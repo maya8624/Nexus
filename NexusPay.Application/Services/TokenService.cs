@@ -31,8 +31,8 @@ namespace NexusPay.Application.Services
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(2),
                 SigningCredentials = creds,
-                Issuer = config["Jwt:Issuer"],   // e.g., "NexusPay_API"
-                Audience = config["Jwt:Audience"] // e.g., "NexusPay_React"
+                Issuer = config["Jwt:Issuer"],  
+                Audience = config["Jwt:Audience"]
             };
 
             // 4. Generate the String
