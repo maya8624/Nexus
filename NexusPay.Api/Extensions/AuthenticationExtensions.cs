@@ -1,37 +1,52 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace NexusPay.Api.Extensions
 {
     public static class AuthenticationExtensions
     {
         //TODO: make sure strong types options are used
-        public static IServiceCollection AddGoogleAuthentication(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddNexusAuthentication(this IServiceCollection services, IConfiguration config)
         {
-            services
-                .AddAuthentication(options =>
+            services.AddAuthentication(options =>
+            {
+                // Set JWT as the boss for both Identifying and Challenging (401 errors)
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-                })
-                .AddCookie(options =>
-                {
-                    options.Cookie.HttpOnly = true;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                    options.Cookie.SameSite = SameSiteMode.Lax; // Default is Lax, but good to be explicit
-                    //options.ExpireTimeSpan = TimeSpan.FromMinutes(60);     // Session timeout
-                    //options.SlidingExpiration = true;                      // Extend on activity
-                })
-                .AddGoogle(options =>
-                {
-                    options.ClientId = configuration["Authentication:Google:ClientId"]!;
-                    options.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
-                });
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!)),
 
-            // Later:
-            // auth.AddMicrosoftIdentityWebApp(configuration.GetSection("AzureAd"));
+                    ValidateIssuer = true,
+                    ValidIssuer = config["Jwt:Issuer"],
 
-            services.AddAuthorization();
+                    ValidateAudience = true,
+                    ValidAudience = config["Jwt:Audience"],
+
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero // Removes the 5-minute "grace period" for tighter security
+                };
+
+                // THE COOKIE BRIDGE: This allows .NET to find the token in your cookie
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        // Look for the cookie we set in the login method
+                        var token = context.Request.Cookies[config["Jwt:CookieName"]!];
+                        if (string.IsNullOrEmpty(token) == false)
+                        {
+                            context.Token = token;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
+            });
 
             return services;
         }

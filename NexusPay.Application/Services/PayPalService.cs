@@ -11,13 +11,10 @@ using NexusPay.Network.Extensions;
 using NexusPay.Network.Interfaces;
 using NexusPay.Network.Services;
 using NexusPay.Domain.Entities;
-using NexusPay.Domain.Enums;
 using NexusPay.Infrastructure.Interfaces;
 using System.Text.Json;
-using NexusPay.Infrastructure.Interfaces;
 using NexusPay.Application.Extensions;
 using System.Net.Http.Json;
-using NexusPay.Domain.Entities;
 
 namespace NexusPay.Application.Services
 {

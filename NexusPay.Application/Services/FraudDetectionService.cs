@@ -7,14 +7,6 @@ using NexusPay.Network;
 using NexusPay.Network.Enums;
 using NexusPay.Network.Interfaces;
 using NexusPay.Network.Services;
-using NexusPay.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http.Json;
-using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NexusPay.Application.Services
 {

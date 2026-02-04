@@ -6,11 +6,7 @@ using NexusPay.Infrastructure.Interfaces;
 using NexusPay.Infrastructure.Repositories;
 using NexusPay.Network.Interfaces;
 using NexusPay.Network.Services;
-using NexusPay.Application.Interfaces;
-using NexusPay.Application.Services;
 using NexusPay.Infrastructure;
-using NexusPay.Infrastructure.Interfaces;
-using NexusPay.Infrastructure.Repositories;
 
 namespace NexusPay.Application.Extensions
 {
@@ -41,6 +37,8 @@ namespace NexusPay.Application.Extensions
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IRefundRepository, RefundRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
             services.AddScoped<IValidator<RefundRequest>, RefundRequestValidator>();

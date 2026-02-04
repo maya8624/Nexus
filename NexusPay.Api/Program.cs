@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
-using NexusPay.Api.Extensions;
 using NexusPay.Api.Extensions;
 using NexusPay.Network;
 using NexusPay.Application.Extensions;
@@ -43,7 +40,9 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddGoogleAuthentication(builder.Configuration);
+builder.Services.AddNexusAuthentication(builder.Configuration);
+
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -63,24 +62,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 
 app.UseAuthorization();
-
-app.MapGet("/login", () =>
-{
-    return Results.Challenge(
-        new AuthenticationProperties
-        {
-            RedirectUri = "http://localhost:5173"
-        },
-        new[] { GoogleDefaults.AuthenticationScheme }
-    );
-});
-
-app.MapGet("/me", (HttpContext ctx) =>
-{
-    return ctx.User.Identity?.IsAuthenticated == true
-        ? Results.Ok(ctx.User.Claims.Select(c => new { c.Type, c.Value }))
-        : Results.Unauthorized();
-});
 
 app.MapControllers();
 

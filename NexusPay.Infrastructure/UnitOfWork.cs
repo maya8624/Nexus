@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using NexusPay.Infrastructure.Interfaces;
 using NexusPay.Infrastructure.Persistence;
 using System;
@@ -24,5 +25,24 @@ namespace NexusPay.Infrastructure
             return result;
         }
 
+        public async Task<IDbContextTransaction> BeginTransaction()
+        {
+            return await _context.Database.BeginTransactionAsync();
+        }
+
+        public async Task Commit()
+        {
+            await _context.Database.CommitTransactionAsync();
+        }
+
+        public async Task RollBack()
+        {
+            await _context.Database.RollbackTransactionAsync();
+        }
+
+        public void Clear()
+        {
+            _context.ChangeTracker.Clear();
+        }
     }
 }

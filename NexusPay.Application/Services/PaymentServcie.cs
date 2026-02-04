@@ -5,8 +5,6 @@ using NexusPay.Application.Interfaces;
 using NexusPay.Domain.Enums;
 using NexusPay.Infrastructure.Interfaces;
 using NexusPay.Domain.Entities;
-using NexusPay.Domain.Enums;
-using NexusPay.Infrastructure.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
