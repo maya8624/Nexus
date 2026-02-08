@@ -25,5 +25,16 @@ namespace NexusPay.Application.Services
             _logger = logger;
             _uow = uow;
         }
+
+        //public async Task ProcessPayment(decimal amount)
+        //{
+        //    if (!userContext.IsAuthenticated)
+        //        throw new UnauthorizedAccessException();
+
+        //    var userId = userContext.UserId;
+
+        //    // Now you can easily save the payment linked to this specific user!
+        //    await repo.SaveTransactionAsync(userId, amount);
+        //}
     }
 }

@@ -11,7 +11,7 @@ using NexusPay.Infrastructure.Persistence;
 namespace NexusPay.Infrastructure.Migrations
 {
     [DbContext(typeof(NexusPayContext))]
-    partial class PayHubContextModelSnapshot : ModelSnapshot
+    partial class NexusPayContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -22,7 +22,7 @@ namespace NexusPay.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("PayPalIntegration.Domain.Entities.Order", b =>
+            modelBuilder.Entity("NexusPay.Domain.Entities.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -56,7 +56,37 @@ namespace NexusPay.Infrastructure.Migrations
                     b.ToTable("Orders");
                 });
 
-            modelBuilder.Entity("PayPalIntegration.Domain.Entities.Payment", b =>
+            modelBuilder.Entity("NexusPay.Domain.Entities.OrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("NexusPay.Domain.Entities.Payment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -114,37 +144,7 @@ namespace NexusPay.Infrastructure.Migrations
                     b.ToTable("Payments");
                 });
 
-            modelBuilder.Entity("PaymentHub.Domain.Entities.OrderItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProductName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("OrderItems");
-                });
-
-            modelBuilder.Entity("PaymentHub.Domain.Entities.Refund", b =>
+            modelBuilder.Entity("NexusPay.Domain.Entities.Refund", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -186,20 +186,57 @@ namespace NexusPay.Infrastructure.Migrations
                     b.ToTable("Refund");
                 });
 
-            modelBuilder.Entity("PayPalIntegration.Domain.Entities.Payment", b =>
+            modelBuilder.Entity("NexusPay.Domain.Entities.User", b =>
                 {
-                    b.HasOne("PayPalIntegration.Domain.Entities.Order", "Order")
-                        .WithOne("Payment")
-                        .HasForeignKey("PayPalIntegration.Domain.Entities.Payment", "OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Navigation("Order");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("PaymentHub.Domain.Entities.OrderItem", b =>
+            modelBuilder.Entity("NexusPay.Domain.Entities.UserLogin", b =>
                 {
-                    b.HasOne("PayPalIntegration.Domain.Entities.Order", "Order")
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("LastLoginAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Provider")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProviderKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserLogin");
+                });
+
+            modelBuilder.Entity("NexusPay.Domain.Entities.OrderItem", b =>
+                {
+                    b.HasOne("NexusPay.Domain.Entities.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -208,9 +245,20 @@ namespace NexusPay.Infrastructure.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("PaymentHub.Domain.Entities.Refund", b =>
+            modelBuilder.Entity("NexusPay.Domain.Entities.Payment", b =>
                 {
-                    b.HasOne("PayPalIntegration.Domain.Entities.Payment", "Payment")
+                    b.HasOne("NexusPay.Domain.Entities.Order", "Order")
+                        .WithOne("Payment")
+                        .HasForeignKey("NexusPay.Domain.Entities.Payment", "OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("NexusPay.Domain.Entities.Refund", b =>
+                {
+                    b.HasOne("NexusPay.Domain.Entities.Payment", "Payment")
                         .WithMany("Refunds")
                         .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -219,16 +267,32 @@ namespace NexusPay.Infrastructure.Migrations
                     b.Navigation("Payment");
                 });
 
-            modelBuilder.Entity("PayPalIntegration.Domain.Entities.Order", b =>
+            modelBuilder.Entity("NexusPay.Domain.Entities.UserLogin", b =>
+                {
+                    b.HasOne("NexusPay.Domain.Entities.User", "User")
+                        .WithMany("Logins")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("NexusPay.Domain.Entities.Order", b =>
                 {
                     b.Navigation("Items");
 
                     b.Navigation("Payment");
                 });
 
-            modelBuilder.Entity("PayPalIntegration.Domain.Entities.Payment", b =>
+            modelBuilder.Entity("NexusPay.Domain.Entities.Payment", b =>
                 {
                     b.Navigation("Refunds");
+                });
+
+            modelBuilder.Entity("NexusPay.Domain.Entities.User", b =>
+                {
+                    b.Navigation("Logins");
                 });
 #pragma warning restore 612, 618
         }

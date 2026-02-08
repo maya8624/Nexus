@@ -4,10 +4,10 @@ using System.Text;
 
 namespace NexusPay.Api.Extensions
 {
-    public static class AuthenticationExtensions
+    public static class AuthExtensions
     {
         //TODO: make sure strong types options are used
-        public static IServiceCollection AddNexusAuthentication(this IServiceCollection services, IConfiguration config)
+        public static IServiceCollection AddNexusAuth(this IServiceCollection services, IConfiguration config)
         {
             services.AddAuthentication(options =>
             {
@@ -32,13 +32,14 @@ namespace NexusPay.Api.Extensions
                     ClockSkew = TimeSpan.Zero // Removes the 5-minute "grace period" for tighter security
                 };
 
-                // THE COOKIE BRIDGE: This allows .NET to find the token in your cookie
+                // Find the token in the code
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
                     {
                         // Look for the cookie we set in the login method
                         var token = context.Request.Cookies[config["Jwt:CookieName"]!];
+
                         if (string.IsNullOrEmpty(token) == false)
                         {
                             context.Token = token;

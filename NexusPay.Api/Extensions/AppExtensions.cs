@@ -2,30 +2,20 @@
 using NexusPay.Application.Dtos;
 using NexusPay.Application.Interfaces;
 using NexusPay.Application.Services;
+using NexusPay.Application.Services.Identity;
+using NexusPay.Infrastructure;
 using NexusPay.Infrastructure.Interfaces;
 using NexusPay.Infrastructure.Repositories;
+using NexusPay.Network;
 using NexusPay.Network.Interfaces;
 using NexusPay.Network.Services;
-using NexusPay.Infrastructure;
 
 namespace NexusPay.Application.Extensions
 {
-    public static class ServiceExtensions
+    public static class AppExtensions
     {   
-        public static void AddServices(this IServiceCollection services)
-        {
-            services.AddCors(options =>
-            {
-                options.AddDefaultPolicy(
-                    builder =>
-                    {
-                        builder.WithOrigins(["http://localhost:5173", "http://127.0.0.1:5500", "https://localhost:7289"])
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
-                    });
-            });
-
+        public static void AddApplicationServices(this IServiceCollection services)
+        {            
             services.AddHttpClient();
             services.AddControllers();
 
@@ -39,6 +29,8 @@ namespace NexusPay.Application.Extensions
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IUserContext, UserContext>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
             services.AddScoped<IValidator<RefundRequest>, RefundRequestValidator>();

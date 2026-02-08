@@ -3,12 +3,11 @@ using NexusPay.Application.Dtos;
 using NexusPay.Infrastructure.Responses;
 using NexusPay.Application.Interfaces;
 using System.Security.Claims;
+using NexusPay.Api.Controllers;
 
 namespace NexusPay.Controllers
 {
-    [ApiController]
-    [Route("api/order")]
-    public class OrderController : ControllerBase
+    public class OrderController : NexusPayControllerBase
     {
         private readonly IOrderService _orderService;
 

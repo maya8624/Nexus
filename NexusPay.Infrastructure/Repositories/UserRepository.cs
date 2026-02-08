@@ -18,11 +18,6 @@ namespace NexusPay.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<User> Create(User user)
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task<User?> GetByEmail(string email)
         {
             return await _context.Users.FirstOrDefaultAsync(x => x.Email == email);

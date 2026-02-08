@@ -3,10 +3,7 @@ using NexusPay.Application.Dtos;
 using NexusPay.Application.Interfaces;
 
 namespace NexusPay.Api.Controllers
-{
-    [ApiController]
-    [Route("api/paypal")]
-    public class PayPalController : ControllerBase
+{    public class PayPalController : NexusPayControllerBase
     {
         private readonly IPayPalService _paypalService;
 
