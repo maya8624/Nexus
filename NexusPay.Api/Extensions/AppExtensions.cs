@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using NexusPay.Application.Dtos;
+using NexusPay.Application.Factories;
 using NexusPay.Application.Interfaces;
 using NexusPay.Application.Services;
 using NexusPay.Application.Services.Identity;
@@ -28,6 +29,7 @@ namespace NexusPay.Application.Extensions
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IAuthServiceFactory, AuthServiceFactory>();
             services.AddScoped<IAuthService, AuthGoogleService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IUserContext, UserContext>();

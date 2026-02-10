@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace NexusPay.Application.Factories
 {
-    public interface IAuthSerivceFactory
+    public interface IAuthServiceFactory
     {
         IAuthService GetAuthProvider(string provider);
     }

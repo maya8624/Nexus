@@ -8,10 +8,10 @@ namespace NexusPay.Api.Controllers
 {
     public class AuthController : NexusPayControllerBase
     {
-        private readonly IAuthSerivceFactory _authFactory;
+        private readonly IAuthServiceFactory _authFactory;
         private readonly ITokenService _tokenService;
 
-        public AuthController(ITokenService tokenService, IAuthSerivceFactory authFactory)
+        public AuthController(ITokenService tokenService, IAuthServiceFactory authFactory)
         {
             _tokenService = tokenService;
             _authFactory = authFactory;

@@ -2,7 +2,7 @@
 
 namespace NexusPay.Application.Factories
 {
-    public class AuthServiceFactory : IAuthSerivceFactory
+    public class AuthServiceFactory : IAuthServiceFactory
     {
         private readonly IEnumerable<IAuthService> _authServices;
 
