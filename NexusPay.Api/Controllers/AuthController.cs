@@ -1,27 +1,30 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NexusPay.Application.Dtos;
+using NexusPay.Application.Factories;
 using NexusPay.Application.Interfaces;
 
 namespace NexusPay.Api.Controllers
 {
     public class AuthController : NexusPayControllerBase
     {
-        private readonly IAuthService _authService;
+        private readonly IAuthSerivceFactory _authFactory;
         private readonly ITokenService _tokenService;
 
-        public AuthController(IAuthService authService, ITokenService tokenService)
+        public AuthController(ITokenService tokenService, IAuthSerivceFactory authFactory)
         {
-            _authService = authService;
             _tokenService = tokenService;
+            _authFactory = authFactory;
         }
 
         [AllowAnonymous]
         [HttpPost("external-login")]
         public async Task<ActionResult<UserResponse>> ExternalLogin([FromBody] ExternalLoginRequest request)
         {
-            var user = await _authService.VerifyProvider(request.Provider, request.IdToken);
-            
+            var authService = _authFactory.GetAuthProvider(request.Provider);
+
+            var user = await authService.Authenticate(request.Provider, request.IdToken);
+
             if (user == null) 
                 return Unauthorized();
 

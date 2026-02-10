@@ -28,7 +28,7 @@ namespace NexusPay.Application.Extensions
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IAuthService, AuthGoogleService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IUserContext, UserContext>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();

@@ -9,7 +9,8 @@ using System.Text;
 namespace NexusPay.Application.Interfaces
 {
     public interface IAuthService
-    { 
-        Task<ExternalUserResponse?> VerifyProvider(string provider, string token);
+    {
+        string ProviderName { get; }
+        Task<ExternalUserResponse?> Authenticate(string provider, string token);
     }
 }

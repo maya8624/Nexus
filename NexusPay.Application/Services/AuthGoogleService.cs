@@ -6,20 +6,21 @@ using NexusPay.Application.Interfaces;
 
 namespace NexusPay.Application.Services
 {
-    public class AuthService : IAuthService
+    public class AuthGoogleService : IAuthService
     {
+        public string ProviderName => "google";
         private readonly AuthSettings _settings;
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
 
-        public AuthService(IOptions<AuthSettings> settings, ITokenService tokenService, IUserService userService)
+        public AuthGoogleService(IOptions<AuthSettings> settings, ITokenService tokenService, IUserService userService)
         {
             _settings = settings.Value;
             _tokenService = tokenService;
             _userService = userService;
         }
 
-        public async Task<ExternalUserResponse?> VerifyProvider(string provider, string token)
+        public async Task<ExternalUserResponse?> Authenticate(string provider, string token)
         {
             try
             {
