@@ -10,11 +10,36 @@ namespace NexusPay.Api.Controllers
     {
         private readonly IAuthServiceFactory _authFactory;
         private readonly ITokenService _tokenService;
+        private readonly IUserService _userService;
 
-        public AuthController(ITokenService tokenService, IAuthServiceFactory authFactory)
+        public AuthController(ITokenService tokenService, IAuthServiceFactory authFactory, IUserService userService)
         {
             _tokenService = tokenService;
             _authFactory = authFactory;
+            _userService = userService;
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<bool>> Login([FromBody] EmailLoginRequest request)
+        {
+            var result = await _userService.Login(request.Email, request.Password);
+            
+            if (result == false)
+            {
+                return Unauthorized(new
+                {
+                    message = "Invalid email or password"
+                });
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPost("register")]
+        public async Task<ActionResult<UserResponse>> Register([FromBody] EmailLoginRequest request)
+        {
+            var user = await _userService.RegisterEmailUser(request.Email, request.Password);
+            return Ok(user);
         }
 
         [AllowAnonymous]

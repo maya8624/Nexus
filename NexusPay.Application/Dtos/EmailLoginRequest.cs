@@ -5,15 +5,15 @@ using System.Text;
 
 namespace NexusPay.Application.Dtos
 {
-    public class LocalLoginRequest
+    public class EmailLoginRequest
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
 
-    public class LocalLoginRequestValidator : AbstractValidator<LocalLoginRequest>
+    public class EmailLoginRequestValidator : AbstractValidator<EmailLoginRequest>
     {
-        public LocalLoginRequestValidator()
+        public EmailLoginRequestValidator()
         {
             RuleFor(x => x.Email).NotEmpty();
             RuleFor(x => x.Password).NotEmpty();

@@ -3,44 +3,52 @@ using NexusPay.Application.Exceptions;
 using NexusPay.Application.Interfaces;
 using NexusPay.Domain.Entities;
 using NexusPay.Infrastructure.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NexusPay.Application.Services
 {
     public class UserService : IUserService
     {
+        private readonly IPasswordHasherService _passwordHasher;
         private readonly IUserRepository _userRepo;
+        private readonly ITokenService _tokenService;
         private readonly IUnitOfWork _uow;
 
-        public UserService(IUserRepository userRepo, IUnitOfWork uow)
+        public UserService(
+            IUserRepository userRepo, 
+            IUnitOfWork uow, 
+            IPasswordHasherService passwordHasher, 
+            ITokenService tokenService)
         {
             _userRepo = userRepo;
             _uow = uow;
+            _passwordHasher = passwordHasher;
+            _tokenService = tokenService;
         }
 
-        //TODO: hash password
-        public async Task<User> CreateEmailUser(string email, string password, string? name)
+        public async Task<UserResponse> RegisterEmailUser(string email, string password)
         {
             var existing = await _userRepo.GetByEmail(email);
 
             if (existing != null)
                 throw new UserException("Email already registered");
 
+            var hashedPassword = _passwordHasher.HashPassword(password);
+
             var user = new User
             {
                 Id = Guid.NewGuid(),
                 Email = email,
-                Name = name,
-                PasswordHash = password,
+                PasswordHash = hashedPassword,
                 CreatedAt = DateTimeOffset.UtcNow,
             };
 
             await _userRepo.Create(user);
-            return user;
+
+            return new UserResponse
+            {
+                Email = user.Email,
+                UserId = user.Id.ToString(), // TODO: need to return????
+            };
         }
 
         public async Task<User> CreateAuthUser(ExternalUserResponse externalUser, string providerName)
@@ -72,19 +80,27 @@ namespace NexusPay.Application.Services
             return user;
         }
 
-        public async Task<User?> GetByEmail(string email)
+        public async Task<bool> Login(string email, string password)
         {
-            return await _userRepo.GetByEmail(email);
+            var user = await _userRepo.GetByEmail(email);
+
+            if (user == null)
+                return false;
+
+            var isVerified = _passwordHasher.VerifyPassword(user.PasswordHash, password);
+
+            if (isVerified == false)
+                return false;
+
+            // Generate OUR token (Doesn't matter which provider they used)
+            var jwtToken = _tokenService.CreateToken(user.Id.ToString(), email);
+
+            return true;
         }
 
         //public async Task<User?> GetByProviderId(string provider, string providerUserId)
         //{
         //    return await _userRepo.GetByProviderId(provider, providerUserId);
-        //}
-
-        public async Task<User?> GetEmailUser(string email, string password)
-        {
-            return await _userRepo.GetEmailUser(email, password);
-        }
+        //}   
     }
 }

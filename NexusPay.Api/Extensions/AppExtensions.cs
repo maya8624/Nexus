@@ -22,6 +22,7 @@ namespace NexusPay.Application.Extensions
 
             services.AddScoped<IHttpClientService, HttpClientService>();
             services.AddScoped<IPayPalAuthService, PayPalAuthService>();
+            services.AddScoped<IUserService, UserService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IPaymentService, PaymentServcie>();
             services.AddScoped<IPayPalService, PayPalService>();
@@ -37,6 +38,9 @@ namespace NexusPay.Application.Extensions
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
             services.AddScoped<IValidator<RefundRequest>, RefundRequestValidator>();
             services.AddScoped<IValidator<OrderPaymentRequest>, OrderPaymentRequestValidator>();
+            services.AddScoped<IValidator<EmailLoginRequest>, EmailLoginRequestValidator>();
+            services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
+            services.AddScoped<IPasswordHasherService, PasswordHasherService>();
         }
     }
 }
