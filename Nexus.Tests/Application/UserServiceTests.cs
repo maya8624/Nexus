@@ -66,7 +66,7 @@ namespace Nexus.Tests.Application
                 u.Email == email && 
                 u.PasswordHash == hashedPassword &&
                 u.Id != Guid.Empty &&
-                u.CreatedAt != default
+                u.CreatedAtUtc != default
             )), Times.Once);
         }
 
@@ -82,7 +82,7 @@ namespace Nexus.Tests.Application
                 Id = Guid.NewGuid(),
                 Email = email,
                 PasswordHash = "existing_hash",
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAtUtc = DateTimeOffset.UtcNow
             };
 
             _userRepoMock
@@ -162,8 +162,8 @@ namespace Nexus.Tests.Application
             Assert.Equal(email, capturedUser.Email);
             Assert.Equal(hashedPassword, capturedUser.PasswordHash);
             Assert.NotEqual(Guid.Empty, capturedUser.Id);
-            Assert.True(capturedUser.CreatedAt <= DateTimeOffset.UtcNow);
-            Assert.True(capturedUser.CreatedAt >= DateTimeOffset.UtcNow.AddSeconds(-5));
+            Assert.True(capturedUser.CreatedAtUtc <= DateTimeOffset.UtcNow);
+            Assert.True(capturedUser.CreatedAtUtc >= DateTimeOffset.UtcNow.AddSeconds(-5));
         }
 
         [Theory]
@@ -268,7 +268,7 @@ namespace Nexus.Tests.Application
                 Id = userId,
                 Email = email,
                 PasswordHash = hashedPassword,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAtUtc = DateTimeOffset.UtcNow
             };
 
             _userRepoMock
@@ -327,7 +327,7 @@ namespace Nexus.Tests.Application
                 Id = Guid.NewGuid(),
                 Email = email,
                 PasswordHash = hashedPassword,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAtUtc = DateTimeOffset.UtcNow
             };
 
             _userRepoMock
@@ -362,7 +362,7 @@ namespace Nexus.Tests.Application
                 Id = userId,
                 Email = email,
                 PasswordHash = hashedPassword,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAtUtc = DateTimeOffset.UtcNow
             };
 
             _userRepoMock
@@ -402,7 +402,7 @@ namespace Nexus.Tests.Application
                 Id = userId,
                 Email = email,
                 PasswordHash = hashedPassword,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAtUtc = DateTimeOffset.UtcNow
             };
 
             _userRepoMock
@@ -458,7 +458,7 @@ namespace Nexus.Tests.Application
                 Id = Guid.NewGuid(),
                 Email = email,
                 PasswordHash = hashedPassword,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAtUtc = DateTimeOffset.UtcNow
             };
 
             _userRepoMock
@@ -519,7 +519,7 @@ namespace Nexus.Tests.Application
                 Id = Guid.NewGuid(),
                 Email = email,
                 PasswordHash = hashedPassword,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAtUtc = DateTimeOffset.UtcNow
             };
 
             _userRepoMock

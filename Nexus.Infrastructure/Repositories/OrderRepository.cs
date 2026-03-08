@@ -13,9 +13,9 @@ namespace Nexus.Infrastructure.Repositories
 {
     public class OrderRepository : RepositoryBase<Order>, IOrderRepository
     {
-        private readonly NexusPayContext _context;
+        private readonly AppDbContext _context;
 
-        public OrderRepository(NexusPayContext context) : base(context) 
+        public OrderRepository(AppDbContext context) : base(context) 
         {
             _context = context;
         }

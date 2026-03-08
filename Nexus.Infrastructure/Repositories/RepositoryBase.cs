@@ -7,10 +7,10 @@ namespace Nexus.Infrastructure.Repositories
 {
     public class RepositoryBase<T> : IRepositoryBase<T> where T : class
     {
-        private readonly NexusPayContext _context;
+        private readonly AppDbContext _context;
         private readonly DbSet<T> _dbSet;
 
-        public RepositoryBase(NexusPayContext context)
+        public RepositoryBase(AppDbContext context)
         {
             _context = context;
             _dbSet = context.Set<T>();

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Nexus.Domain.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,37 +7,24 @@ using System.Threading.Tasks;
 
 namespace Nexus.Domain.Entities
 {
-
-    /// <summary>
-    /// Represents a single chat message in a conversation session.
-    /// Kept in Domain as it's a core business entity.
-    /// </summary>
     public class ChatMessage
     {
-        public Guid Id { get; private set; }
-        public string SessionId { get; private set; }
-        public string UserId { get; private set; }
-        public string Message { get; private set; }
-        public string? Reply { get; private set; }
-        public DateTime CreatedAt { get; private set; }
+        public Guid Id { get; set; }
 
-        private ChatMessage() { } // EF Core constructor
+        public Guid ChatSessionId { get; set; }
 
-        public static ChatMessage Create(string sessionId, string userId, string message)
-        {
-            return new ChatMessage
-            {
-                Id = Guid.NewGuid(),
-                SessionId = sessionId,
-                UserId = userId,
-                Message = message,
-                CreatedAt = DateTime.UtcNow,
-            };
-        }
+        public ChatMessageRole Role { get; set; }
 
-        public void SetReply(string reply)
-        {
-            Reply = reply;
-        }
+        public string Content { get; set; } = default!;
+
+        public string? ToolName { get; set; }
+
+        public DateTimeOffset CreatedAtUtc { get; set; }
+
+        public ChatSession ChatSession { get; set; } = null!;
+
+        //public string? MetadataJson { get; set; }
+        //public int? PromptTokens { get; set; }
+        //public int? CompletionTokens { get; set; }
     }
 }

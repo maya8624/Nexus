@@ -7,9 +7,9 @@ namespace Nexus.Infrastructure.Repositories
 {
     public class RefundRepository : RepositoryBase<Refund>, IRefundRepository
     {
-        private readonly NexusPayContext _context;
+        private readonly AppDbContext _context;
 
-        public RefundRepository(NexusPayContext context) : base(context)
+        public RefundRepository(AppDbContext context) : base(context)
         {
             _context = context;
         }

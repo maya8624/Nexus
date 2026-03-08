@@ -28,8 +28,11 @@ namespace Nexus.Api.Extensions
                     });
             });
 
-            services.AddDbContext<NexusPayContext>(options 
-                => options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+            //services.AddDbContext<AppDbContext>(options 
+            //    => options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
 
             return services;
         }

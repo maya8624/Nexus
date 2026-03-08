@@ -39,7 +39,7 @@ namespace Nexus.Application.Services
                 Id = Guid.NewGuid(),
                 Email = email,
                 PasswordHash = hashedPassword,
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAtUtc = DateTimeOffset.UtcNow,
             };
 
             await _userRepo.Create(user);
@@ -62,8 +62,8 @@ namespace Nexus.Application.Services
             {
                 Id = Guid.NewGuid(),
                 Email = externalUser.Email,
-                Name = externalUser.Name,
-                CreatedAt = DateTimeOffset.UtcNow,
+                FirstName = externalUser.Name,
+                CreatedAtUtc = DateTimeOffset.UtcNow,
                 Logins =
                 [
                     new() {

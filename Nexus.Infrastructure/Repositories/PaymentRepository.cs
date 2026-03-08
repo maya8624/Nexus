@@ -15,9 +15,9 @@ namespace Nexus.Infrastructure.Repositories
 {
     public class PaymentRepository : RepositoryBase<Payment>, IPaymentRepository
     {
-        private readonly NexusPayContext _context;
+        private readonly AppDbContext _context;
 
-        public PaymentRepository(NexusPayContext context) : base(context)
+        public PaymentRepository(AppDbContext context) : base(context)
         {
             _context = context;
         }

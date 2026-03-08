@@ -11,9 +11,9 @@ namespace Nexus.Infrastructure.Repositories
 {
     public class UserRepository : RepositoryBase<User>, IUserRepository
     {
-        private readonly NexusPayContext _context;
+        private readonly AppDbContext _context;
 
-        public UserRepository(NexusPayContext context) : base(context)
+        public UserRepository(AppDbContext context) : base(context)
         {
             _context = context;
         }

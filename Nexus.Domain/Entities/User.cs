@@ -1,20 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
+﻿using Nexus.Domain.Enums;
 
 namespace Nexus.Domain.Entities
 {
     public class User
     {
         public Guid Id { get; set; }
-        public string Email { get; set; } = string.Empty;
-        public string Name { get; set; }
-        public string PasswordHash { get; set; } 
-        public DateTimeOffset CreatedAt { get; set; }
-        public List<UserLogin> Logins { get; set; } = [];
-        //public List<LoginHistory> History { get; set; } = [];
+
+        public string Email { get; set; } = default!;
+
+        public string? PasswordHash { get; set; }
+
+        public string FirstName { get; set; } = default!;
+
+        public string LastName { get; set; } = default!;
+
+        public string? PhoneNumber { get; set; }
+
+        public bool IsActive { get; set; }
+
+        public DateTimeOffset CreatedAtUtc { get; set; }
+
+        public DateTimeOffset ModifiedAtUtc { get; set; }
+
+        public ICollection<UserLogin> Logins { get; set; } = new List<UserLogin>();
+
+        public ICollection<SavedProperty> SavedProperties { get; set; } = new List<SavedProperty>();
+
+        public ICollection<Enquiry> Enquiries { get; set; } = new List<Enquiry>();
+
+        public ICollection<InspectionBooking> InspectionBookings { get; set; } = new List<InspectionBooking>();
+
+        public ICollection<ChatSession> ChatSessions { get; set; } = new List<ChatSession>();
     }
 
 
@@ -33,16 +49,4 @@ namespace Nexus.Domain.Entities
     //    public Guid UserId { get; set; }
     //    public User User { get; set; } = null!;
     //}
-
-    public class LoginHistory
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public Guid UserId { get; set; }
-        public User User { get; set; } = null!;
-
-        public DateTimeOffset LoginDate { get; set; } = DateTimeOffset.UtcNow;
-        public string? IpAddress { get; set; }
-        public string? UserAgent { get; set; }
-        public string ProviderUsed { get; set; } = string.Empty; // "Google", "Credentials", etc.
-    }
 }
