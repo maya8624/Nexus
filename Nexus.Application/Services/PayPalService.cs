@@ -49,13 +49,15 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
-        public async Task<PayPalOrderResultResponse> CreateOrder(int orderId)
+        public async Task<PayPalOrderResultResponse?> CreateOrder(int orderId)
         {
             var order = await _orderRepository.GetOrderForPayment(orderId);
+
             if (order == null)
-                throw new NotFoundException($"Order: {orderId} not found.");
+                return null;
 
             var payment = await GetPaymentByOrderId(orderId);
+
             if (payment == null)
             {
                 var idempotencyKey = Guid.NewGuid().ToString();
@@ -78,7 +80,7 @@ namespace Nexus.Application.Services
             return response;
         }        
 
-        private async Task<Payment> GetPaymentByOrderId(int orderId)
+        private async Task<Payment?> GetPaymentByOrderId(int orderId)
         { 
             var payment = await _paymentRepository.GetByOrderId(orderId);
 
@@ -88,11 +90,12 @@ namespace Nexus.Application.Services
             return payment;
         }
 
-        public async Task<PayPalCaptureResponse> CaptureOrder(int orderId)
+        public async Task<PayPalCaptureResponse?> CaptureOrder(int orderId)
         {
             var payment = await _paymentRepository.GetByOrderId(orderId);
+
             if (payment == null)
-                throw new NotFoundException($"Payment not found. orderId:{orderId}");
+                return null;
 
             if (payment.Status == PaymentStatus.Completed && string.IsNullOrEmpty(payment.RawResponse) == false)
                 return payment.RawResponse.SafeDeserialize<PayPalCaptureResponse>();

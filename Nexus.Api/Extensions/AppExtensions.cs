@@ -21,6 +21,7 @@ namespace Nexus.Application.Extensions
             services.AddControllers();
 
             services.AddScoped<IHttpClientService, HttpClientService>();
+            services.AddScoped<IAiService, AiService>();
             services.AddScoped<IPayPalAuthService, PayPalAuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IOrderService, OrderService>();
@@ -40,6 +41,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<OrderPaymentRequest>, OrderPaymentRequestValidator>();
             services.AddScoped<IValidator<EmailLoginRequest>, EmailLoginRequestValidator>();
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
+            services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
         }
     }

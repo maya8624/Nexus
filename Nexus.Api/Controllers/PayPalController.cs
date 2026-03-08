@@ -3,7 +3,8 @@ using Nexus.Application.Dtos;
 using Nexus.Application.Interfaces;
 
 namespace Nexus.Api.Controllers
-{    public class PayPalController : NexusPayControllerBase
+{
+    public class PayPalController : AppControllerBase
     {
         private readonly IPayPalService _paypalService;
 
@@ -23,14 +24,18 @@ namespace Nexus.Api.Controllers
         public async Task<ActionResult<PayPalCaptureResponse>> CaptureOrder([FromBody] OrderPaymentRequest request)
         {
             var result = await _paypalService.CaptureOrder(request.OrderId);
+
+            if (result == null)
+                return NotFound();
+           
             return Ok(result);
-        }        
-        
+        }
+
         [HttpPost("refund")]
-        public async Task<IActionResult> Refund(RefundRequest request, CancellationToken ct)
+        public async Task<ActionResult<PayPalRefundResponse>> Refund(RefundRequest request, CancellationToken ct)
         {
             var refund = await _paypalService.RefundCapture(request.PaymentId, request.Amount, ct);
-            return Ok(refund);
+            return refund;
         }
 
         [HttpPost("webhook")]

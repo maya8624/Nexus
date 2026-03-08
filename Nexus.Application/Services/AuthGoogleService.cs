@@ -3,6 +3,7 @@ using Google.Apis.Auth;
 using Microsoft.Extensions.Options;
 using Nexus.Application.Dtos;
 using Nexus.Application.Interfaces;
+using Nexus.Application.Settings;
 
 namespace Nexus.Application.Services
 {

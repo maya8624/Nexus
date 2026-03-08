@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Nexus.Application.Settings;
 using System.Text;
 
 namespace Nexus.Api.Extensions
@@ -20,13 +21,13 @@ namespace Nexus.Api.Extensions
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]!)),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:Key"]!)),
 
                     ValidateIssuer = true,
-                    ValidIssuer = config["Jwt:Issuer"],
+                    ValidIssuer = config["JwtSettings:Issuer"],
 
                     ValidateAudience = true,
-                    ValidAudience = config["Jwt:Audience"],
+                    ValidAudience = config["JwtSettings:Audience"],
 
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero // Removes the 5-minute "grace period" for tighter security
@@ -38,7 +39,7 @@ namespace Nexus.Api.Extensions
                     OnMessageReceived = context =>
                     {
                         // Look for the cookie we set in the login method
-                        var token = context.Request.Cookies[config["Jwt:CookieName"]!];
+                        var token = context.Request.Cookies[config["JwtSettings:CookieName"]!];
 
                         if (string.IsNullOrEmpty(token) == false)
                         {

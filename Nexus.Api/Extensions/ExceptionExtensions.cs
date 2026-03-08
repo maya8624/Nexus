@@ -9,7 +9,7 @@ namespace Nexus.Api.Extensions
     {
         public static (int StatusCode, ErrorResponse Response) ToHttpResponse(this Exception exception, HttpContext context)
         {
-            return exception switch
+            var result = exception switch
             {
                 AppException appEx => (
                     appEx.StatusCode,
@@ -37,6 +37,8 @@ namespace Nexus.Api.Extensions
                    }
                 )
             };
+
+            return result;
         }
     }
 }

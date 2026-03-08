@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using Nexus.Application;
+using Nexus.Application.Settings;
 using Nexus.Infrastructure.Persistence;
 using Nexus.Network;
 

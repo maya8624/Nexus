@@ -6,7 +6,7 @@ using Nexus.Application.Interfaces;
 
 namespace Nexus.Api.Controllers
 {
-    public class AuthController : NexusPayControllerBase
+    public class AuthController : AppControllerBase
     {
         private readonly IAuthServiceFactory _authFactory;
         private readonly ITokenService _tokenService;
@@ -68,6 +68,9 @@ namespace Nexus.Api.Controllers
         public ActionResult<UserResponse> GetMe()
         {
             var user = _tokenService.GetCurrentUser();
+            if (user == null)
+                return Unauthorized();
+
             return Ok(user);
         }
 

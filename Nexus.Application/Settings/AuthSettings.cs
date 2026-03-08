@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Nexus.Application
+namespace Nexus.Application.Settings
 {
     public class AuthSettings
     {

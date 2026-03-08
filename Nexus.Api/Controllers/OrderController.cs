@@ -7,7 +7,7 @@ using Nexus.Api.Controllers;
 
 namespace Nexus.Controllers
 {
-    public class OrderController : NexusPayControllerBase
+    public class OrderController : AppControllerBase
     {
         private readonly IOrderService _orderService;
 
@@ -20,11 +20,15 @@ namespace Nexus.Controllers
         public async Task<ActionResult<OrderResponse>> GetOrder(int orderId)
         {
             var order = await _orderService.GetOrderById(orderId);
+
+            if (order == null)
+                return NotFound();
+
             return Ok(order);
         }
 
         [HttpGet("orders")]
-        public async Task<ActionResult<List<OrderSummaryResponse>>> GetOrders()
+        public async Task<ActionResult<IEnumerable<OrderSummaryResponse>>> GetOrders()
         {
             //TODO: get userId from JWT claims
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -40,8 +44,8 @@ namespace Nexus.Controllers
         public async Task<ActionResult<OrderResponse>> Create([FromBody] CreateOrderRequest request)
         {
             var order = await _orderService.CreateOrder(
-                request.UserId, 
-                request.FrontendIdempotencyKey, 
+                request.UserId,
+                request.FrontendIdempotencyKey,
                 request.Items);
 
             return Ok(order);
@@ -51,9 +55,10 @@ namespace Nexus.Controllers
         public async Task<IActionResult> DeleteOrder(int orderId)
         {
             var result = await _orderService.DeleteOrder(orderId);
+            
             if (result == false)
                 return NotFound();
-            
+
             return NoContent();
         }
     }

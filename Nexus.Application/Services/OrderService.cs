@@ -3,7 +3,6 @@ using Nexus.Application.Exceptions;
 using Nexus.Domain.Entities;
 using Nexus.Infrastructure.Responses;
 using Nexus.Application.Interfaces;
-using Nexus.Domain.Entities;
 using Nexus.Infrastructure.Interfaces;
 using System.Drawing;
 
@@ -20,12 +19,12 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
-        public async Task<OrderResponse> GetOrderById(int orderId)
+        public async Task<OrderResponse?> GetOrderById(int orderId)
         {
             var order = await _orderRepository.GetOrderById(orderId);
 
             if (order == null)
-                throw new NotFoundException("Order is not found.");
+                return null;
 
             var response = new OrderResponse
             {
