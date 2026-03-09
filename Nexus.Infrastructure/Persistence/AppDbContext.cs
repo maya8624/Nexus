@@ -28,6 +28,7 @@ namespace Nexus.Infrastructure.Persistence
         public DbSet<PropertyImage> PropertyImages => Set<PropertyImage>();
         public DbSet<PropertyType> PropertyTypes => Set<PropertyType>();
         public DbSet<SavedProperty> SavedProperties => Set<SavedProperty>();
+        public DbSet<ToolExecution> ToolExecutions => Set<ToolExecution>();
         public DbSet<User> Users => Set<User>();
         public DbSet<UserLogin> UserLogins => Set<UserLogin>();
 

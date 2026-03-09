@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Nexus.Infrastructure.Persistence;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Nexus.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260309064205_Add ToolExectuion Table")]
+    partial class AddToolExectuionTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -379,17 +382,9 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("agency_id");
 
-                    b.Property<Guid?>("AgencyId1")
-                        .HasColumnType("uuid")
-                        .HasColumnName("agency_id1");
-
                     b.Property<Guid?>("AgentId")
                         .HasColumnType("uuid")
                         .HasColumnName("agent_id");
-
-                    b.Property<Guid?>("AgentId1")
-                        .HasColumnType("uuid")
-                        .HasColumnName("agent_id1");
 
                     b.Property<DateTimeOffset?>("AvailableFromUtc")
                         .HasColumnType("timestamp with time zone")
@@ -434,14 +429,8 @@ namespace Nexus.Infrastructure.Migrations
                     b.HasIndex("AgencyId")
                         .HasDatabaseName("ix_listings_agency_id");
 
-                    b.HasIndex("AgencyId1")
-                        .HasDatabaseName("ix_listings_agency_id1");
-
                     b.HasIndex("AgentId")
                         .HasDatabaseName("ix_listings_agent_id");
-
-                    b.HasIndex("AgentId1")
-                        .HasDatabaseName("ix_listings_agent_id1");
 
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("ix_listings_is_published");
@@ -637,10 +626,6 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("agent_id");
 
-                    b.Property<Guid?>("AgentId1")
-                        .HasColumnType("uuid")
-                        .HasColumnName("agent_id1");
-
                     b.Property<int>("Bathrooms")
                         .HasColumnType("integer")
                         .HasColumnName("bathrooms");
@@ -693,9 +678,6 @@ namespace Nexus.Infrastructure.Migrations
 
                     b.HasIndex("AgentId")
                         .HasDatabaseName("ix_properties_agent_id");
-
-                    b.HasIndex("AgentId1")
-                        .HasDatabaseName("ix_properties_agent_id1");
 
                     b.HasIndex("IsActive")
                         .HasDatabaseName("ix_properties_is_active");
@@ -945,6 +927,61 @@ namespace Nexus.Infrastructure.Migrations
                     b.ToTable("saved_properties", (string)null);
                 });
 
+            modelBuilder.Entity("Nexus.Domain.Entities.ToolExecution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChatMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_message_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("error_message");
+
+                    b.Property<string>("InputJson")
+                        .HasColumnType("text")
+                        .HasColumnName("input_json");
+
+                    b.Property<string>("OutputJson")
+                        .HasColumnType("text")
+                        .HasColumnName("output_json");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean")
+                        .HasColumnName("success");
+
+                    b.Property<string>("ToolName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tool_name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tool_executions");
+
+                    b.HasIndex("ChatMessageId")
+                        .HasDatabaseName("ix_tool_executions_chat_message_id");
+
+                    b.HasIndex("CreatedAtUtc")
+                        .HasDatabaseName("ix_tool_executions_created_at_utc");
+
+                    b.HasIndex("Success")
+                        .HasDatabaseName("ix_tool_executions_success");
+
+                    b.HasIndex("ToolName")
+                        .HasDatabaseName("ix_tool_executions_tool_name");
+
+                    b.ToTable("tool_executions", (string)null);
+                });
+
             modelBuilder.Entity("Nexus.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1152,26 +1189,16 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.Listing", b =>
                 {
                     b.HasOne("Nexus.Domain.Entities.Agency", "Agency")
-                        .WithMany()
+                        .WithMany("Listings")
                         .HasForeignKey("AgencyId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_listings_agencies_agency_id");
 
-                    b.HasOne("Nexus.Domain.Entities.Agency", null)
-                        .WithMany("Listings")
-                        .HasForeignKey("AgencyId1")
-                        .HasConstraintName("fk_listings_agencies_agency_id1");
-
                     b.HasOne("Nexus.Domain.Entities.Agent", "Agent")
-                        .WithMany()
+                        .WithMany("Listings")
                         .HasForeignKey("AgentId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_listings_agencts_agent_id");
-
-                    b.HasOne("Nexus.Domain.Entities.Agent", null)
-                        .WithMany("Listings")
-                        .HasForeignKey("AgentId1")
-                        .HasConstraintName("fk_listings_agents_agent_id1");
 
                     b.HasOne("Nexus.Domain.Entities.Property", "Property")
                         .WithMany("Listings")
@@ -1220,15 +1247,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasConstraintName("fk_properties_agencies_agency_id");
 
                     b.HasOne("Nexus.Domain.Entities.Agent", "Agent")
-                        .WithMany()
+                        .WithMany("Properties")
                         .HasForeignKey("AgentId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_properties_agencts_agent_id");
-
-                    b.HasOne("Nexus.Domain.Entities.Agent", null)
-                        .WithMany("Properties")
-                        .HasForeignKey("AgentId1")
-                        .HasConstraintName("fk_properties_agents_agent_id1");
 
                     b.HasOne("Nexus.Domain.Entities.PropertyType", "PropertyType")
                         .WithMany("Properties")
@@ -1301,6 +1323,18 @@ namespace Nexus.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Nexus.Domain.Entities.ToolExecution", b =>
+                {
+                    b.HasOne("Nexus.Domain.Entities.ChatMessage", "ChatMessage")
+                        .WithMany("ToolExecutions")
+                        .HasForeignKey("ChatMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tool_executions_chat_messages_chat_message_id");
+
+                    b.Navigation("ChatMessage");
+                });
+
             modelBuilder.Entity("Nexus.Domain.Entities.UserLogin", b =>
                 {
                     b.HasOne("Nexus.Domain.Entities.User", "User")
@@ -1329,6 +1363,11 @@ namespace Nexus.Infrastructure.Migrations
                     b.Navigation("Listings");
 
                     b.Navigation("Properties");
+                });
+
+            modelBuilder.Entity("Nexus.Domain.Entities.ChatMessage", b =>
+                {
+                    b.Navigation("ToolExecutions");
                 });
 
             modelBuilder.Entity("Nexus.Domain.Entities.ChatSession", b =>

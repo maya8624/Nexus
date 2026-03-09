@@ -23,6 +23,8 @@ namespace Nexus.Domain.Entities
 
         public ChatSession ChatSession { get; set; } = null!;
 
+        public ICollection<ToolExecution> ToolExecutions { get; set; } = new List<ToolExecution>();
+
         //public string? MetadataJson { get; set; }
         //public int? PromptTokens { get; set; }
         //public int? CompletionTokens { get; set; }
