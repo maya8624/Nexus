@@ -32,7 +32,8 @@ namespace Nexus.Api.Extensions
             //    => options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
 
             services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+                options.UseNpgsql(config.GetConnectionString("DefaultConnection"))
+                       .UseSnakeCaseNamingConvention());
 
             return services;
         }

@@ -49,14 +49,14 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.PropertyId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(x => x.Agency)
-                .WithMany()
-                .HasForeignKey(x => x.AgencyId)
-                .OnDelete(DeleteBehavior.SetNull);
-
             builder.HasOne(x => x.Agent)
-                .WithMany()
-                .HasForeignKey(x => x.AgentId)
+               .WithMany(x => x.Listings)   
+               .HasForeignKey(x => x.AgentId)
+               .OnDelete(DeleteBehavior.SetNull);
+
+            builder.HasOne(x => x.Agency)
+                .WithMany(x => x.Listings)
+                .HasForeignKey(x => x.AgencyId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasIndex(x => x.PropertyId);

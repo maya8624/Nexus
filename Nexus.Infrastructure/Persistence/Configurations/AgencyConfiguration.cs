@@ -47,11 +47,6 @@ namespace Nexus.Infrastructure.Persistence.Configurations
 
             builder.HasIndex(x => x.Abn)
                 .IsUnique();
-
-            builder.HasMany(x => x.Agents)
-                .WithOne(x => x.Agency)
-                .HasForeignKey(x => x.AgencyId)
-                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

@@ -12,15 +12,15 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Nexus.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260308094815_Create Database")]
-    partial class CreateDatabase
+    [Migration("20260309055526_Create Database, Tables")]
+    partial class CreateDatabaseTables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.23")
+                .HasAnnotation("ProductVersion", "8.0.24")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -28,48 +28,61 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.Agency", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<string>("Abn")
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("abn");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
 
                     b.Property<string>("Email")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
                     b.Property<string>("LicenseNumber")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("license_number");
 
                     b.Property<DateTimeOffset>("ModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("modified_at_utc");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
 
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_number");
 
                     b.Property<string>("WebsiteUrl")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("website_url");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_agencies");
 
                     b.HasIndex("Abn")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_agencies_abn");
 
-                    b.HasIndex("Name");
+                    b.HasIndex("Name")
+                        .HasDatabaseName("ix_agencies_name");
 
                     b.ToTable("agencies", (string)null);
                 });
@@ -77,52 +90,66 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.Agent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid?>("AgencyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("agency_id");
 
                     b.Property<string>("Bio")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("bio");
 
                     b.Property<string>("Email")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
 
                     b.Property<string>("LicenseNumber")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("license_number");
 
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_number");
 
                     b.Property<string>("PhotoUrl")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("photo_url");
 
                     b.Property<string>("PositionTitle")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("position_title");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_agents");
 
-                    b.HasIndex("AgencyId");
+                    b.HasIndex("AgencyId")
+                        .HasDatabaseName("ix_agents_agency_id");
 
-                    b.HasIndex("Email");
+                    b.HasIndex("Email")
+                        .HasDatabaseName("ix_agents_email");
 
                     b.ToTable("agents", (string)null);
                 });
@@ -130,36 +157,47 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.ChatMessage", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid>("ChatSessionId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_session_id");
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("content");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
 
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("role");
 
                     b.Property<string>("ToolName")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tool_name");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_chat_messages");
 
-                    b.HasIndex("ChatSessionId");
+                    b.HasIndex("ChatSessionId")
+                        .HasDatabaseName("ix_chat_messages_chat_session_id");
 
-                    b.HasIndex("CreatedAtUtc");
+                    b.HasIndex("CreatedAtUtc")
+                        .HasDatabaseName("ix_chat_messages_created_at_utc");
 
-                    b.HasIndex("Role");
+                    b.HasIndex("Role")
+                        .HasDatabaseName("ix_chat_messages_role");
 
-                    b.HasIndex("ChatSessionId", "CreatedAtUtc");
+                    b.HasIndex("ChatSessionId", "CreatedAtUtc")
+                        .HasDatabaseName("ix_chat_messages_chat_session_id_created_at_utc");
 
                     b.ToTable("chat_messages", (string)null);
                 });
@@ -167,26 +205,34 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.ChatSession", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTimeOffset?>("EndedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at_utc");
 
                     b.Property<DateTimeOffset>("StartedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
 
                     b.Property<string>("Title")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_chat_sessions");
 
-                    b.HasIndex("StartedAtUtc");
+                    b.HasIndex("StartedAtUtc")
+                        .HasDatabaseName("ix_chat_sessions_started_at_utc");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_chat_sessions_user_id");
 
                     b.ToTable("chat_sessions", (string)null);
                 });
@@ -194,49 +240,65 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.Enquiry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid?>("AgentId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("agent_id");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
 
                     b.Property<Guid?>("ListingId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
 
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("message");
 
                     b.Property<Guid>("PropertyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
 
                     b.Property<DateTimeOffset?>("RespondedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("responded_at_utc");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_enquiries");
 
-                    b.HasIndex("AgentId");
+                    b.HasIndex("AgentId")
+                        .HasDatabaseName("ix_enquiries_agent_id");
 
-                    b.HasIndex("CreatedAtUtc");
+                    b.HasIndex("CreatedAtUtc")
+                        .HasDatabaseName("ix_enquiries_created_at_utc");
 
-                    b.HasIndex("ListingId");
+                    b.HasIndex("ListingId")
+                        .HasDatabaseName("ix_enquiries_listing_id");
 
-                    b.HasIndex("PropertyId");
+                    b.HasIndex("PropertyId")
+                        .HasDatabaseName("ix_enquiries_property_id");
 
-                    b.HasIndex("Status");
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_enquiries_status");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_enquiries_user_id");
 
                     b.ToTable("enquiries", (string)null);
                 });
@@ -244,51 +306,68 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.InspectionBooking", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid?>("AgentId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("agent_id");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
 
                     b.Property<DateTimeOffset?>("InspectionEndAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("inspection_end_at_utc");
 
                     b.Property<DateTimeOffset>("InspectionStartAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("inspection_start_at_utc");
 
                     b.Property<Guid?>("ListingId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("listing_id");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
 
                     b.Property<Guid>("PropertyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_inspection_bookings");
 
-                    b.HasIndex("AgentId");
+                    b.HasIndex("AgentId")
+                        .HasDatabaseName("ix_inspection_bookings_agent_id");
 
-                    b.HasIndex("InspectionStartAtUtc");
+                    b.HasIndex("InspectionStartAtUtc")
+                        .HasDatabaseName("ix_inspection_bookings_inspection_start_at_utc");
 
-                    b.HasIndex("ListingId");
+                    b.HasIndex("ListingId")
+                        .HasDatabaseName("ix_inspection_bookings_listing_id");
 
-                    b.HasIndex("PropertyId");
+                    b.HasIndex("PropertyId")
+                        .HasDatabaseName("ix_inspection_bookings_property_id");
 
-                    b.HasIndex("Status");
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_inspection_bookings_status");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_inspection_bookings_user_id");
 
                     b.ToTable("inspection_bookings", (string)null);
                 });
@@ -296,68 +375,77 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.Listing", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid?>("AgencyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("AgencyId1")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("agency_id");
 
                     b.Property<Guid?>("AgentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("AgentId1")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("agent_id");
 
                     b.Property<DateTimeOffset?>("AvailableFromUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("available_from_utc");
 
                     b.Property<DateTimeOffset?>("ClosedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at_utc");
 
                     b.Property<bool>("IsPublished")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_published");
 
                     b.Property<DateTimeOffset>("ListedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("listed_at_utc");
 
                     b.Property<string>("ListingType")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("listing_type");
 
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("price");
 
                     b.Property<Guid>("PropertyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_listings");
 
-                    b.HasIndex("AgencyId");
+                    b.HasIndex("AgencyId")
+                        .HasDatabaseName("ix_listings_agency_id");
 
-                    b.HasIndex("AgencyId1");
+                    b.HasIndex("AgentId")
+                        .HasDatabaseName("ix_listings_agent_id");
 
-                    b.HasIndex("AgentId");
+                    b.HasIndex("IsPublished")
+                        .HasDatabaseName("ix_listings_is_published");
 
-                    b.HasIndex("AgentId1");
+                    b.HasIndex("ListedAtUtc")
+                        .HasDatabaseName("ix_listings_listed_at_utc");
 
-                    b.HasIndex("IsPublished");
+                    b.HasIndex("ListingType")
+                        .HasDatabaseName("ix_listings_listing_type");
 
-                    b.HasIndex("ListedAtUtc");
+                    b.HasIndex("PropertyId")
+                        .HasDatabaseName("ix_listings_property_id");
 
-                    b.HasIndex("ListingType");
-
-                    b.HasIndex("PropertyId");
-
-                    b.HasIndex("Status");
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_listings_status");
 
                     b.ToTable("listings", (string)null);
                 });
@@ -366,189 +454,236 @@ namespace Nexus.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<int>("Currency")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("currency");
 
                     b.Property<string>("FrontendIdempotencyKey")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("frontend_idempotency_key");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
 
                     b.Property<decimal>("TotalAmount")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("total_amount");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_orders");
 
-                    b.ToTable("Orders");
+                    b.ToTable("orders", (string)null);
                 });
 
             modelBuilder.Entity("Nexus.Domain.Entities.OrderItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("OrderId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("order_id");
 
                     b.Property<int>("ProductId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("product_name");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("quantity");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("unit_price");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_order_items");
 
-                    b.HasIndex("OrderId");
+                    b.HasIndex("OrderId")
+                        .HasDatabaseName("ix_order_items_order_id");
 
-                    b.ToTable("OrderItems");
+                    b.ToTable("order_items", (string)null);
                 });
 
             modelBuilder.Entity("Nexus.Domain.Entities.Payment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("amount");
 
                     b.Property<string>("BackendIdempotencyKey")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("backend_idempotency_key");
 
                     b.Property<decimal>("CapturedAmount")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("captured_amount");
 
                     b.Property<DateTimeOffset?>("CapturedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("captured_at");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<int>("Currency")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("currency");
 
                     b.Property<int>("OrderId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("order_id");
 
                     b.Property<int>("Provider")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("provider");
 
                     b.Property<string>("ProviderCaptureId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("provider_capture_id");
 
                     b.Property<string>("ProviderOrderId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("provider_order_id");
 
                     b.Property<string>("RawResponse")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("raw_response");
 
                     b.Property<decimal>("RefundedAmount")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("refunded_amount");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_payments");
 
                     b.HasIndex("OrderId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_payments_order_id");
 
-                    b.ToTable("Payments");
+                    b.ToTable("payments", (string)null);
                 });
 
             modelBuilder.Entity("Nexus.Domain.Entities.Property", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid?>("AgencyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("agency_id");
 
                     b.Property<Guid?>("AgentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("AgentId1")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("agent_id");
 
                     b.Property<int>("Bathrooms")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("bathrooms");
 
                     b.Property<int>("Bedrooms")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("bedrooms");
 
                     b.Property<decimal?>("BuildingSizeSqm")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("building_size_sqm");
 
                     b.Property<int>("CarSpaces")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("car_spaces");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
                     b.Property<decimal?>("LandSizeSqm")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)");
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("land_size_sqm");
 
                     b.Property<int>("PropertyTypeId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("property_type_id");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
 
                     b.Property<int?>("YearBuilt")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("year_built");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_properties");
 
-                    b.HasIndex("AgencyId");
+                    b.HasIndex("AgencyId")
+                        .HasDatabaseName("ix_properties_agency_id");
 
-                    b.HasIndex("AgentId");
+                    b.HasIndex("AgentId")
+                        .HasDatabaseName("ix_properties_agent_id");
 
-                    b.HasIndex("AgentId1");
+                    b.HasIndex("IsActive")
+                        .HasDatabaseName("ix_properties_is_active");
 
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("PropertyTypeId");
+                    b.HasIndex("PropertyTypeId")
+                        .HasDatabaseName("ix_properties_property_type_id");
 
                     b.ToTable("properties", (string)null);
                 });
@@ -556,52 +691,65 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.PropertyAddress", b =>
                 {
                     b.Property<Guid>("PropertyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
 
                     b.Property<string>("AddressLine1")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("address_line1");
 
                     b.Property<string>("AddressLine2")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("address_line2");
 
                     b.Property<string>("Country")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("country");
 
                     b.Property<decimal?>("Latitude")
                         .HasPrecision(9, 6)
-                        .HasColumnType("numeric(9,6)");
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("latitude");
 
                     b.Property<decimal?>("Longitude")
                         .HasPrecision(9, 6)
-                        .HasColumnType("numeric(9,6)");
+                        .HasColumnType("numeric(9,6)")
+                        .HasColumnName("longitude");
 
                     b.Property<string>("Postcode")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("postcode");
 
                     b.Property<string>("State")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("state");
 
                     b.Property<string>("Suburb")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("suburb");
 
-                    b.HasKey("PropertyId");
+                    b.HasKey("PropertyId")
+                        .HasName("pk_property_addresses");
 
-                    b.HasIndex("Postcode");
+                    b.HasIndex("Postcode")
+                        .HasDatabaseName("ix_property_addresses_postcode");
 
-                    b.HasIndex("State");
+                    b.HasIndex("State")
+                        .HasDatabaseName("ix_property_addresses_state");
 
-                    b.HasIndex("Suburb");
+                    b.HasIndex("Suburb")
+                        .HasDatabaseName("ix_property_addresses_suburb");
 
                     b.ToTable("property_addresses", (string)null);
                 });
@@ -639,7 +787,8 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("property_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_property_images");
 
                     b.HasIndex("PropertyId")
                         .IsUnique()
@@ -657,26 +806,32 @@ namespace Nexus.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_property_types");
 
                     b.HasIndex("Name")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_property_types_name");
 
                     b.ToTable("property_types", (string)null);
                 });
@@ -685,69 +840,89 @@ namespace Nexus.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
+                        .HasColumnType("numeric")
+                        .HasColumnName("amount");
 
                     b.Property<string>("BackendIdempotencyKey")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("backend_idempotency_key");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
                     b.Property<int>("PaymentId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("payment_id");
 
                     b.Property<int>("Provider")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("provider");
 
                     b.Property<string>("ProviderRefundId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("provider_refund_id");
 
                     b.Property<string>("RawResponse")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("raw_response");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_refund");
 
-                    b.HasIndex("PaymentId");
+                    b.HasIndex("PaymentId")
+                        .HasDatabaseName("ix_refund_payment_id");
 
-                    b.ToTable("Refund");
+                    b.ToTable("refund", (string)null);
                 });
 
             modelBuilder.Entity("Nexus.Domain.Entities.SavedProperty", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<Guid>("PropertyId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("property_id");
 
                     b.Property<DateTimeOffset>("SavedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("saved_at_utc");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_saved_properties");
 
-                    b.HasIndex("PropertyId");
+                    b.HasIndex("PropertyId")
+                        .HasDatabaseName("ix_saved_properties_property_id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_saved_properties_user_id");
 
                     b.HasIndex("UserId", "PropertyId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_saved_properties_user_id_property_id");
 
                     b.ToTable("saved_properties", (string)null);
                 });
@@ -755,43 +930,54 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
 
                     b.Property<DateTimeOffset>("ModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("modified_at_utc");
 
                     b.Property<string>("PasswordHash")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("password_hash");
 
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("phone_number");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_users");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_email");
 
                     b.ToTable("users", (string)null);
                 });
@@ -800,30 +986,38 @@ namespace Nexus.Infrastructure.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<DateTimeOffset?>("LastLoginAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_login_at");
 
                     b.Property<string>("Provider")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("provider");
 
                     b.Property<string>("ProviderKey")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("provider_key");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_user_logins");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_user_logins_user_id");
 
                     b.HasIndex("Provider", "ProviderKey")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_logins_provider_provider_key");
 
                     b.ToTable("user_logins", (string)null);
                 });
@@ -833,7 +1027,8 @@ namespace Nexus.Infrastructure.Migrations
                     b.HasOne("Nexus.Domain.Entities.Agency", "Agency")
                         .WithMany("Agents")
                         .HasForeignKey("AgencyId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_agents_agencies_agency_id");
 
                     b.Navigation("Agency");
                 });
@@ -844,7 +1039,8 @@ namespace Nexus.Infrastructure.Migrations
                         .WithMany("Messages")
                         .HasForeignKey("ChatSessionId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_chat_messages_chat_sessions_chat_session_id");
 
                     b.Navigation("ChatSession");
                 });
@@ -855,7 +1051,8 @@ namespace Nexus.Infrastructure.Migrations
                         .WithMany("ChatSessions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_chat_sessions_users_user_id");
 
                     b.Navigation("User");
                 });
@@ -865,24 +1062,28 @@ namespace Nexus.Infrastructure.Migrations
                     b.HasOne("Nexus.Domain.Entities.Agent", "Agent")
                         .WithMany("Enquiries")
                         .HasForeignKey("AgentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_enquiries_agencts_agent_id");
 
                     b.HasOne("Nexus.Domain.Entities.Listing", "Listing")
                         .WithMany("Enquiries")
                         .HasForeignKey("ListingId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_enquiries_listings_listing_id");
 
                     b.HasOne("Nexus.Domain.Entities.Property", "Property")
                         .WithMany("Enquiries")
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_enquiries_properties_property_id");
 
                     b.HasOne("Nexus.Domain.Entities.User", "User")
                         .WithMany("Enquiries")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_enquiries_users_user_id");
 
                     b.Navigation("Agent");
 
@@ -898,24 +1099,28 @@ namespace Nexus.Infrastructure.Migrations
                     b.HasOne("Nexus.Domain.Entities.Agent", "Agent")
                         .WithMany("InspectionBookings")
                         .HasForeignKey("AgentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_inspection_bookings_agencts_agent_id");
 
                     b.HasOne("Nexus.Domain.Entities.Listing", "Listing")
                         .WithMany("InspectionBookings")
                         .HasForeignKey("ListingId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_inspection_bookings_listings_listing_id");
 
                     b.HasOne("Nexus.Domain.Entities.Property", "Property")
                         .WithMany("InspectionBookings")
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_inspection_bookings_properties_property_id");
 
                     b.HasOne("Nexus.Domain.Entities.User", "User")
                         .WithMany("InspectionBookings")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_inspection_bookings_users_user_id");
 
                     b.Navigation("Agent");
 
@@ -929,28 +1134,23 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.Listing", b =>
                 {
                     b.HasOne("Nexus.Domain.Entities.Agency", "Agency")
-                        .WithMany()
-                        .HasForeignKey("AgencyId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Nexus.Domain.Entities.Agency", null)
                         .WithMany("Listings")
-                        .HasForeignKey("AgencyId1");
+                        .HasForeignKey("AgencyId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_listings_agencies_agency_id");
 
                     b.HasOne("Nexus.Domain.Entities.Agent", "Agent")
-                        .WithMany()
-                        .HasForeignKey("AgentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Nexus.Domain.Entities.Agent", null)
                         .WithMany("Listings")
-                        .HasForeignKey("AgentId1");
+                        .HasForeignKey("AgentId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_listings_agencts_agent_id");
 
                     b.HasOne("Nexus.Domain.Entities.Property", "Property")
                         .WithMany("Listings")
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_listings_properties_property_id");
 
                     b.Navigation("Agency");
 
@@ -965,7 +1165,8 @@ namespace Nexus.Infrastructure.Migrations
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_order_items_orders_order_id");
 
                     b.Navigation("Order");
                 });
@@ -976,7 +1177,8 @@ namespace Nexus.Infrastructure.Migrations
                         .WithOne("Payment")
                         .HasForeignKey("Nexus.Domain.Entities.Payment", "OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_payments_orders_order_id");
 
                     b.Navigation("Order");
                 });
@@ -986,22 +1188,21 @@ namespace Nexus.Infrastructure.Migrations
                     b.HasOne("Nexus.Domain.Entities.Agency", "Agency")
                         .WithMany()
                         .HasForeignKey("AgencyId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_properties_agencies_agency_id");
 
                     b.HasOne("Nexus.Domain.Entities.Agent", "Agent")
-                        .WithMany()
-                        .HasForeignKey("AgentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Nexus.Domain.Entities.Agent", null)
                         .WithMany("Properties")
-                        .HasForeignKey("AgentId1");
+                        .HasForeignKey("AgentId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_properties_agencts_agent_id");
 
                     b.HasOne("Nexus.Domain.Entities.PropertyType", "PropertyType")
                         .WithMany("Properties")
                         .HasForeignKey("PropertyTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_properties_property_types_property_type_id");
 
                     b.Navigation("Agency");
 
@@ -1016,7 +1217,8 @@ namespace Nexus.Infrastructure.Migrations
                         .WithOne("Address")
                         .HasForeignKey("Nexus.Domain.Entities.PropertyAddress", "PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_property_addresses_properties_property_id");
 
                     b.Navigation("Property");
                 });
@@ -1027,7 +1229,8 @@ namespace Nexus.Infrastructure.Migrations
                         .WithMany("Images")
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_property_images_properties_property_id");
 
                     b.Navigation("Property");
                 });
@@ -1038,7 +1241,8 @@ namespace Nexus.Infrastructure.Migrations
                         .WithMany("Refunds")
                         .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_refund_payments_payment_id");
 
                     b.Navigation("Payment");
                 });
@@ -1049,13 +1253,15 @@ namespace Nexus.Infrastructure.Migrations
                         .WithMany("SavedByUsers")
                         .HasForeignKey("PropertyId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_saved_properties_properties_property_id");
 
                     b.HasOne("Nexus.Domain.Entities.User", "User")
                         .WithMany("SavedProperties")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_saved_properties_users_user_id");
 
                     b.Navigation("Property");
 
@@ -1068,7 +1274,8 @@ namespace Nexus.Infrastructure.Migrations
                         .WithMany("Logins")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_user_logins_users_user_id");
 
                     b.Navigation("User");
                 });

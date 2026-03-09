@@ -57,7 +57,7 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasOne(x => x.Agent)
-                .WithMany()
+                .WithMany(x => x.Properties)
                 .HasForeignKey(x => x.AgentId)
                 .OnDelete(DeleteBehavior.SetNull);
 
