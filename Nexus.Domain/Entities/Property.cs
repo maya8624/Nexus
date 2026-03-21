@@ -32,6 +32,10 @@ namespace Nexus.Domain.Entities
 
         public bool IsActive { get; set; }
 
+        public DateTimeOffset CreatedAtUtc { get; set; }
+
+        public DateTimeOffset UpdatedAtUtc { get; set; }
+
         public PropertyType PropertyType { get; set; } = default!;
 
         public Agency? Agency { get; set; }

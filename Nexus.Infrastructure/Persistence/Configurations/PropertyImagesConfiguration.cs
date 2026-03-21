@@ -47,6 +47,11 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .HasColumnType("timestamp with time zone")
                 .IsRequired();
 
+            builder.Property(x => x.UpdatedAtUtc)
+                .HasColumnName("updated_at_utc")
+                .HasColumnType("timestamp with time zone")
+                .IsRequired();
+
             builder.HasIndex(x => x.PropertyId)
                 .HasDatabaseName("ix_property_images_property_id");
 

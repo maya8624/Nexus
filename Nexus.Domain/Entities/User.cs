@@ -20,7 +20,7 @@ namespace Nexus.Domain.Entities
 
         public DateTimeOffset CreatedAtUtc { get; set; }
 
-        public DateTimeOffset ModifiedAtUtc { get; set; }
+        public DateTimeOffset UpdatedAtUtc { get; set; }
 
         public ICollection<UserLogin> Logins { get; set; } = new List<UserLogin>();
 

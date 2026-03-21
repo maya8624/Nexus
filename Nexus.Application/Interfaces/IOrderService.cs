@@ -8,6 +8,6 @@ namespace Nexus.Application.Interfaces
         Task<OrderResponse> CreateOrder(int userId, string frontendIdempotencyKey, List<CreateOrderItemRequest> items);
         Task<bool> DeleteOrder(int orderId);
         Task<OrderResponse?> GetOrderById(int orderId);
-        Task<IEnumerable<OrderSummaryResponse>> GetOrdersForUser(int userId);
+        Task<IEnumerable<OrderSummaryReadModel>> GetOrdersForUser(int userId);
     }
 }

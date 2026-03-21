@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Nexus.Infrastructure.Responses
 {
-    public class OrderItemForPaymentResponse
+    public class OrderItemForPaymentReadModel
     {
         public string ProductName { get; set; } = null!;
         public decimal UnitPrice { get; set; }

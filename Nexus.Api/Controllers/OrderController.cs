@@ -28,7 +28,7 @@ namespace Nexus.Controllers
         }
 
         [HttpGet("orders")]
-        public async Task<ActionResult<IEnumerable<OrderSummaryResponse>>> GetOrders()
+        public async Task<ActionResult<IEnumerable<OrderSummaryReadModel>>> GetOrders()
         {
             //TODO: get userId from JWT claims
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -51,7 +51,7 @@ namespace Nexus.Controllers
             return Ok(order);
         }
 
-        [HttpDelete("{orderId:int}")]
+        [HttpDelete("delete/{orderId:int}")]
         public async Task<IActionResult> DeleteOrder(int orderId)
         {
             var result = await _orderService.DeleteOrder(orderId);

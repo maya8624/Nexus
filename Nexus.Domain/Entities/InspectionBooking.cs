@@ -29,6 +29,8 @@ namespace Nexus.Domain.Entities
 
         public DateTimeOffset CreatedAtUtc { get; set; }
 
+        public DateTimeOffset UpdatedAtUtc { get; set; }
+
         public User User { get; set; } = null!;
 
         public Property Property { get; set; } = null!;

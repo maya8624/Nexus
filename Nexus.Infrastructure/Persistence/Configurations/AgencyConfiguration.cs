@@ -40,7 +40,7 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.CreatedAtUtc)
                 .IsRequired();
 
-            builder.Property(x => x.ModifiedAtUtc)
+            builder.Property(x => x.UpdatedAtUtc)
                 .IsRequired();
 
             builder.HasIndex(x => x.Name);

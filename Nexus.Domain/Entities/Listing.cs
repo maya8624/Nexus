@@ -29,6 +29,10 @@ namespace Nexus.Domain.Entities
 
         public DateTimeOffset? ClosedAtUtc { get; set; }
 
+        public DateTimeOffset CreatedAtUtc { get; set; }
+
+        public DateTimeOffset UpdatedAtUtc { get; set; }
+
         public bool IsPublished { get; set; }
 
         public Property Property { get; set; } = default!;

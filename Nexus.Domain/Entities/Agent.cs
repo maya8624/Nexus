@@ -26,6 +26,10 @@ namespace Nexus.Domain.Entities
 
         public bool IsActive { get; set; }
 
+        public DateTimeOffset CreatedAtUtc { get; set; }
+
+        public DateTimeOffset UpdatedAtUtc { get; set; }
+
         public Agency? Agency { get; set; }
 
         public ICollection<Property> Properties { get; set; } = new List<Property>();

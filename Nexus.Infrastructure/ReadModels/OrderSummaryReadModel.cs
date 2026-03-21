@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Nexus.Infrastructure.Responses
 {
-    public class OrderSummaryResponse
+    public class OrderSummaryReadModel
     {
         public int OrderId { get; set; }
         public string Status { get; set; }

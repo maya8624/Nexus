@@ -44,6 +44,12 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.IsPublished)
                 .IsRequired();
 
+            builder.Property(x => x.CreatedAtUtc)
+             .IsRequired();
+
+            builder.Property(x => x.UpdatedAtUtc)
+                .IsRequired();
+
             builder.HasOne(x => x.Property)
                 .WithMany(x => x.Listings)
                 .HasForeignKey(x => x.PropertyId)

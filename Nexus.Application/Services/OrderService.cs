@@ -45,7 +45,7 @@ namespace Nexus.Application.Services
             return response;
         }
 
-        public async Task<IEnumerable<OrderSummaryResponse>> GetOrdersForUser(int userId)
+        public async Task<IEnumerable<OrderSummaryReadModel>> GetOrdersForUser(int userId)
         {
             var orders = await _orderRepository.GetOrdersForUser(userId);
             return orders;

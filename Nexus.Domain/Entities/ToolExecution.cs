@@ -24,6 +24,8 @@ namespace Nexus.Domain.Entities
 
         public DateTimeOffset CreatedAtUtc { get; set; }
 
+        public DateTimeOffset UpdatedAtUtc { get; set; }
+
         public ChatMessage ChatMessage { get; set; } = null!;
     }
 }

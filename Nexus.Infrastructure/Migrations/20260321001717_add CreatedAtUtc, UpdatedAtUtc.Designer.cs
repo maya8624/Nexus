@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Nexus.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260309053145_Create Database and Tablse")]
-    partial class CreateDatabaseandTablse
+    [Migration("20260321001717_add CreatedAtUtc, UpdatedAtUtc")]
+    partial class addCreatedAtUtcUpdatedAtUtc
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,10 +54,6 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("license_number");
 
-                    b.Property<DateTimeOffset>("ModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("modified_at_utc");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -68,6 +64,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("phone_number");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
 
                     b.Property<string>("WebsiteUrl")
                         .HasMaxLength(500)
@@ -100,6 +100,10 @@ namespace Nexus.Infrastructure.Migrations
                     b.Property<string>("Bio")
                         .HasColumnType("text")
                         .HasColumnName("bio");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
 
                     b.Property<string>("Email")
                         .HasMaxLength(255)
@@ -141,6 +145,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("position_title");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
 
                     b.HasKey("Id")
                         .HasName("pk_agents");
@@ -275,6 +283,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("status");
 
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
@@ -344,6 +356,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("status");
 
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
@@ -382,17 +398,9 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("agency_id");
 
-                    b.Property<Guid?>("AgencyId1")
-                        .HasColumnType("uuid")
-                        .HasColumnName("agency_id1");
-
                     b.Property<Guid?>("AgentId")
                         .HasColumnType("uuid")
                         .HasColumnName("agent_id");
-
-                    b.Property<Guid?>("AgentId1")
-                        .HasColumnType("uuid")
-                        .HasColumnName("agent_id1");
 
                     b.Property<DateTimeOffset?>("AvailableFromUtc")
                         .HasColumnType("timestamp with time zone")
@@ -401,6 +409,10 @@ namespace Nexus.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("ClosedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("closed_at_utc");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
 
                     b.Property<bool>("IsPublished")
                         .HasColumnType("boolean")
@@ -431,20 +443,18 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("character varying(30)")
                         .HasColumnName("status");
 
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
                     b.HasKey("Id")
                         .HasName("pk_listings");
 
                     b.HasIndex("AgencyId")
                         .HasDatabaseName("ix_listings_agency_id");
 
-                    b.HasIndex("AgencyId1")
-                        .HasDatabaseName("ix_listings_agency_id1");
-
                     b.HasIndex("AgentId")
                         .HasDatabaseName("ix_listings_agent_id");
-
-                    b.HasIndex("AgentId1")
-                        .HasDatabaseName("ix_listings_agent_id1");
 
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("ix_listings_is_published");
@@ -640,10 +650,6 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("agent_id");
 
-                    b.Property<Guid?>("AgentId1")
-                        .HasColumnType("uuid")
-                        .HasColumnName("agent_id1");
-
                     b.Property<int>("Bathrooms")
                         .HasColumnType("integer")
                         .HasColumnName("bathrooms");
@@ -660,6 +666,10 @@ namespace Nexus.Infrastructure.Migrations
                     b.Property<int>("CarSpaces")
                         .HasColumnType("integer")
                         .HasColumnName("car_spaces");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -684,6 +694,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("title");
 
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
                     b.Property<int?>("YearBuilt")
                         .HasColumnType("integer")
                         .HasColumnName("year_built");
@@ -696,9 +710,6 @@ namespace Nexus.Infrastructure.Migrations
 
                     b.HasIndex("AgentId")
                         .HasDatabaseName("ix_properties_agent_id");
-
-                    b.HasIndex("AgentId1")
-                        .HasDatabaseName("ix_properties_agent_id1");
 
                     b.HasIndex("IsActive")
                         .HasDatabaseName("ix_properties_is_active");
@@ -732,6 +743,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("country");
 
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
                     b.Property<decimal?>("Latitude")
                         .HasPrecision(9, 6)
                         .HasColumnType("numeric(9,6)")
@@ -760,6 +775,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("suburb");
 
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
                     b.HasKey("PropertyId")
                         .HasName("pk_property_addresses");
 
@@ -786,7 +805,7 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("character varying(300)")
                         .HasColumnName("caption");
 
-                    b.Property<DateTime>("CreatedAtUtc")
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at_utc");
 
@@ -807,6 +826,10 @@ namespace Nexus.Infrastructure.Migrations
                     b.Property<Guid>("PropertyId")
                         .HasColumnType("uuid")
                         .HasColumnName("property_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
 
                     b.HasKey("Id")
                         .HasName("pk_property_images");
@@ -832,6 +855,10 @@ namespace Nexus.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -846,6 +873,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
 
                     b.HasKey("Id")
                         .HasName("pk_property_types");
@@ -875,9 +906,9 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("backend_idempotency_key");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnName("created_at_utc");
 
                     b.Property<int>("PaymentId")
                         .HasColumnType("integer")
@@ -901,9 +932,9 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("status");
 
-                    b.Property<DateTimeOffset>("UpdatedAt")
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
+                        .HasColumnName("updated_at_utc");
 
                     b.HasKey("Id")
                         .HasName("pk_refund");
@@ -948,6 +979,65 @@ namespace Nexus.Infrastructure.Migrations
                     b.ToTable("saved_properties", (string)null);
                 });
 
+            modelBuilder.Entity("Nexus.Domain.Entities.ToolExecution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChatMessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chat_message_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("error_message");
+
+                    b.Property<string>("InputJson")
+                        .HasColumnType("text")
+                        .HasColumnName("input_json");
+
+                    b.Property<string>("OutputJson")
+                        .HasColumnType("text")
+                        .HasColumnName("output_json");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean")
+                        .HasColumnName("success");
+
+                    b.Property<string>("ToolName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tool_name");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tool_executions");
+
+                    b.HasIndex("ChatMessageId")
+                        .HasDatabaseName("ix_tool_executions_chat_message_id");
+
+                    b.HasIndex("CreatedAtUtc")
+                        .HasDatabaseName("ix_tool_executions_created_at_utc");
+
+                    b.HasIndex("Success")
+                        .HasDatabaseName("ix_tool_executions_success");
+
+                    b.HasIndex("ToolName")
+                        .HasDatabaseName("ix_tool_executions_tool_name");
+
+                    b.ToTable("tool_executions", (string)null);
+                });
+
             modelBuilder.Entity("Nexus.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -980,10 +1070,6 @@ namespace Nexus.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("last_name");
 
-                    b.Property<DateTimeOffset>("ModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("modified_at_utc");
-
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
@@ -992,6 +1078,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)")
                         .HasColumnName("phone_number");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
 
                     b.HasKey("Id")
                         .HasName("pk_users");
@@ -1155,26 +1245,16 @@ namespace Nexus.Infrastructure.Migrations
             modelBuilder.Entity("Nexus.Domain.Entities.Listing", b =>
                 {
                     b.HasOne("Nexus.Domain.Entities.Agency", "Agency")
-                        .WithMany()
+                        .WithMany("Listings")
                         .HasForeignKey("AgencyId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_listings_agencies_agency_id");
 
-                    b.HasOne("Nexus.Domain.Entities.Agency", null)
-                        .WithMany("Listings")
-                        .HasForeignKey("AgencyId1")
-                        .HasConstraintName("fk_listings_agencies_agency_id1");
-
                     b.HasOne("Nexus.Domain.Entities.Agent", "Agent")
-                        .WithMany()
+                        .WithMany("Listings")
                         .HasForeignKey("AgentId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_listings_agencts_agent_id");
-
-                    b.HasOne("Nexus.Domain.Entities.Agent", null)
-                        .WithMany("Listings")
-                        .HasForeignKey("AgentId1")
-                        .HasConstraintName("fk_listings_agents_agent_id1");
 
                     b.HasOne("Nexus.Domain.Entities.Property", "Property")
                         .WithMany("Listings")
@@ -1223,15 +1303,10 @@ namespace Nexus.Infrastructure.Migrations
                         .HasConstraintName("fk_properties_agencies_agency_id");
 
                     b.HasOne("Nexus.Domain.Entities.Agent", "Agent")
-                        .WithMany()
+                        .WithMany("Properties")
                         .HasForeignKey("AgentId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_properties_agencts_agent_id");
-
-                    b.HasOne("Nexus.Domain.Entities.Agent", null)
-                        .WithMany("Properties")
-                        .HasForeignKey("AgentId1")
-                        .HasConstraintName("fk_properties_agents_agent_id1");
 
                     b.HasOne("Nexus.Domain.Entities.PropertyType", "PropertyType")
                         .WithMany("Properties")
@@ -1304,6 +1379,18 @@ namespace Nexus.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Nexus.Domain.Entities.ToolExecution", b =>
+                {
+                    b.HasOne("Nexus.Domain.Entities.ChatMessage", "ChatMessage")
+                        .WithMany("ToolExecutions")
+                        .HasForeignKey("ChatMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tool_executions_chat_messages_chat_message_id");
+
+                    b.Navigation("ChatMessage");
+                });
+
             modelBuilder.Entity("Nexus.Domain.Entities.UserLogin", b =>
                 {
                     b.HasOne("Nexus.Domain.Entities.User", "User")
@@ -1332,6 +1419,11 @@ namespace Nexus.Infrastructure.Migrations
                     b.Navigation("Listings");
 
                     b.Navigation("Properties");
+                });
+
+            modelBuilder.Entity("Nexus.Domain.Entities.ChatMessage", b =>
+                {
+                    b.Navigation("ToolExecutions");
                 });
 
             modelBuilder.Entity("Nexus.Domain.Entities.ChatSession", b =>

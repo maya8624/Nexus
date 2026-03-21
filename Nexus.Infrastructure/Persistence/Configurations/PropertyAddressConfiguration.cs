@@ -46,6 +46,12 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Longitude)
                 .HasPrecision(9, 6);
 
+            builder.Property(x => x.CreatedAtUtc)
+             .IsRequired();
+
+            builder.Property(x => x.UpdatedAtUtc)
+                .IsRequired();
+
             builder.HasOne(x => x.Property)
                 .WithOne(x => x.Address)
                 .HasForeignKey<PropertyAddress>(x => x.PropertyId)

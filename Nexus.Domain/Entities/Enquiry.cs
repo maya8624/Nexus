@@ -25,6 +25,8 @@ namespace Nexus.Domain.Entities
 
         public DateTimeOffset CreatedAtUtc { get; set; }
 
+        public DateTimeOffset UpdatedAtUtc { get; set; }
+
         public DateTimeOffset? RespondedAtUtc { get; set; }
 
         public User User { get; set; } = default!;

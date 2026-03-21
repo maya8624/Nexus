@@ -25,9 +25,11 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IPayPalAuthService, PayPalAuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IPropertyService, PropertyService>();
             services.AddScoped<IPaymentService, PaymentServcie>();
             services.AddScoped<IPayPalService, PayPalService>();
             services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IPropertyRepository, PropertyRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
@@ -42,6 +44,10 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<EmailLoginRequest>, EmailLoginRequestValidator>();
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
             services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();
+            services.AddScoped<IValidator<AgentDto>, AgentDtoValidator>();
+            services.AddScoped<IValidator<PropertyDto>, PropertyDtoValidator>();
+            services.AddScoped<IValidator<PropertyListResponse>, PropertyListResponseValidator>();
+            services.AddScoped<IValidator<PropertyQueryRequest>, PropertyQueryRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
         }
     }

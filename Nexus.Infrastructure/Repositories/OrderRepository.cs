@@ -34,12 +34,12 @@ namespace Nexus.Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.Id == orderId);
         }
 
-        public async Task<IEnumerable<OrderSummaryResponse>> GetOrdersForUser(int userId)
+        public async Task<IEnumerable<OrderSummaryReadModel>> GetOrdersForUser(int userId)
         {
             return await _context.Orders
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
-                .Select(x => new OrderSummaryResponse
+                .Select(x => new OrderSummaryReadModel
                 {
                     OrderId = x.Id,
                     Status = x.Status.ToString(),
@@ -49,18 +49,18 @@ namespace Nexus.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<OrderForPaymentResponse?> GetOrderForPayment(int orderId)
+        public async Task<OrderForPaymentReadModel?> GetOrderForPayment(int orderId)
         {
             return await _context.Orders
                 .AsNoTracking()
                 .Where(o => o.Id == orderId)
-                .Select(o => new OrderForPaymentResponse
+                .Select(o => new OrderForPaymentReadModel
                 {
                     Id = o.Id,
                     TotalAmount = o.TotalAmount,
                     Currency = o.Currency,
                     FrontendIdempotencyKey = o.FrontendIdempotencyKey,
-                    Items = o.Items.Select(i => new OrderItemForPaymentResponse
+                    Items = o.Items.Select(i => new OrderItemForPaymentReadModel
                     {
                         ProductName = i.ProductName,
                         UnitPrice = i.UnitPrice,

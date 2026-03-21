@@ -17,7 +17,9 @@ namespace Nexus.Domain.Entities
 
         public bool IsPrimary { get; set; }
 
-        public DateTime CreatedAtUtc { get; set; }
+        public DateTimeOffset CreatedAtUtc { get; set; }
+
+        public DateTimeOffset UpdatedAtUtc { get; set; }
 
         public Property Property { get; set; } = null!;
     }

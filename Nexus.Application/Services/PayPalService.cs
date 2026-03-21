@@ -203,8 +203,8 @@ namespace Nexus.Application.Services
                 ProviderRefundId = response.Id,
                 Amount = amount,
                 Status = RefundStatus.Completed,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow,
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                UpdatedAtUtc = DateTimeOffset.UtcNow,
                 BackendIdempotencyKey = idempotencyKey,
                 RawResponse = response.Raw
             };
@@ -291,7 +291,7 @@ namespace Nexus.Application.Services
             return request;
         }
 
-        private HttpRequestMessage BuildCreateRequest(OrderForPaymentResponse order, string idempotencyKey, string accessToken)
+        private HttpRequestMessage BuildCreateRequest(OrderForPaymentReadModel order, string idempotencyKey, string accessToken)
         {
             var url = _settings.SandboxBaseUrl.CombineUrl(_settings.SandboxCreateOrderUrl);
             var body = BuildPayPalOrderRequest(order);
@@ -314,7 +314,7 @@ namespace Nexus.Application.Services
             return request;
         }
 
-        private object BuildPayPalOrderRequest(OrderForPaymentResponse order)
+        private object BuildPayPalOrderRequest(OrderForPaymentReadModel order)
         {
             return new
             {
@@ -344,7 +344,7 @@ namespace Nexus.Application.Services
             };
         }
 
-        private async Task<Payment> SavePaymentRecord(OrderForPaymentResponse order, string backendIdempotencyKey)
+        private async Task<Payment> SavePaymentRecord(OrderForPaymentReadModel order, string backendIdempotencyKey)
         {
             try
             {
