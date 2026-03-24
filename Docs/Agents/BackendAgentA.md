@@ -84,7 +84,7 @@ Application services must:
 - use async methods
 - use result-based responses for expected business failures
 - avoid exceptions for normal validation or business-rule flow
-- create a shared `Result<T>` type if one does not already exist
+- use the shared `Result<T>` type for expected business failures
 
 ## Repository Expectations
 

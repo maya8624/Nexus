@@ -13,7 +13,7 @@ Agents must follow these conventions to ensure **consistency, Clean Architecture
 - **Methods**: PascalCase + `Async` suffix for async methods (e.g., `CreatePaymentAsync`)
 - **Variables / parameters**: camelCase (e.g., `paymentRequest`)
 - **Constants**: UPPER_CASE_WITH_UNDERSCORES
-- **Folder names**: PascalCase (e.g., `Services`, `Controllers`, `Validators`, `DTOs`)
+- **Folder names**: PascalCase or the existing repository convention for shared folders (e.g., `Services`, `Controllers`, `Dtos`, `Interfaces`)
 
 ---
 
@@ -28,6 +28,7 @@ Nexus/
     Extensions/
     Middleware/
   Nexus.Application/
+    Common/
     Constants/
     Dtos/
     Enums/
@@ -107,7 +108,7 @@ public interface IPaymentRepository
 ```csharp
 public interface IUnitOfWork
 {
-    Task<int> SaveChanges(CancellationToken cancellationToken = default);
+    Task<int> SaveChanges();
 }
 ```
 
@@ -142,7 +143,7 @@ Agents must:
 2. Follow **folder structure**
 3. Apply **SOLID/OOP principles**
 4. Use **async EF Core methods**
-5. Apply **FluentValidation** for input models
+5. Follow `Docs/Shared/ApiConventions.md` for DTO and validation rules
 6. Use **ILogger and proper error handling**
 7. Implement required API controllers/endpoints
 8. Write **xUnit/Moq tests** for services, and controllers
