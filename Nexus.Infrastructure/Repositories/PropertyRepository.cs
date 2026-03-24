@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Nexus.Domain.Entities;
+using Nexus.Domain.Enums;
 using Nexus.Infrastructure.Interfaces;
 using Nexus.Infrastructure.Persistence;
 using Nexus.Infrastructure.Responses;
@@ -120,7 +122,107 @@ namespace Nexus.Infrastructure.Repositories
                 .FirstOrDefaultAsync(ct);
         }
 
-        private IQueryable<Domain.Entities.Property> BuildBaseQuery()
+        public async Task<bool> UserExists(Guid userId, CancellationToken ct)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == userId && x.IsActive, ct);
+        }
+
+        public async Task<bool> AgentExists(Guid agentId, CancellationToken ct)
+        {
+            return await _context.Agencts
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == agentId && x.IsActive, ct);
+        }
+
+        public async Task<BookingContextReadModel?> GetBookingContext(Guid propertyId, Guid listingId, CancellationToken ct)
+        {
+            return await _context.Properties
+                .AsNoTracking()
+                .Where(x => x.Id == propertyId)
+                .Select(x => new BookingContextReadModel
+                {
+                    PropertyId = x.Id,
+                    PropertyIsActive = x.IsActive,
+                    ListingId = x.Listings
+                        .Where(l => l.Id == listingId)
+                        .Select(l => l.Id)
+                        .FirstOrDefault(),
+                    ListingIsPublished = x.Listings
+                        .Where(l => l.Id == listingId)
+                        .Select(l => l.IsPublished)
+                        .FirstOrDefault(),
+                    ListingStatus = x.Listings
+                        .Where(l => l.Id == listingId)
+                        .Select(l => l.Status.ToString())
+                        .FirstOrDefault() ?? string.Empty,
+                    ListingAgentId = x.Listings
+                        .Where(l => l.Id == listingId)
+                        .Select(l => l.AgentId)
+                        .FirstOrDefault()
+                })
+                .FirstOrDefaultAsync(x => x.ListingId != Guid.Empty, ct);
+        }
+
+        public async Task<bool> HasDuplicateBooking(
+            Guid userId,
+            Guid propertyId,
+            Guid listingId,
+            DateTimeOffset inspectionStartAtUtc,
+            DateTimeOffset inspectionEndAtUtc,
+            CancellationToken ct)
+        {
+            return await _context.InspectionBookings
+                .AsNoTracking()
+                .AnyAsync(x =>
+                    x.UserId == userId &&
+                    x.PropertyId == propertyId &&
+                    x.ListingId == listingId &&
+                    x.InspectionStartAtUtc == inspectionStartAtUtc &&
+                    x.InspectionEndAtUtc == inspectionEndAtUtc &&
+                    x.Status != InspectionBookingStatus.Cancelled,
+                    ct);
+        }
+
+        public async Task<bool> HasOverlappingConfirmedBooking(
+            Guid propertyId,
+            DateTimeOffset inspectionStartAtUtc,
+            DateTimeOffset inspectionEndAtUtc,
+            Guid? excludeBookingId,
+            CancellationToken ct)
+        {
+            return await _context.InspectionBookings
+                .AsNoTracking()
+                .AnyAsync(x =>
+                    x.PropertyId == propertyId &&
+                    x.Status == InspectionBookingStatus.Confirmed &&
+                    (excludeBookingId == null || x.Id != excludeBookingId.Value) &&
+                    x.InspectionEndAtUtc.HasValue &&
+                    inspectionStartAtUtc < x.InspectionEndAtUtc.Value &&
+                    inspectionEndAtUtc > x.InspectionStartAtUtc,
+                    ct);
+        }
+
+        public async Task AddInspectionBooking(InspectionBooking booking, CancellationToken ct)
+        {
+            await _context.InspectionBookings.AddAsync(booking, ct);
+        }
+
+        public async Task<InspectionBooking?> GetInspectionBookingById(Guid id, CancellationToken ct)
+        {
+            return await _context.InspectionBookings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
+        }
+
+        public async Task<InspectionBooking?> GetInspectionBookingForUpdate(Guid id, CancellationToken ct)
+        {
+            return await _context.InspectionBookings
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
+        }
+
+        private IQueryable<Property> BuildBaseQuery()
         {
             return _context.Properties
                 .AsNoTracking()

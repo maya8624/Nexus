@@ -1,6 +1,0 @@
-POST   /api/bookings          → create booking
-GET    /api/bookings/{id}     → get booking details
-PUT    /api/bookings/{id}     → update/confirm booking
-DELETE /api/bookings/{id}     → cancel booking
-GET    /api/bookings          → list bookings (for agency admin)
-```
