@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nexus.Infrastructure.Interfaces
+namespace Nexus.Application.Interfaces.Repository
 {
     public interface IUnitOfWork
     {

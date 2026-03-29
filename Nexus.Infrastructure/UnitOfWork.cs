@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Nexus.Infrastructure.Interfaces;
+using Nexus.Application.Interfaces.Repository;
 using Nexus.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;

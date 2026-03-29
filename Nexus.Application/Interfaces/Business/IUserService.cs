@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nexus.Application.Interfaces
+namespace Nexus.Application.Interfaces.Business
 {
     public interface IUserService
     {

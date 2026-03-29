@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nexus.Application.Dtos;
-using Nexus.Infrastructure.Responses;
-using Nexus.Application.Interfaces;
-using System.Security.Claims;
 using Nexus.Api.Controllers;
+using Nexus.Application.ReadModels;
+using Nexus.Application.Interfaces.Business;
 
 namespace Nexus.Controllers
 {

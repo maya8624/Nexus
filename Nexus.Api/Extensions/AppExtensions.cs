@@ -2,12 +2,12 @@
 using Nexus.Application.Dtos;
 using Nexus.Application.Factories;
 using Nexus.Application.Interfaces;
+using Nexus.Application.Interfaces.Business;
+using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Services;
 using Nexus.Application.Services.Identity;
 using Nexus.Infrastructure;
-using Nexus.Infrastructure.Interfaces;
 using Nexus.Infrastructure.Repositories;
-using Nexus.Network;
 using Nexus.Network.Interfaces;
 using Nexus.Network.Services;
 
@@ -44,11 +44,8 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<EmailLoginRequest>, EmailLoginRequestValidator>();
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
             services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();
-            services.AddScoped<IValidator<AgentDto>, AgentDtoValidator>();
             services.AddScoped<IValidator<CreateInspectionBookingRequest>, CreateInspectionBookingRequestValidator>();
             services.AddScoped<IValidator<CheckInspectionAvailabilityRequest>, CheckInspectionAvailabilityRequestValidator>();
-            services.AddScoped<IValidator<PropertyDto>, PropertyDtoValidator>();
-            services.AddScoped<IValidator<PropertyListResponse>, PropertyListResponseValidator>();
             services.AddScoped<IValidator<PropertyQueryRequest>, PropertyQueryRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
         }

@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Nexus.Application\Nexus.Application.csproj" />
     <ProjectReference Include="..\Nexus.Domain\Nexus.Domain.csproj" />
   </ItemGroup>
 

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nexus.Infrastructure.Responses
+namespace Nexus.Application.ReadModels
 {
     public class OrderForPaymentReadModel
     {

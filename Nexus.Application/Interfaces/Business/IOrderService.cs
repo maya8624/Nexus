@@ -1,7 +1,7 @@
 ﻿using Nexus.Application.Dtos;
-using Nexus.Infrastructure.Responses;
+using Nexus.Application.ReadModels;
 
-namespace Nexus.Application.Interfaces
+namespace Nexus.Application.Interfaces.Business
 {
     public interface IOrderService
     {

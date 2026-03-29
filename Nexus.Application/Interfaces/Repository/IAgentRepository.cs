@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nexus.Application.Interfaces
+namespace Nexus.Application.Interfaces.Repository
 {
-    public interface IPaymentService
+    public interface IAgentRepository : IRepositoryBase<Agent>
     {
     }
 }

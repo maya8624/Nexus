@@ -1,4 +1,4 @@
-namespace Nexus.Infrastructure.Responses
+namespace Nexus.Application.ReadModels
 {
     public sealed class PropertyReadModel
     {

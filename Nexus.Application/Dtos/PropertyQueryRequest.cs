@@ -3,10 +3,8 @@ using Nexus.Domain.Enums;
 
 namespace Nexus.Application.Dtos
 {
-    public sealed class PropertyQueryRequest
+    public sealed class PropertyQueryRequest : PaginationRequest
     {
-        public int Page { get; init; } = 1;
-        public int PageSize { get; init; } = 20;
         public string? Type { get; init; }
     }
 

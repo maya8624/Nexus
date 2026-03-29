@@ -2,7 +2,8 @@
 using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
+using Nexus.Application.Interfaces.Repository;
+using Nexus.Application.Interfaces.Business;
 
 namespace Nexus.Application.Services
 {
@@ -42,7 +43,7 @@ namespace Nexus.Application.Services
                 CreatedAtUtc = DateTimeOffset.UtcNow,
             };
 
-            await _userRepo.Create(user);
+            await _userRepo.Create(user, CancellationToken.None);
 
             return new UserResponse
             {
@@ -75,7 +76,7 @@ namespace Nexus.Application.Services
                 ]
             };
 
-            await _userRepo.Create(user);
+            await _userRepo.Create(user, CancellationToken.None);
             await _uow.SaveChanges();
             return user;
         }

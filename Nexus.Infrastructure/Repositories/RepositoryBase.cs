@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Nexus.Infrastructure.Interfaces;
+using Nexus.Application.Interfaces.Repository;
 using Nexus.Infrastructure.Persistence;
 using System.Linq.Expressions;
 
@@ -16,24 +16,26 @@ namespace Nexus.Infrastructure.Repositories
             _dbSet = context.Set<T>();
         }
 
-        public async Task Create(T entity)
-            => await _dbSet.AddAsync(entity);
+        public async Task Create(T entity, CancellationToken ct)
+            => await _dbSet.AddAsync(entity, ct);
 
-        public async Task CreateRange(IEnumerable<T> entities)
-            => await _dbSet.AddRangeAsync(entities);
-
+        public async Task CreateRange(IEnumerable<T> entities, CancellationToken ct)
+            => await _dbSet.AddRangeAsync(entities, ct);
         public void Delete(T entity)
             => _dbSet.Remove(entity);
 
-        public async Task<IList<T>> GetAll()
-            => await _dbSet.ToListAsync();
+        public async Task<IList<T>> GetAll(CancellationToken ct)
+            => await _dbSet.ToListAsync(ct);
 
-        public async Task<IEnumerable<T>> GetByCondition(Expression<Func<T, bool>> expression)
-        => await _dbSet.Where(expression).ToListAsync();
+        public async Task<IEnumerable<T>> GetByCondition(Expression<Func<T, bool>> expression, CancellationToken ct)
+            => await _dbSet.Where(expression).ToListAsync(ct);
 
-        public async Task<T> Find(int id)
-            => await _dbSet.FindAsync(id);
-
+        public async Task<T?> Find(int id, CancellationToken ct)
+            => await _dbSet.FindAsync(id, ct);
+         
+        public async Task<bool> IsAny(Expression<Func<T, bool>> expression, CancellationToken ct)
+            => await _dbSet.AnyAsync(expression, ct);
+           
         public void Update(T entity)
             => _dbSet.Update(entity);
     }

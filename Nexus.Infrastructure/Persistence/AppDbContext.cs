@@ -17,7 +17,7 @@ namespace Nexus.Infrastructure.Persistence
         ///
         
         public DbSet<Agency> Agencies => Set<Agency>();
-        public DbSet<Agent> Agencts => Set<Agent>();
+        public DbSet<Agent> Agents => Set<Agent>();
         public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
         public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
         public DbSet<Enquiry> Enquiries => Set<Enquiry>();

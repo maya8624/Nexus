@@ -1,7 +1,6 @@
 ﻿using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
 using Nexus.Infrastructure.Persistence;
-using Nexus.Infrastructure.Repositories;
+using Nexus.Application.Interfaces.Repository;
 
 namespace Nexus.Infrastructure.Repositories
 {

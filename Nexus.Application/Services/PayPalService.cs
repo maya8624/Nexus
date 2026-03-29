@@ -4,17 +4,17 @@ using Nexus.Application.Dtos;
 using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
 using Nexus.Domain.Enums;
-using Nexus.Infrastructure.Responses;
 using Nexus.Network;
 using Nexus.Network.Enums;
 using Nexus.Network.Extensions;
 using Nexus.Network.Interfaces;
 using Nexus.Network.Services;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
 using System.Text.Json;
 using Nexus.Application.Extensions;
 using System.Net.Http.Json;
+using Nexus.Application.ReadModels;
+using Nexus.Application.Interfaces.Repository;
 
 namespace Nexus.Application.Services
 {
@@ -110,7 +110,7 @@ namespace Nexus.Application.Services
 
         public async Task<PayPalRefundResponse> RefundCapture(int paymentId, decimal amount, CancellationToken ct)
         {
-            var payment = await _paymentRepository.Find(paymentId);
+            var payment = await _paymentRepository.Find(paymentId, ct);
             ValidatePaymentForRefund(payment, amount);
 
             var idempotencyKey = Guid.NewGuid().ToString();
@@ -121,7 +121,7 @@ namespace Nexus.Application.Services
             var response = await _httpClientService.ExecuteRequest<PayPalRefundResponse>(request);
 
             var refund = CreateRefundRecord(payment, amount, response, idempotencyKey);
-            await _refundRepository.Create(refund);
+            await _refundRepository.Create(refund, ct);
 
             UpdateRefundPayment(payment, amount);
             _paymentRepository.Update(payment);
@@ -360,7 +360,7 @@ namespace Nexus.Application.Services
                     UpdatedAt = DateTimeOffset.UtcNow
                 };
 
-                await _paymentRepository.Create(payment);
+                await _paymentRepository.Create(payment, CancellationToken.None);
                 await _uow.SaveChanges();
 
                 return payment;

@@ -1,10 +1,8 @@
 ﻿using Nexus.Application.Dtos;
-using Nexus.Application.Exceptions;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Responses;
-using Nexus.Application.Interfaces;
-using Nexus.Infrastructure.Interfaces;
-using System.Drawing;
+using Nexus.Application.ReadModels;
+using Nexus.Application.Interfaces.Repository;
+using Nexus.Application.Interfaces.Business;
 
 namespace Nexus.Application.Services
 {
@@ -77,7 +75,7 @@ namespace Nexus.Application.Services
                 Items = orderItems
             };
 
-            await _orderRepository.Create(order);
+            await _orderRepository.Create(order, CancellationToken.None);
             await _uow.SaveChanges();
 
             return MapToOrderResponse(order);
@@ -87,7 +85,7 @@ namespace Nexus.Application.Services
         // Returns true if the order was found and deleted, false otherwise.
         public async Task<bool> DeleteOrder(int orderId)
         {
-            var order = await _orderRepository.Find(orderId);
+            var order = await _orderRepository.Find(orderId, CancellationToken.None);
             if (order == null) 
                 return false;
             

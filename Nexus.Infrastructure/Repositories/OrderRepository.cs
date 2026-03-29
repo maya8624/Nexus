@@ -1,13 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Nexus.Infrastructure.Responses;
+using Nexus.Application.Interfaces.Repository;
+using Nexus.Application.ReadModels;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
 using Nexus.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nexus.Infrastructure.Repositories
 {

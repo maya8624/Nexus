@@ -1,12 +1,12 @@
-﻿using Nexus.Infrastructure.Responses;
-using Nexus.Domain.Entities;
+﻿using Nexus.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nexus.Application.ReadModels;
 
-namespace Nexus.Infrastructure.Interfaces
+namespace Nexus.Application.Interfaces.Repository
 {
     public interface IOrderRepository : IRepositoryBase<Order>
     {

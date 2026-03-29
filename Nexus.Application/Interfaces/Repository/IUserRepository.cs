@@ -1,11 +1,9 @@
 ﻿using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Persistence;
-using Nexus.Infrastructure.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Nexus.Infrastructure.Interfaces
+namespace Nexus.Application.Interfaces.Repository
 {
     public interface IUserRepository : IRepositoryBase<User>
     {

@@ -2,9 +2,9 @@ using Moq;
 using Nexus.Application.Dtos;
 using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
+using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Services;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
 using Xunit;
 
 namespace Nexus.Tests.Application
@@ -49,7 +49,7 @@ namespace Nexus.Tests.Application
                 .Returns(hashedPassword);
 
             _userRepoMock
-                .Setup(x => x.Create(It.IsAny<User>()))
+                .Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -59,15 +59,15 @@ namespace Nexus.Tests.Application
             Assert.NotNull(result);
             Assert.Equal(email, result.Email);
             Assert.NotNull(result.UserId);
-            
+
             _userRepoMock.Verify(x => x.GetByEmail(email), Times.Once);
             _passwordHasherMock.Verify(x => x.HashPassword(password), Times.Once);
-            _userRepoMock.Verify(x => x.Create(It.Is<User>(u => 
-                u.Email == email && 
+            _userRepoMock.Verify(x => x.Create(It.Is<User>(u =>
+                u.Email == email &&
                 u.PasswordHash == hashedPassword &&
                 u.Id != Guid.Empty &&
                 u.CreatedAtUtc != default
-            )), Times.Once);
+            ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -98,7 +98,7 @@ namespace Nexus.Tests.Application
             
             _userRepoMock.Verify(x => x.GetByEmail(email), Times.Once);
             _passwordHasherMock.Verify(x => x.HashPassword(It.IsAny<string>()), Times.Never);
-            _userRepoMock.Verify(x => x.Create(It.IsAny<User>()), Times.Never);
+            _userRepoMock.Verify(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -118,7 +118,7 @@ namespace Nexus.Tests.Application
                 .Returns(hashedPassword);
 
             _userRepoMock
-                .Setup(x => x.Create(It.IsAny<User>()))
+                .Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -129,7 +129,7 @@ namespace Nexus.Tests.Application
             _userRepoMock.Verify(x => x.Create(It.Is<User>(u => 
                 u.PasswordHash == hashedPassword && 
                 u.PasswordHash != password
-            )), Times.Once);
+            ), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -150,8 +150,8 @@ namespace Nexus.Tests.Application
 
             User? capturedUser = null;
             _userRepoMock
-                .Setup(x => x.Create(It.IsAny<User>()))
-                .Callback<User>(u => capturedUser = u)
+                .Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()))
+                .Callback<User, CancellationToken>((u, ct) => capturedUser = u)
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -184,7 +184,7 @@ namespace Nexus.Tests.Application
                 .Returns(hashedPassword);
 
             _userRepoMock
-                .Setup(x => x.Create(It.IsAny<User>()))
+                .Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -213,7 +213,7 @@ namespace Nexus.Tests.Application
                 .Returns(hashedPassword);
 
             _userRepoMock
-                .Setup(x => x.Create(It.IsAny<User>()))
+                .Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -241,14 +241,14 @@ namespace Nexus.Tests.Application
                 .Returns(hashedPassword);
 
             _userRepoMock
-                .Setup(x => x.Create(It.IsAny<User>()))
+                .Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             // Act
             await _userService.RegisterEmailUser(email, password);
 
             // Assert
-            _userRepoMock.Verify(x => x.Create(It.IsAny<User>()), Times.Once);
+            _userRepoMock.Verify(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         #region Login Tests

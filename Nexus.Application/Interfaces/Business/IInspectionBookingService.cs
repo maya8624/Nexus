@@ -1,12 +1,15 @@
-using Nexus.Application.Common;
+﻿using Nexus.Application.Common;
 using Nexus.Application.Dtos;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Nexus.Application.Interfaces
+namespace Nexus.Application.Interfaces.Business
 {
-    public interface IPropertyService
+    public interface IInspectionBookingService
     {
-        Task<PropertyListResponse> GetProperties(int page, int pageSize, string? type, CancellationToken ct);
-        Task<PropertyDto?> GetPropertyById(Guid id, CancellationToken ct);
         Task<Result<InspectionBookingDto>> CreateInspectionBookingAsync(CreateInspectionBookingRequest request, CancellationToken ct);
         Task<Result<InspectionBookingDto>> CancelInspectionBookingAsync(Guid id, CancellationToken ct);
         Task<Result<InspectionBookingDto>> GetInspectionBookingByIdAsync(Guid id, CancellationToken ct);

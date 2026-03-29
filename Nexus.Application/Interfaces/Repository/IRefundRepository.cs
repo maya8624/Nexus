@@ -1,9 +1,7 @@
 ﻿using Nexus.Domain.Entities;
-using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
 using System;
 
-namespace Nexus.Infrastructure.Interfaces
+namespace Nexus.Application.Interfaces.Repository
 {
     public interface IRefundRepository : IRepositoryBase<Refund>
     {

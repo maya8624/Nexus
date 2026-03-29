@@ -1,11 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
 using Nexus.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Nexus.Application.Interfaces.Repository;
 
 namespace Nexus.Infrastructure.Repositories
 {
