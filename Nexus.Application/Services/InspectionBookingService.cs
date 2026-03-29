@@ -83,6 +83,7 @@ namespace Nexus.Application.Services
 
         public async Task<Result<InspectionBookingDto>> CancelInspectionBookingAsync(Guid id, CancellationToken ct)
         {
+            //TODO: get the current user from auth
             var booking = await _bookingRepository.GetInspectionBookingForUpdate(id, ct);
             if (booking == null)
             {

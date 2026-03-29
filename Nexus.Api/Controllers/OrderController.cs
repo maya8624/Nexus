@@ -50,7 +50,7 @@ namespace Nexus.Controllers
             return Ok(order);
         }
 
-        [HttpDelete("delete/{orderId:int}")]
+        [HttpDelete("{orderId:int}")]
         public async Task<IActionResult> DeleteOrder(int orderId)
         {
             var result = await _orderService.DeleteOrder(orderId);
