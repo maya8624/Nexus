@@ -2,12 +2,12 @@
 using Nexus.Application.Dtos;
 using Nexus.Application.Factories;
 using Nexus.Application.Interfaces;
+using Nexus.Application.Interfaces.Business;
+using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Services;
 using Nexus.Application.Services.Identity;
 using Nexus.Infrastructure;
-using Nexus.Infrastructure.Interfaces;
 using Nexus.Infrastructure.Repositories;
-using Nexus.Network;
 using Nexus.Network.Interfaces;
 using Nexus.Network.Services;
 
@@ -21,12 +21,15 @@ namespace Nexus.Application.Extensions
             services.AddControllers();
 
             services.AddScoped<IHttpClientService, HttpClientService>();
+            services.AddScoped<IAiService, AiService>();
             services.AddScoped<IPayPalAuthService, PayPalAuthService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IPropertyService, PropertyService>();
             services.AddScoped<IPaymentService, PaymentServcie>();
             services.AddScoped<IPayPalService, PayPalService>();
             services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IPropertyRepository, PropertyRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
@@ -40,6 +43,10 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<OrderPaymentRequest>, OrderPaymentRequestValidator>();
             services.AddScoped<IValidator<EmailLoginRequest>, EmailLoginRequestValidator>();
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
+            services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();
+            services.AddScoped<IValidator<CreateInspectionBookingRequest>, CreateInspectionBookingRequestValidator>();
+            services.AddScoped<IValidator<CheckInspectionAvailabilityRequest>, CheckInspectionAvailabilityRequestValidator>();
+            services.AddScoped<IValidator<PropertyQueryRequest>, PropertyQueryRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
         }
     }

@@ -1,21 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Nexus.Infrastructure.Responses;
+using Nexus.Application.Interfaces.Repository;
+using Nexus.Application.ReadModels;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
 using Nexus.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nexus.Infrastructure.Repositories
 {
     public class OrderRepository : RepositoryBase<Order>, IOrderRepository
     {
-        private readonly NexusPayContext _context;
+        private readonly AppDbContext _context;
 
-        public OrderRepository(NexusPayContext context) : base(context) 
+        public OrderRepository(AppDbContext context) : base(context) 
         {
             _context = context;
         }
@@ -34,12 +29,12 @@ namespace Nexus.Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.Id == orderId);
         }
 
-        public async Task<IEnumerable<OrderSummaryResponse>> GetOrdersForUser(int userId)
+        public async Task<IEnumerable<OrderSummaryReadModel>> GetOrdersForUser(int userId)
         {
             return await _context.Orders
                 .AsNoTracking()
                 .Where(x => x.UserId == userId)
-                .Select(x => new OrderSummaryResponse
+                .Select(x => new OrderSummaryReadModel
                 {
                     OrderId = x.Id,
                     Status = x.Status.ToString(),
@@ -49,18 +44,18 @@ namespace Nexus.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<OrderForPaymentResponse?> GetOrderForPayment(int orderId)
+        public async Task<OrderForPaymentReadModel?> GetOrderForPayment(int orderId)
         {
             return await _context.Orders
                 .AsNoTracking()
                 .Where(o => o.Id == orderId)
-                .Select(o => new OrderForPaymentResponse
+                .Select(o => new OrderForPaymentReadModel
                 {
                     Id = o.Id,
                     TotalAmount = o.TotalAmount,
                     Currency = o.Currency,
                     FrontendIdempotencyKey = o.FrontendIdempotencyKey,
-                    Items = o.Items.Select(i => new OrderItemForPaymentResponse
+                    Items = o.Items.Select(i => new OrderItemForPaymentReadModel
                     {
                         ProductName = i.ProductName,
                         UnitPrice = i.UnitPrice,

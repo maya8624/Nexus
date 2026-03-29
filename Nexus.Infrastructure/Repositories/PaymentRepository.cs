@@ -1,23 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Nexus.Infrastructure.Interfaces;
 using Nexus.Domain.Entities;
 using Nexus.Domain.Enums;
-using Nexus.Infrastructure.Interfaces;
 using Nexus.Infrastructure.Persistence;
-using Nexus.Infrastructure.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Nexus.Application.Interfaces.Repository;
 
 namespace Nexus.Infrastructure.Repositories
 {
     public class PaymentRepository : RepositoryBase<Payment>, IPaymentRepository
     {
-        private readonly NexusPayContext _context;
+        private readonly AppDbContext _context;
 
-        public PaymentRepository(NexusPayContext context) : base(context)
+        public PaymentRepository(AppDbContext context) : base(context)
         {
             _context = context;
         }

@@ -16,8 +16,11 @@ namespace Nexus.Domain.Entities
         public string BackendIdempotencyKey { get; set; }
         public decimal Amount { get; set; }
         public RefundStatus Status { get; set; }
-        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-        public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+        public DateTimeOffset CreatedAtUtc { get; set; }
+
+        public DateTimeOffset UpdatedAtUtc { get; set; }
+
         public string RawResponse { get; set; }
         public Payment Payment { get; set; }
     }

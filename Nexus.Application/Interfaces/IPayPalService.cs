@@ -9,8 +9,8 @@ namespace Nexus.Application.Interfaces
 {
     public interface IPayPalService
     {
-        Task<PayPalOrderResultResponse> CreateOrder(int orderId);
-        Task<PayPalCaptureResponse> CaptureOrder(int orderId);
+        Task<PayPalOrderResultResponse?> CreateOrder(int orderId);
+        Task<PayPalCaptureResponse?> CaptureOrder(int orderId);
         Task<PayPalRefundResponse> RefundCapture(int paymentId, decimal amount, CancellationToken ct);
     }
 }

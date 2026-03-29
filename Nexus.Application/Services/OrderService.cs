@@ -1,11 +1,8 @@
 ﻿using Nexus.Application.Dtos;
-using Nexus.Application.Exceptions;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Responses;
-using Nexus.Application.Interfaces;
-using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
-using System.Drawing;
+using Nexus.Application.ReadModels;
+using Nexus.Application.Interfaces.Repository;
+using Nexus.Application.Interfaces.Business;
 
 namespace Nexus.Application.Services
 {
@@ -20,12 +17,12 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
-        public async Task<OrderResponse> GetOrderById(int orderId)
+        public async Task<OrderResponse?> GetOrderById(int orderId)
         {
             var order = await _orderRepository.GetOrderById(orderId);
 
             if (order == null)
-                throw new NotFoundException("Order is not found.");
+                return null;
 
             var response = new OrderResponse
             {
@@ -46,7 +43,7 @@ namespace Nexus.Application.Services
             return response;
         }
 
-        public async Task<IEnumerable<OrderSummaryResponse>> GetOrdersForUser(int userId)
+        public async Task<IEnumerable<OrderSummaryReadModel>> GetOrdersForUser(int userId)
         {
             var orders = await _orderRepository.GetOrdersForUser(userId);
             return orders;
@@ -78,7 +75,7 @@ namespace Nexus.Application.Services
                 Items = orderItems
             };
 
-            await _orderRepository.Create(order);
+            await _orderRepository.Create(order, CancellationToken.None);
             await _uow.SaveChanges();
 
             return MapToOrderResponse(order);
@@ -88,7 +85,7 @@ namespace Nexus.Application.Services
         // Returns true if the order was found and deleted, false otherwise.
         public async Task<bool> DeleteOrder(int orderId)
         {
-            var order = await _orderRepository.Find(orderId);
+            var order = await _orderRepository.Find(orderId, CancellationToken.None);
             if (order == null) 
                 return false;
             

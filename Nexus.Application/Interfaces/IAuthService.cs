@@ -1,6 +1,4 @@
-﻿using Azure.Core;
-using Microsoft.AspNetCore.Http;
-using Nexus.Application.Dtos;
+﻿using Nexus.Application.Dtos;
 using Nexus.Domain.Entities;
 using System;
 using System.Collections.Generic;

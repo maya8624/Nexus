@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexus.Application.Dtos;
 using Nexus.Application.Interfaces;

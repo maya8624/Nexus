@@ -4,17 +4,17 @@ using Nexus.Application.Dtos;
 using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
 using Nexus.Domain.Enums;
-using Nexus.Infrastructure.Responses;
 using Nexus.Network;
 using Nexus.Network.Enums;
 using Nexus.Network.Extensions;
 using Nexus.Network.Interfaces;
 using Nexus.Network.Services;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
 using System.Text.Json;
 using Nexus.Application.Extensions;
 using System.Net.Http.Json;
+using Nexus.Application.ReadModels;
+using Nexus.Application.Interfaces.Repository;
 
 namespace Nexus.Application.Services
 {
@@ -49,13 +49,15 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
-        public async Task<PayPalOrderResultResponse> CreateOrder(int orderId)
+        public async Task<PayPalOrderResultResponse?> CreateOrder(int orderId)
         {
             var order = await _orderRepository.GetOrderForPayment(orderId);
+
             if (order == null)
-                throw new NotFoundException($"Order: {orderId} not found.");
+                return null;
 
             var payment = await GetPaymentByOrderId(orderId);
+
             if (payment == null)
             {
                 var idempotencyKey = Guid.NewGuid().ToString();
@@ -78,7 +80,7 @@ namespace Nexus.Application.Services
             return response;
         }        
 
-        private async Task<Payment> GetPaymentByOrderId(int orderId)
+        private async Task<Payment?> GetPaymentByOrderId(int orderId)
         { 
             var payment = await _paymentRepository.GetByOrderId(orderId);
 
@@ -88,11 +90,12 @@ namespace Nexus.Application.Services
             return payment;
         }
 
-        public async Task<PayPalCaptureResponse> CaptureOrder(int orderId)
+        public async Task<PayPalCaptureResponse?> CaptureOrder(int orderId)
         {
             var payment = await _paymentRepository.GetByOrderId(orderId);
+
             if (payment == null)
-                throw new NotFoundException($"Payment not found. orderId:{orderId}");
+                return null;
 
             if (payment.Status == PaymentStatus.Completed && string.IsNullOrEmpty(payment.RawResponse) == false)
                 return payment.RawResponse.SafeDeserialize<PayPalCaptureResponse>();
@@ -107,7 +110,7 @@ namespace Nexus.Application.Services
 
         public async Task<PayPalRefundResponse> RefundCapture(int paymentId, decimal amount, CancellationToken ct)
         {
-            var payment = await _paymentRepository.Find(paymentId);
+            var payment = await _paymentRepository.Find(paymentId, ct);
             ValidatePaymentForRefund(payment, amount);
 
             var idempotencyKey = Guid.NewGuid().ToString();
@@ -118,7 +121,7 @@ namespace Nexus.Application.Services
             var response = await _httpClientService.ExecuteRequest<PayPalRefundResponse>(request);
 
             var refund = CreateRefundRecord(payment, amount, response, idempotencyKey);
-            await _refundRepository.Create(refund);
+            await _refundRepository.Create(refund, ct);
 
             UpdateRefundPayment(payment, amount);
             _paymentRepository.Update(payment);
@@ -200,8 +203,8 @@ namespace Nexus.Application.Services
                 ProviderRefundId = response.Id,
                 Amount = amount,
                 Status = RefundStatus.Completed,
-                CreatedAt = DateTimeOffset.UtcNow,
-                UpdatedAt = DateTimeOffset.UtcNow,
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                UpdatedAtUtc = DateTimeOffset.UtcNow,
                 BackendIdempotencyKey = idempotencyKey,
                 RawResponse = response.Raw
             };
@@ -288,7 +291,7 @@ namespace Nexus.Application.Services
             return request;
         }
 
-        private HttpRequestMessage BuildCreateRequest(OrderForPaymentResponse order, string idempotencyKey, string accessToken)
+        private HttpRequestMessage BuildCreateRequest(OrderForPaymentReadModel order, string idempotencyKey, string accessToken)
         {
             var url = _settings.SandboxBaseUrl.CombineUrl(_settings.SandboxCreateOrderUrl);
             var body = BuildPayPalOrderRequest(order);
@@ -311,7 +314,7 @@ namespace Nexus.Application.Services
             return request;
         }
 
-        private object BuildPayPalOrderRequest(OrderForPaymentResponse order)
+        private object BuildPayPalOrderRequest(OrderForPaymentReadModel order)
         {
             return new
             {
@@ -341,7 +344,7 @@ namespace Nexus.Application.Services
             };
         }
 
-        private async Task<Payment> SavePaymentRecord(OrderForPaymentResponse order, string backendIdempotencyKey)
+        private async Task<Payment> SavePaymentRecord(OrderForPaymentReadModel order, string backendIdempotencyKey)
         {
             try
             {
@@ -357,7 +360,7 @@ namespace Nexus.Application.Services
                     UpdatedAt = DateTimeOffset.UtcNow
                 };
 
-                await _paymentRepository.Create(payment);
+                await _paymentRepository.Create(payment, CancellationToken.None);
                 await _uow.SaveChanges();
 
                 return payment;

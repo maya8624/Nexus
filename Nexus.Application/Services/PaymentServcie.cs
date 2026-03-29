@@ -1,15 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Nexus.Application.Exceptions;
-using Nexus.Application.Interfaces;
-using Nexus.Domain.Enums;
-using Nexus.Infrastructure.Interfaces;
-using Nexus.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Logging;
+using Nexus.Application.Interfaces.Business;
+using Nexus.Application.Interfaces.Repository;
 
 namespace Nexus.Application.Services
 {

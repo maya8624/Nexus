@@ -1,19 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using Nexus.Domain.Entities;
-using Nexus.Infrastructure.Interfaces;
 using Nexus.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Nexus.Application.Interfaces.Repository;
 
 namespace Nexus.Infrastructure.Repositories
 {
     public class UserRepository : RepositoryBase<User>, IUserRepository
     {
-        private readonly NexusPayContext _context;
+        private readonly AppDbContext _context;
 
-        public UserRepository(NexusPayContext context) : base(context)
+        public UserRepository(AppDbContext context) : base(context)
         {
             _context = context;
         }

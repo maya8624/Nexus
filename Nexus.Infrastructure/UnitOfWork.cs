@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Nexus.Infrastructure.Interfaces;
+using Nexus.Application.Interfaces.Repository;
 using Nexus.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
@@ -12,9 +12,9 @@ namespace Nexus.Infrastructure
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly NexusPayContext _context;
+        private readonly AppDbContext _context;
 
-        public UnitOfWork(NexusPayContext context)
+        public UnitOfWork(AppDbContext context)
         {
             _context = context;
         }
