@@ -20,11 +20,6 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Id)
                 .ValueGeneratedNever();
 
-            builder.Property(x => x.InspectionStartAtUtc)
-                .IsRequired();
-
-            builder.Property(x => x.InspectionEndAtUtc);
-
             builder.Property(x => x.Status)
                 .HasConversion<string>()
                 .HasMaxLength(20)
@@ -39,32 +34,47 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.UpdatedAtUtc)
                 .IsRequired();
 
+            builder.Property(x => x.RowVersion)
+                .IsRowVersion();
+
+            builder.HasOne(x => x.InspectionSlot)
+                .WithMany(x => x.InspectionBookings)
+                .HasForeignKey(x => x.InspectionSlotId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasOne(x => x.User)
                 .WithMany(x => x.InspectionBookings)
                 .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Property)
                 .WithMany(x => x.InspectionBookings)
                 .HasForeignKey(x => x.PropertyId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Listing)
                 .WithMany(x => x.InspectionBookings)
                 .HasForeignKey(x => x.ListingId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Agent)
                 .WithMany(x => x.InspectionBookings)
                 .HasForeignKey(x => x.AgentId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasIndex(x => x.InspectionSlotId);
             builder.HasIndex(x => x.UserId);
             builder.HasIndex(x => x.PropertyId);
             builder.HasIndex(x => x.ListingId);
             builder.HasIndex(x => x.AgentId);
             builder.HasIndex(x => x.Status);
-            builder.HasIndex(x => x.InspectionStartAtUtc);
+
+            builder.HasIndex(x => new { x.InspectionSlotId, x.Status });
+            builder.HasIndex(x => new { x.UserId, x.Status });
+            builder.HasIndex(x => new { x.PropertyId, x.Status });
+            builder.HasIndex(x => new { x.ListingId, x.Status });
+            builder.HasIndex(x => new { x.InspectionSlotId, x.UserId })
+                .IsUnique();
         }
     }
 }

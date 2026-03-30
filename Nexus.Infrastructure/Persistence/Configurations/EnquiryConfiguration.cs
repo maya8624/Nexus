@@ -36,22 +36,22 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.HasOne(x => x.User)
                 .WithMany(x => x.Enquiries)
                 .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Property)
                 .WithMany(x => x.Enquiries)
                 .HasForeignKey(x => x.PropertyId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Listing)
                 .WithMany(x => x.Enquiries)
                 .HasForeignKey(x => x.ListingId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Agent)
                 .WithMany(x => x.Enquiries)
                 .HasForeignKey(x => x.AgentId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(x => x.UserId);
             builder.HasIndex(x => x.PropertyId);

@@ -44,5 +44,7 @@ namespace Nexus.Domain.Entities
         public ICollection<Enquiry> Enquiries { get; set; } = new List<Enquiry>();
 
         public ICollection<InspectionBooking> InspectionBookings { get; set; } = new List<InspectionBooking>();
+
+        public ICollection<InspectionSlot> InspectionSlots { get; set; } = new List<InspectionSlot>();
     }
 }

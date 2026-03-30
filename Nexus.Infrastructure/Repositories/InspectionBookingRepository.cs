@@ -45,8 +45,6 @@ namespace Nexus.Infrastructure.Repositories
                 .Where(x => x.UserId == userId)
                 .Where(x => x.PropertyId == request.PropertyId)
                 .Where(x => x.ListingId == request.ListingId)
-                .Where(x => x.InspectionStartAtUtc == request.InspectionStartAtUtc)
-                .Where(x => x.InspectionEndAtUtc == request.InspectionEndAtUtc)
                 .Where(x => x.Status != request.Status) // not cancelled
                 .AnyAsync(ct);
         }
@@ -59,9 +57,9 @@ namespace Nexus.Infrastructure.Repositories
                 .Where(x => x.PropertyId == request.PropertyId)
                 .Where(x => x.ListingId == request.ListingId)
                 .Where(x => x.Status == InspectionBookingStatus.Confirmed)
-                .Where(x => x.InspectionEndAtUtc.HasValue &&
-                        request.InspectionStartAtUtc < x.InspectionEndAtUtc.Value &&
-                        request.InspectionEndAtUtc > x.InspectionStartAtUtc)
+                //.Where(x => x.InspectionEndAtUtc.HasValue &&
+                //        request.InspectionStartAtUtc < x.InspectionEndAtUtc.Value &&
+                //        request.InspectionEndAtUtc > x.InspectionStartAtUtc)
                 .AnyAsync(ct);
         }
     }

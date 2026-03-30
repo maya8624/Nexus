@@ -52,7 +52,7 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.HasOne(x => x.Agency)
                 .WithMany(x => x.Agents)
                 .HasForeignKey(x => x.AgencyId)
-                .OnDelete(DeleteBehavior.SetNull);       
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(x => x.AgencyId);
             builder.HasIndex(x => x.Email);

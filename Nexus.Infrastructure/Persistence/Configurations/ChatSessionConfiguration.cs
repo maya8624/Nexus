@@ -31,7 +31,7 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.HasOne(x => x.User)
                 .WithMany(x => x.ChatSessions)
                 .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(x => x.UserId);
             builder.HasIndex(x => x.StartedAtUtc);
