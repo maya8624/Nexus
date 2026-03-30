@@ -45,7 +45,7 @@ namespace Nexus.Api.Controllers
 
         [AllowAnonymous]
         [HttpPost("bookings")]
-        public async Task<ActionResult<InspectionBookingDto>> CreateInspectionBooking([FromBody] CreateInspectionBookingRequest request, CancellationToken ct)
+        public async Task<ActionResult<InspectionBookingDto>> CreateInspectionBooking([FromBody] InspectionBookingRequest request, CancellationToken ct)
         {
             var result = await _bookingService.CreateInspectionBookingAsync(request, ct);
 

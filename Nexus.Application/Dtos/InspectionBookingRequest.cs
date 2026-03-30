@@ -9,10 +9,8 @@ using System.Threading.Tasks;
 
 namespace Nexus.Application.Dtos
 {
-    public sealed class CreateInspectionBookingRequest
+    public sealed class InspectionBookingRequest
     {
-        public Guid UserId { get; init; }
-
         public Guid PropertyId { get; init; }
 
         public Guid ListingId { get; init; }
@@ -29,11 +27,10 @@ namespace Nexus.Application.Dtos
     }
 }
 
-public sealed class CreateInspectionBookingRequestValidator : AbstractValidator<CreateInspectionBookingRequest>
+public sealed class CreateInspectionBookingRequestValidator : AbstractValidator<InspectionBookingRequest>
 {
     public CreateInspectionBookingRequestValidator()
     {
-        RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.PropertyId).NotEmpty();
         RuleFor(x => x.ListingId).NotEmpty();
         RuleFor(x => x.AgentId).NotEmpty();

@@ -21,24 +21,28 @@ namespace Nexus.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<InspectionBooking?> GetInspectionBookingById(Guid id, CancellationToken ct)
+        public async Task<InspectionBooking?> GetInspectionBookingById(Guid id, Guid userId, CancellationToken ct)
         {
             return await _context.InspectionBookings
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id, ct);
+                .Where(x => x.Id == id)
+                .Where(x => x.UserId == userId)
+                .FirstOrDefaultAsync(ct);
         }
 
-        public async Task<InspectionBooking?> GetInspectionBookingForUpdate(Guid id, CancellationToken ct)
+        public async Task<InspectionBooking?> GetInspectionBookingForUpdate(Guid id, Guid userId, CancellationToken ct)
         {
             return await _context.InspectionBookings
-                .FirstOrDefaultAsync(x => x.Id == id, ct);
+                .Where(x => x.Id == id)
+                .Where(x => x.UserId == userId)
+                .FirstOrDefaultAsync(ct);
         }
 
-        public async Task<bool> HasDuplicateBooking(CreateInspectionBookingRequest request, CancellationToken ct)
+        public async Task<bool> HasDuplicateBooking(InspectionBookingRequest request, Guid userId, CancellationToken ct)
         {
             return await _context.InspectionBookings
                 .AsNoTracking()
-                .Where(x => x.UserId == request.UserId)
+                .Where(x => x.UserId == userId)
                 .Where(x => x.PropertyId == request.PropertyId)
                 .Where(x => x.ListingId == request.ListingId)
                 .Where(x => x.InspectionStartAtUtc == request.InspectionStartAtUtc)
@@ -47,10 +51,11 @@ namespace Nexus.Infrastructure.Repositories
                 .AnyAsync(ct);
         }
 
-        public async Task<bool> HasOverlappingConfirmedBooking(CreateInspectionBookingRequest request, CancellationToken ct)
+        public async Task<bool> HasOverlappingConfirmedBooking(InspectionBookingRequest request, Guid userId, CancellationToken ct)
         {
             return await _context.InspectionBookings
                 .AsNoTracking()
+                .Where(x => x.UserId == userId)
                 .Where(x => x.PropertyId == request.PropertyId)
                 .Where(x => x.ListingId == request.ListingId)
                 .Where(x => x.Status == InspectionBookingStatus.Confirmed)

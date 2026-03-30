@@ -16,7 +16,7 @@ namespace Nexus.Api.Controllers
 
         [AllowAnonymous]
         [HttpGet("properties")]
-        public async Task<ActionResult<PropertyListResponse>> GetProperties([FromQuery] PropertyQueryRequest request, CancellationToken ct = default)
+        public async Task<ActionResult<PropertyListResponse>> GetProperties([FromQuery] PropertyQueryRequest request, CancellationToken ct)
         {            
             var result = await _propertyService.GetProperties(request, ct);
             return Ok(result);

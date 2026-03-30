@@ -87,7 +87,7 @@ namespace Nexus.Application.Services
 
             if (user == null)
                 return false;
-
+                
             var isVerified = _passwordHasher.VerifyPassword(user.PasswordHash, password);
 
             if (isVerified == false)
