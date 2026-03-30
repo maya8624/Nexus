@@ -15,13 +15,14 @@ namespace Nexus.Infrastructure.Persistence
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
         ///
-        
+
         public DbSet<Agency> Agencies => Set<Agency>();
         public DbSet<Agent> Agents => Set<Agent>();
         public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
         public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
         public DbSet<Enquiry> Enquiries => Set<Enquiry>();
         public DbSet<InspectionBooking> InspectionBookings => Set<InspectionBooking>();
+        public DbSet<InspectionSlot> InspectionSlots => Set<InspectionSlot>();
         public DbSet<Listing> Listings => Set<Listing>();
         public DbSet<PropertyAddress> PropertyAddresses => Set<PropertyAddress>();
         public DbSet<Property> Properties => Set<Property>();

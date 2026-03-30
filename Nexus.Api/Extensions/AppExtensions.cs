@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Factories;
 using Nexus.Application.Interfaces;
 using Nexus.Application.Interfaces.Business;
@@ -38,14 +39,18 @@ namespace Nexus.Application.Extensions
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IUserContext, UserContext>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IInspectionBookingService, InspectionBookingService>();
+            services.AddScoped<IInspectionBookingRepository, InspectionBookingRepository>();
+            services.AddScoped<IInspectionSlotService, InspectionSlotService>();
+            services.AddScoped<IInspectionSlotRepository, InspectionSlotRepository>();
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
             services.AddScoped<IValidator<RefundRequest>, RefundRequestValidator>();
             services.AddScoped<IValidator<OrderPaymentRequest>, OrderPaymentRequestValidator>();
             services.AddScoped<IValidator<EmailLoginRequest>, EmailLoginRequestValidator>();
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
             services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();
-            services.AddScoped<IValidator<InspectionBookingRequest>, CreateInspectionBookingRequestValidator>();
-            services.AddScoped<IValidator<CheckInspectionAvailabilityRequest>, CheckInspectionAvailabilityRequestValidator>();
+            services.AddScoped<IValidator<CreateInspectionBookingRequest>, CreateInspectionBookingRequestValidator>();
+            services.AddScoped<IValidator<CreateInspectionSlotRequest>, CreateInspectionSlotRequestValidator>();
             services.AddScoped<IValidator<PropertyQueryRequest>, PropertyQueryRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
         }

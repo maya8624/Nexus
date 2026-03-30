@@ -1,4 +1,5 @@
 ﻿using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
 using Nexus.Domain.Entities;

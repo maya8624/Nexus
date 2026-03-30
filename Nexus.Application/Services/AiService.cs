@@ -1,4 +1,5 @@
 ﻿using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Interfaces;
 using System;
 using System.Collections.Generic;

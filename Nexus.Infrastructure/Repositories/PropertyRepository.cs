@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.ReadModels;
 using Nexus.Domain.Entities;
-using Nexus.Domain.Enums;
 using Nexus.Infrastructure.Persistence;
 using System.Linq.Expressions;
 
@@ -17,13 +16,13 @@ namespace Nexus.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<(IReadOnlyList<PropertyReadModel> Items, int TotalCount)> GetPagedProperties(
+        public async Task<(IReadOnlyList<PropertyReadModel> Items, int TotalCount)> GetPagedAsync(
             int skip,
             int pageSize,
             int? propertyTypeId,
             CancellationToken ct)
         {
-            var query = BuildBaseQuery();
+            var query = BuildBaseQuery(propertyTypeId);
             var totalCount = await query.CountAsync(ct);
 
             var items = await query
@@ -35,59 +34,12 @@ namespace Nexus.Infrastructure.Repositories
             return (items, totalCount);
         }
 
-        public async Task<PropertyReadModel?> GetPropertyById(Guid id, CancellationToken ct)
+        public async Task<PropertyReadModel?> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            return await BuildBaseQuery()
+            return await BuildBaseQuery(propertyTypeId: null)
                 .Where(x => x.Id == id)
                 .Select(ToReadModel)
                 .FirstOrDefaultAsync(ct);
-        }
-
-        public async Task<Property?> IsActiveGetBookingContext(Guid propertyId, Guid listingId, ListingStatus status, CancellationToken ct)
-        {
-            var result = await _context.Properties
-                .AsNoTracking()
-                .Include(x => x.Listings
-                    .Where(l => l.Id == listingId)
-                    .Where(l => l.IsPublished == true)
-                    .Where(l => l.Status == status)
-                    .FirstOrDefault())
-                .Include(x => x.Agent)
-                .Where(x => x.Id == propertyId)
-                .Where(x => x.IsActive == true)
-                .FirstOrDefaultAsync(ct);
-
-            return result;
-
-            //var result = await _context.Properties
-            //    .AsNoTracking()
-            //    .Where(x => x.Id == propertyId)
-            //    .Select(x => new
-            //    {
-            //        PropertyId = x.Id,
-            //        PropertyIsActive = x.IsActive,
-            //        Listing = x.Listings
-            //            .Where(l => l.Id == listingId)
-            //            .Select(l => new
-            //            {
-            //                l.Id,
-            //                l.IsPublished,
-            //                Status = l.Status.ToString(),
-            //                l.AgentId
-            //            })
-            //            .FirstOrDefault()
-            //    })
-            //    .Where(x => x.Listing != null)
-            //    .Select(x => new BookingContextReadModel
-            //    {
-            //        PropertyId = x.,
-            //        PropertyIsActive = x.PropertyIsActive,
-            //        ListingId = x.Listing!.Id,
-            //        ListingIsPublished = x.Listing.IsPublished,
-            //        ListingStatus = x.Listing.Status,
-            //        ListingAgentId = x.Listing.AgentId
-            //    })
-            //    .FirstOrDefaultAsync(ct);
         }
 
         private static readonly Expression<Func<Property, PropertyReadModel>> ToReadModel = x => new PropertyReadModel
@@ -126,11 +78,16 @@ namespace Nexus.Infrastructure.Repositories
                 .FirstOrDefault()
         };
 
-        private IQueryable<Property> BuildBaseQuery()
+        private IQueryable<Property> BuildBaseQuery(int? propertyTypeId)
         {
-            return _context.Properties
+            var query = _context.Properties
                 .AsNoTracking()
                 .Where(x => x.IsActive && x.Listings.Any(l => l.IsPublished));
+
+            if (propertyTypeId.HasValue)
+                query = query.Where(x => x.PropertyTypeId == propertyTypeId.Value);
+
+            return query;
         }
     }
 }

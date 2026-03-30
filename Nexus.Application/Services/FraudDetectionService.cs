@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Interfaces;
 using Nexus.Network;
 using Nexus.Network.Enums;

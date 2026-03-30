@@ -14,12 +14,11 @@ namespace Nexus.Tests.Application
     public class PropertyServiceTests
     {
         private readonly Mock<IPropertyRepository> _propertyRepository = new();
-        private readonly Mock<IUnitOfWork> _uow = new();
         private readonly PropertyService _service;
 
         public PropertyServiceTests()
         {
-            _service = new PropertyService(_propertyRepository.Object, _uow.Object);
+            _service = new PropertyService(_propertyRepository.Object);
         }
     }
 }

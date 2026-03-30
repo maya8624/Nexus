@@ -34,6 +34,9 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.UpdatedAtUtc)
                 .IsRequired();
 
+            builder.Property(x => x.IsDeleted)
+               .HasDefaultValue(false);
+
             builder.Property(x => x.RowVersion)
                 .IsRowVersion();
 
@@ -62,19 +65,10 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.AgentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasIndex(x => x.InspectionSlotId);
-            builder.HasIndex(x => x.UserId);
-            builder.HasIndex(x => x.PropertyId);
-            builder.HasIndex(x => x.ListingId);
             builder.HasIndex(x => x.AgentId);
             builder.HasIndex(x => x.Status);
-
             builder.HasIndex(x => new { x.InspectionSlotId, x.Status });
             builder.HasIndex(x => new { x.UserId, x.Status });
-            builder.HasIndex(x => new { x.PropertyId, x.Status });
-            builder.HasIndex(x => new { x.ListingId, x.Status });
-            builder.HasIndex(x => new { x.InspectionSlotId, x.UserId })
-                .IsUnique();
         }
     }
 }

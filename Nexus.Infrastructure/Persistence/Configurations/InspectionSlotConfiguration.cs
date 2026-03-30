@@ -46,6 +46,9 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.RowVersion)
                 .IsRowVersion();
 
+            builder.Property(x => x.IsDeleted)
+               .HasDefaultValue(false);
+
             builder.HasOne(x => x.Listing)
                 .WithMany(x => x.InspectionSlots)
                 .HasForeignKey(x => x.ListingId)
@@ -61,11 +64,17 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.AgentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(x => x.CreatedByUser)
+                .WithMany(x => x.CreatedSlots)
+                .HasForeignKey(x => x.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasMany(x => x.InspectionBookings)
                 .WithOne(x => x.InspectionSlot)
                 .HasForeignKey(x => x.InspectionSlotId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasIndex(x => x.CreatedByUserId);
             builder.HasIndex(x => x.ListingId);
             builder.HasIndex(x => x.PropertyId);
             builder.HasIndex(x => x.AgentId);

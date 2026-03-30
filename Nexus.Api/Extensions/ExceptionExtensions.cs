@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nexus.Api.Middleware;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Exceptions;
 
 namespace Nexus.Api.Extensions

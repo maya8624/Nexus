@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
 using System.Security.Claims;

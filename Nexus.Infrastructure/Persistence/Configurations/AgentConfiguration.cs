@@ -4,7 +4,7 @@ using Nexus.Domain.Entities;
 
 namespace Nexus.Infrastructure.Persistence.Configurations
 {
-    public class AgenctConfiguration : IEntityTypeConfiguration<Agent>
+    public class AgentConfiguration : IEntityTypeConfiguration<Agent>
     {
         public void Configure(EntityTypeBuilder<Agent> builder)
         {

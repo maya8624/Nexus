@@ -35,6 +35,8 @@ namespace Nexus.Domain.Entities
 
         public bool IsPublished { get; set; }
 
+        public bool IsDeleted { get; set; }
+
         public Property Property { get; set; } = default!;
 
         public Agency? Agency { get; set; }

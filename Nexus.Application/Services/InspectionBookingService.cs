@@ -1,79 +1,65 @@
-﻿using Nexus.Application.Common;
+using Nexus.Application.Common;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Interfaces;
 using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Domain.Entities;
 using Nexus.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nexus.Application.Services
 {
     public class InspectionBookingService : IInspectionBookingService
     {
-
-        private readonly IAgentRepository _agentRepository;
         private readonly IInspectionBookingRepository _bookingRepository;
+        private readonly IInspectionSlotRepository _slotRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUserContext _userContext;
         private readonly IUnitOfWork _uow;
 
-
         public InspectionBookingService(
-            IAgentRepository agentRepository,
             IInspectionBookingRepository bookingRepository,
+            IInspectionSlotRepository slotRepository,
             IUserRepository userRepository,
             IUserContext userContext,
             IUnitOfWork uow)
         {
-            _agentRepository = agentRepository;
             _bookingRepository = bookingRepository;
+            _slotRepository = slotRepository;
             _userRepository = userRepository;
             _userContext = userContext;
             _uow = uow;
         }
 
-
-        public async Task<Result<InspectionBookingDto>> CreateInspectionBookingAsync(InspectionBookingRequest request, CancellationToken ct)
+        public async Task<Result<InspectionBookingDto>> CreateAsync(CreateInspectionBookingRequest request, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
             var userExists = await _userRepository.IsAny(x => x.Id == userId && x.IsActive, ct);
-            if (userExists == false)
-            {
-                return Result<InspectionBookingDto>.NotFound("UserNotFound", "The specified user was not found.");
-            }
+            if (!userExists)
+                return Result<InspectionBookingDto>.NotFound("UserNotFound", "User not found or inactive.");
 
-            var hasDuplicateBooking = await _bookingRepository.HasDuplicateBooking(request, userId, ct);
-            if (hasDuplicateBooking)
-            {
-                return Result<InspectionBookingDto>.Conflict("DuplicateBooking", "A booking request already exists for the same user, property, listing, and time window.");
-            }
+            var slot = await _slotRepository.GetByIdForUpdateAsync(request.InspectionSlotId, ct);
+            if (slot is null || slot.Status != InspectionSlotStatus.Open)
+                return Result<InspectionBookingDto>.NotFound("SlotNotFound", "Inspection slot not found or not available.");
 
-            var hasConfirmedConflict = await _bookingRepository.HasOverlappingConfirmedBooking(request, userId, ct);
-            if (hasConfirmedConflict)
-            {
-                return Result<InspectionBookingDto>.Conflict("BookingConflict", "The requested inspection time overlaps an existing confirmed booking.");
-            }
+            var confirmedCount = await _bookingRepository.GetConfirmedCountForSlotAsync(slot.Id, ct);
+            if (confirmedCount >= slot.Capacity)
+                return Result<InspectionBookingDto>.Conflict("SlotFull", "This inspection slot is fully booked.");
 
-            var agentExists = await _agentRepository.IsAny(x => x.Id == request.AgentId && x.IsActive, ct);
-            if (agentExists == false)
-            {
-                return Result<InspectionBookingDto>.NotFound("AgentNotFound", "The specified agent was not found.");
-            }
+            var hasActiveBooking = await _bookingRepository.HasActiveBookingForSlotAsync(slot.Id, userId, ct);
+            if (hasActiveBooking)
+                return Result<InspectionBookingDto>.Conflict("DuplicateBooking", "You already have an active booking for this slot.");
 
             var now = DateTimeOffset.UtcNow;
             var booking = new InspectionBooking
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                PropertyId = request.PropertyId,
-                ListingId = request.ListingId,
-                AgentId = request.AgentId,
+                InspectionSlotId = slot.Id,
+                PropertyId = slot.PropertyId,
+                ListingId = slot.ListingId,
+                AgentId = slot.AgentId,
                 Status = InspectionBookingStatus.Pending,
                 Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
                 CreatedAtUtc = now,
@@ -83,95 +69,61 @@ namespace Nexus.Application.Services
             await _bookingRepository.Create(booking, ct);
             await _uow.SaveChanges();
 
-            return Result<InspectionBookingDto>.Success(MapInspectionBookingDto(booking));
+            return Result<InspectionBookingDto>.Success(MapToDto(booking));
         }
 
-        public async Task<Result<InspectionBookingDto>> CancelInspectionBookingAsync(Guid id, CancellationToken ct)
+        public async Task<Result<IReadOnlyList<InspectionBookingDto>>> GetMyBookingsAsync(CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
-            var booking = await _bookingRepository.GetInspectionBookingForUpdate(id, userId, ct);
-            if (booking == null)
-            {
-                return Result<InspectionBookingDto>.NotFound("BookingNotFound", "The specified booking was not found.");
-            }
+            var bookings = await _bookingRepository.GetByUserIdAsync(userId, ct);
+            var dtos = bookings.Select(MapToDto).ToList();
 
-            if (booking.Status != InspectionBookingStatus.Pending &&
-                booking.Status != InspectionBookingStatus.Confirmed)
-            {
-                return Result<InspectionBookingDto>.Conflict("InvalidBookingStatus", "Only pending or confirmed bookings can be cancelled.");
-            }
+            return Result<IReadOnlyList<InspectionBookingDto>>.Success(dtos);
+        }
+
+        public async Task<Result<InspectionBookingDto>> GetByIdAsync(Guid id, CancellationToken ct)
+        {
+            Guid.TryParse(_userContext.UserId, out var userId);
+
+            var booking = await _bookingRepository.GetByIdAsync(id, userId, ct);
+            if (booking is null)
+                return Result<InspectionBookingDto>.NotFound("BookingNotFound", "Booking not found.");
+
+            return Result<InspectionBookingDto>.Success(MapToDto(booking));
+        }
+
+        public async Task<Result<InspectionBookingDto>> CancelAsync(Guid id, CancellationToken ct)
+        {
+            Guid.TryParse(_userContext.UserId, out var userId);
+
+            var booking = await _bookingRepository.GetByIdForUpdateAsync(id, userId, ct);
+            if (booking is null)
+                return Result<InspectionBookingDto>.NotFound("BookingNotFound", "Booking not found.");
+
+            if (booking.Status != InspectionBookingStatus.Pending && booking.Status != InspectionBookingStatus.Confirmed)
+                return Result<InspectionBookingDto>.Conflict("InvalidStatus", "Only pending or confirmed bookings can be cancelled.");
 
             booking.Status = InspectionBookingStatus.Cancelled;
             booking.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
             await _uow.SaveChanges();
 
-            return Result<InspectionBookingDto>.Success(MapInspectionBookingDto(booking));
+            return Result<InspectionBookingDto>.Success(MapToDto(booking));
         }
 
-        public async Task<Result<InspectionBookingDto>> GetInspectionBookingByIdAsync(Guid id, CancellationToken ct)
+        private static InspectionBookingDto MapToDto(InspectionBooking booking) => new()
         {
-            Guid.TryParse(_userContext.UserId, out var userId);
-
-            var booking = await _bookingRepository.GetInspectionBookingById(id, userId, ct);
-
-            if (booking == null)
-                return Result<InspectionBookingDto>.NotFound("BookingNotFound", "The specified booking was not found.");
-
-            return Result<InspectionBookingDto>.Success(MapInspectionBookingDto(booking));
-        }
-
-        public async Task<Result<InspectionAvailabilityResponse>> CheckInspectionAvailabilityAsync(CheckInspectionAvailabilityRequest request, CancellationToken ct)
-        {
-            Guid.TryParse(_userContext.UserId, out var userId);
-
-            throw new NotImplementedException("CheckInspectionAvailabilityAsync is not implemented yet.");
-
-            //var booking = await _bookingRepository.GetInspectionBookingById(id, userId, ct);
-            //if (booking == null)
-            //    return Result<InspectionBookingDto>.NotFound("BookingNotFound", "The specified booking was not found.");
-
-
-            //var bookingContext = await _propertyRepository.GetBookingContext(request.PropertyId, request.ListingId, ct);
-            //if (bookingContext == null || bookingContext.PropertyIsActive == false)
-            //{
-            //    return Result<InspectionAvailabilityResponse>.NotFound("PropertyNotFound", "The specified property was not found or is inactive.");
-            //}
-
-            //if (bookingContext.ListingIsPublished == false || IsListingActive(bookingContext.ListingStatus) == false)
-            //{
-            //    return Result<InspectionAvailabilityResponse>.Conflict("ListingUnavailable", "The specified listing is not available for inspection booking.");
-            //}
-
-            //var hasConfirmedConflict = await _bookingRepository.HasOverlappingConfirmedBooking(request, userId, ct);
-            //if (hasConfirmedConflict)
-            //{
-            //    return Result<InspectionBookingDto>.Conflict("BookingConflict", "The requested inspection time overlaps an existing confirmed booking.");
-            //}
-            //return Result<InspectionAvailabilityResponse>.Success(new InspectionAvailabilityResponse
-            //{
-            //    IsAvailable = hasConfirmedConflict == false,
-            //    Message = hasConfirmedConflict
-            //        ? "The requested inspection time conflicts with an existing confirmed booking."
-            //        : "The requested inspection time is available."
-            //});
-        }
-
-        private static InspectionBookingDto MapInspectionBookingDto(InspectionBooking booking)
-        {
-            return new InspectionBookingDto
-            {
-                Id = booking.Id,
-                UserId = booking.UserId,
-                PropertyId = booking.PropertyId,
-                ListingId = booking.ListingId,
-                AgentId = booking.AgentId,               
-                Status = booking.Status.ToString(),
-                Notes = booking.Notes,
-                CreatedAtUtc = booking.CreatedAtUtc,
-                UpdatedAtUtc = booking.UpdatedAtUtc
-            };
-        }
+            Id = booking.Id,
+            UserId = booking.UserId,
+            InspectionSlotId = booking.InspectionSlotId,
+            PropertyId = booking.PropertyId,
+            ListingId = booking.ListingId,
+            AgentId = booking.AgentId,
+            Status = booking.Status.ToString(),
+            Notes = booking.Notes,
+            CreatedAtUtc = booking.CreatedAtUtc,
+            UpdatedAtUtc = booking.UpdatedAtUtc
+        };
     }
 }

@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Interfaces;
 
 namespace Nexus.Api.Controllers

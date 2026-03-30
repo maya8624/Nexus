@@ -1,5 +1,7 @@
-using FluentValidation;
+using Nexus.Application.Common;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.ReadModels;
@@ -10,23 +12,19 @@ namespace Nexus.Application.Services
     public class PropertyService : IPropertyService
     {
         private readonly IPropertyRepository _propertyRepository;
-        private readonly IUnitOfWork _uow;
 
-        public PropertyService(IPropertyRepository propertyRepository, IUnitOfWork uow)
+        public PropertyService(IPropertyRepository propertyRepository)
         {
             _propertyRepository = propertyRepository;
-            _uow = uow;
         }
 
-        public async Task<PropertyListResponse> GetProperties(PropertyQueryRequest request, CancellationToken ct)
+        public async Task<PropertyListResponse> GetPropertiesAsync(PropertyQueryRequest request, CancellationToken ct)
         {
             int? propertyTypeId = null;
-            if (string.IsNullOrWhiteSpace(request.Type) == false)
-            {
-                propertyTypeId =(int)Enum.Parse<PropertyTypeEnum>(request.Type, ignoreCase: true); 
-            }
+            if (!string.IsNullOrWhiteSpace(request.Type))
+                propertyTypeId = (int)Enum.Parse<PropertyTypeEnum>(request.Type, ignoreCase: true);
 
-            var (items, totalCount) = await _propertyRepository.GetPagedProperties(
+            var (items, totalCount) = await _propertyRepository.GetPagedAsync(
                 request.Skip,
                 request.PageSize,
                 propertyTypeId,
@@ -42,23 +40,22 @@ namespace Nexus.Application.Services
             };
         }
 
-        public async Task<PropertyDto?> GetPropertyById(Guid id, CancellationToken ct)
+        public async Task<Result<PropertyDto>> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            var property = await _propertyRepository.GetPropertyById(id, ct);
-            return property == null ? null : MapToDto(property);
+            var property = await _propertyRepository.GetByIdAsync(id, ct);
+            if (property is null)
+                return Result<PropertyDto>.NotFound("PropertyNotFound", "Property not found.");
+
+            return Result<PropertyDto>.Success(MapToDto(property));
         }
 
-        
         private static PropertyDto MapToDto(PropertyReadModel property)
         {
             var agentName = string.Join(" ", new[] { property.AgentFirstName, property.AgentLastName }
-                    .Where(x => string.IsNullOrWhiteSpace(x) == false));
+                .Where(x => !string.IsNullOrWhiteSpace(x)));
 
-            var addressLine = string.Join(", ", new[]
-            {
-                property.AddressLine1,
-                property.AddressLine2
-            }.Where(x => string.IsNullOrWhiteSpace(x) == false));
+            var addressLine = string.Join(", ", new[] { property.AddressLine1, property.AddressLine2 }
+                .Where(x => !string.IsNullOrWhiteSpace(x)));
 
             return new PropertyDto
             {
@@ -93,9 +90,7 @@ namespace Nexus.Application.Services
             };
         }
 
-        private static string FormatPrice(decimal price)
-        {
-            return price > 0 ? price.ToString("C0") : string.Empty;
-        }
+        private static string FormatPrice(decimal price) =>
+            price > 0 ? price.ToString("C0") : string.Empty;
     }
 }

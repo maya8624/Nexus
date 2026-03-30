@@ -1,4 +1,6 @@
 ﻿using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Application.ReadModels;
 
 namespace Nexus.Application.Interfaces.Business

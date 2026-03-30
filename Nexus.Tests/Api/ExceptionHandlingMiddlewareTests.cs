@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Nexus.Application.Constants;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Api.Middleware;
 using Nexus.Application.Exceptions;
 using System;

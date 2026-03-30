@@ -31,6 +31,8 @@ namespace Nexus.Domain.Entities
         public ICollection<InspectionBooking> InspectionBookings { get; set; } = new List<InspectionBooking>();
 
         public ICollection<ChatSession> ChatSessions { get; set; } = new List<ChatSession>();
+
+        public ICollection<InspectionSlot> CreatedSlots { get; set; } = new List<InspectionSlot>();
     }
 
 

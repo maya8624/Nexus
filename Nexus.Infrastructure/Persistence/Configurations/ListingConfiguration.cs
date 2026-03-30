@@ -50,13 +50,16 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.UpdatedAtUtc)
                 .IsRequired();
 
+            builder.Property(x => x.IsDeleted)
+                .HasDefaultValue(false);
+
             builder.HasOne(x => x.Property)
                 .WithMany(x => x.Listings)
                 .HasForeignKey(x => x.PropertyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Agent)
-               .WithMany(x => x.Listings)   
+               .WithMany(x => x.Listings)
                .HasForeignKey(x => x.AgentId)
                .OnDelete(DeleteBehavior.Restrict);
 

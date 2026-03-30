@@ -17,6 +17,8 @@ namespace Nexus.Domain.Entities
         //TODO: AgencyId
         public Guid AgentId { get; set; }
 
+        public Guid CreatedByUserId { get; set; }
+
         public DateTimeOffset StartAtUtc { get; set; }
 
         public DateTimeOffset EndAtUtc { get; set; }
@@ -27,8 +29,10 @@ namespace Nexus.Domain.Entities
 
         public string? Notes { get; set; }
 
+        public bool IsDeleted { get; set; }
+
         public DateTimeOffset CreatedAtUtc { get; set; }
-        
+
         public DateTimeOffset UpdatedAtUtc { get; set; }
 
         public byte[] RowVersion { get; set; } = [];
@@ -36,8 +40,10 @@ namespace Nexus.Domain.Entities
         public Property Property { get; set; } = null!;
 
         public Listing Listing { get; set; } = null!;
-        
+
         public Agent Agent { get; set; } = null!;
+
+        public User CreatedByUser { get; set; } = null!;
 
         public ICollection<InspectionBooking> InspectionBookings { get; set; } = [];
     }

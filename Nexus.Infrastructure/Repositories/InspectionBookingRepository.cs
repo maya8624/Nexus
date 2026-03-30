@@ -1,14 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Nexus.Application.Dtos;
+using Microsoft.EntityFrameworkCore;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Domain.Entities;
 using Nexus.Domain.Enums;
 using Nexus.Infrastructure.Persistence;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nexus.Infrastructure.Repositories
 {
@@ -21,46 +15,51 @@ namespace Nexus.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<InspectionBooking?> GetInspectionBookingById(Guid id, Guid userId, CancellationToken ct)
+        public async Task<InspectionBooking?> GetByIdAsync(Guid id, Guid userId, CancellationToken ct)
         {
             return await _context.InspectionBookings
                 .AsNoTracking()
-                .Where(x => x.Id == id)
-                .Where(x => x.UserId == userId)
+                .Where(x => x.Id == id && x.UserId == userId && x.IsDeleted == false)
                 .FirstOrDefaultAsync(ct);
         }
 
-        public async Task<InspectionBooking?> GetInspectionBookingForUpdate(Guid id, Guid userId, CancellationToken ct)
+        public async Task<InspectionBooking?> GetByIdForUpdateAsync(Guid id, Guid userId, CancellationToken ct)
         {
             return await _context.InspectionBookings
-                .Where(x => x.Id == id)
-                .Where(x => x.UserId == userId)
+                .Where(x => x.Id == id && x.UserId == userId && x.IsDeleted == false)
                 .FirstOrDefaultAsync(ct);
         }
 
-        public async Task<bool> HasDuplicateBooking(InspectionBookingRequest request, Guid userId, CancellationToken ct)
+        public async Task<IReadOnlyList<InspectionBooking>> GetByUserIdAsync(Guid userId, CancellationToken ct)
         {
             return await _context.InspectionBookings
                 .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .Where(x => x.PropertyId == request.PropertyId)
-                .Where(x => x.ListingId == request.ListingId)
-                .Where(x => x.Status != request.Status) // not cancelled
+                .Where(x => x.UserId == userId && x.IsDeleted == false)
+                .OrderByDescending(x => x.CreatedAtUtc)
+                .ToListAsync(ct);
+        }
+
+        public async Task<bool> HasActiveBookingForSlotAsync(Guid slotId, Guid userId, CancellationToken ct)
+        {
+            return await _context.InspectionBookings
+                .AsNoTracking()
+                .Where(x =>
+                    x.InspectionSlotId == slotId &&
+                    x.UserId == userId &&
+                    x.IsDeleted == false &&
+                    x.Status != InspectionBookingStatus.Cancelled)
                 .AnyAsync(ct);
         }
 
-        public async Task<bool> HasOverlappingConfirmedBooking(InspectionBookingRequest request, Guid userId, CancellationToken ct)
+        public async Task<int> GetConfirmedCountForSlotAsync(Guid slotId, CancellationToken ct)
         {
             return await _context.InspectionBookings
                 .AsNoTracking()
-                .Where(x => x.UserId == userId)
-                .Where(x => x.PropertyId == request.PropertyId)
-                .Where(x => x.ListingId == request.ListingId)
-                .Where(x => x.Status == InspectionBookingStatus.Confirmed)
-                //.Where(x => x.InspectionEndAtUtc.HasValue &&
-                //        request.InspectionStartAtUtc < x.InspectionEndAtUtc.Value &&
-                //        request.InspectionEndAtUtc > x.InspectionStartAtUtc)
-                .AnyAsync(ct);
+                .Where(x =>
+                    x.InspectionSlotId == slotId &&
+                    x.IsDeleted == false &&
+                    x.Status == InspectionBookingStatus.Confirmed)
+                .CountAsync(ct);
         }
     }
 }

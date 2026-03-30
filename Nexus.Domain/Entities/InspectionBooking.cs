@@ -21,13 +21,15 @@ namespace Nexus.Domain.Entities
 
         public Guid InspectionSlotId { get; set; }
 
-        public InspectionBookingStatus Status { get; set; } 
+        public InspectionBookingStatus Status { get; set; }
 
         public string? Notes { get; set; }
 
         public DateTimeOffset CreatedAtUtc { get; set; }
 
         public DateTimeOffset UpdatedAtUtc { get; set; }
+
+        public bool IsDeleted { get; set; }
 
         public byte[] RowVersion { get; set; } = [];
 

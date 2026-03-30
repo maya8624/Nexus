@@ -1,4 +1,6 @@
 ﻿using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
+using Nexus.Application.Dtos.Responses;
 using Nexus.Domain.Entities;
 using Nexus.Application.ReadModels;
 using Nexus.Application.Interfaces.Repository;

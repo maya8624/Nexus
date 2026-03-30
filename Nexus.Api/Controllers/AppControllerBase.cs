@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Nexus.Application.Common;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Responses;
 
 namespace Nexus.Api.Controllers
 {

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nexus.Infrastructure.Persistence.Configurations
 {
-    public class ChatSessionConfigurationExtensions : IEntityTypeConfiguration<ChatSession>
+    public class ChatSessionConfiguration : IEntityTypeConfiguration<ChatSession>
     {
         public void Configure(EntityTypeBuilder<ChatSession> builder)
         {

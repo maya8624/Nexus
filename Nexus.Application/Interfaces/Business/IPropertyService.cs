@@ -1,10 +1,13 @@
+using Nexus.Application.Common;
 using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
+using Nexus.Application.Dtos.Responses;
 
 namespace Nexus.Application.Interfaces.Business
 {
     public interface IPropertyService
     {
-        Task<PropertyListResponse> GetProperties(PropertyQueryRequest request, CancellationToken ct);
-        Task<PropertyDto?> GetPropertyById(Guid id, CancellationToken ct);
+        Task<PropertyListResponse> GetPropertiesAsync(PropertyQueryRequest request, CancellationToken ct);
+        Task<Result<PropertyDto>> GetByIdAsync(Guid id, CancellationToken ct);
     }
 }
