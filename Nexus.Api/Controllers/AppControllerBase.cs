@@ -19,9 +19,11 @@ namespace Nexus.Api.Controllers
             var statusCode = result.Status switch
             {
                 ResultStatus.ValidationError => StatusCodes.Status400BadRequest,
-                ResultStatus.NotFound => StatusCodes.Status404NotFound,
-                ResultStatus.Conflict => StatusCodes.Status409Conflict,
-                _ => StatusCodes.Status400BadRequest
+                ResultStatus.NotFound        => StatusCodes.Status404NotFound,
+                ResultStatus.Conflict        => StatusCodes.Status409Conflict,
+                ResultStatus.Unauthorized    => StatusCodes.Status401Unauthorized,
+                ResultStatus.Forbidden       => StatusCodes.Status403Forbidden,
+                _                            => StatusCodes.Status500InternalServerError
             };
 
             var firstError = result.Errors.FirstOrDefault();

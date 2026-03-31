@@ -43,6 +43,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IInspectionBookingRepository, InspectionBookingRepository>();
             services.AddScoped<IInspectionSlotService, InspectionSlotService>();
             services.AddScoped<IInspectionSlotRepository, InspectionSlotRepository>();
+            services.AddScoped<IAgentRepository, AgentRepository>();
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
             services.AddScoped<IValidator<RefundRequest>, RefundRequestValidator>();
             services.AddScoped<IValidator<OrderPaymentRequest>, OrderPaymentRequestValidator>();

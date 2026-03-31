@@ -28,21 +28,7 @@ namespace Nexus.Infrastructure.Repositories
                 .FirstOrDefaultAsync(ct);
         }
 
-        public async Task<bool> HasOverlappingSlotAsync(CreateInspectionSlotRequest request, CancellationToken ct)
-        {
-            return await _context.InspectionSlots
-                .AsNoTracking()
-                .Where(x =>
-                    x.PropertyId == request.PropertyId &&
-                    x.AgentId == request.AgentId &&
-                    x.IsDeleted == false &&
-                    x.Status != InspectionSlotStatus.Cancelled &&
-                    x.StartAtUtc < request.EndAtUtc &&
-                    x.EndAtUtc > request.StartAtUtc)
-                .AnyAsync(ct);
-        }
-
-        public async Task<bool> HasOverlappingSlotAsync(Guid propertyId, Guid agentId, DateTimeOffset startAtUtc, DateTimeOffset endAtUtc, CancellationToken ct, Guid excludeId)
+        public async Task<bool> HasConflictingSlotAsync(Guid propertyId, Guid agentId, DateTimeOffset startAtUtc, DateTimeOffset endAtUtc, CancellationToken ct, Guid? excludeId = null)
         {
             return await _context.InspectionSlots
                 .AsNoTracking()
@@ -53,18 +39,7 @@ namespace Nexus.Infrastructure.Repositories
                     x.Status != InspectionSlotStatus.Cancelled &&
                     x.StartAtUtc < endAtUtc &&
                     x.EndAtUtc > startAtUtc &&
-                    x.Id != excludeId)
-                .AnyAsync(ct);
-        }
-
-        public async Task<bool> HasActiveBookingsAsync(Guid slotId, CancellationToken ct)
-        {
-            return await _context.InspectionBookings
-                .AsNoTracking()
-                .Where(x =>
-                    x.InspectionSlotId == slotId &&
-                    x.IsDeleted == false &&
-                    (x.Status == InspectionBookingStatus.Pending || x.Status == InspectionBookingStatus.Confirmed))
+                    (excludeId == null || x.Id != excludeId))
                 .AnyAsync(ct);
         }
 

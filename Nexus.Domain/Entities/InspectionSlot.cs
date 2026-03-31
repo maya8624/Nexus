@@ -14,10 +14,10 @@ namespace Nexus.Domain.Entities
         public Guid ListingId { get; set; }
 
         public Guid PropertyId { get; set; }
-        //TODO: AgencyId
+
         public Guid AgentId { get; set; }
 
-        public Guid CreatedByUserId { get; set; }
+        public Guid UserId { get; set; }
 
         public DateTimeOffset StartAtUtc { get; set; }
 
@@ -43,7 +43,7 @@ namespace Nexus.Domain.Entities
 
         public Agent Agent { get; set; } = null!;
 
-        public User CreatedByUser { get; set; } = null!;
+        public User User { get; set; } = null!;
 
         public ICollection<InspectionBooking> InspectionBookings { get; set; } = [];
     }

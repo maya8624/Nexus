@@ -13,6 +13,7 @@ namespace Nexus.Application.Services
     public class InspectionSlotService : IInspectionSlotService
     {
         private readonly IInspectionSlotRepository _slotRepository;
+        private readonly IInspectionBookingRepository _bookingRepository;
         private readonly IAgentRepository _agentRepository;
         private readonly IPropertyRepository _propertyRepository;
         private readonly IUserContext _userContext;
@@ -20,12 +21,14 @@ namespace Nexus.Application.Services
 
         public InspectionSlotService(
             IInspectionSlotRepository slotRepository,
+            IInspectionBookingRepository bookingRepository,
             IAgentRepository agentRepository,
             IPropertyRepository propertyRepository,
             IUserContext userContext,
             IUnitOfWork uow)
         {
             _slotRepository = slotRepository;
+            _bookingRepository = bookingRepository;
             _agentRepository = agentRepository;
             _propertyRepository = propertyRepository;
             _userContext = userContext;
@@ -34,17 +37,17 @@ namespace Nexus.Application.Services
 
         public async Task<Guid> CreateAsync(CreateInspectionSlotRequest request, CancellationToken ct)
         {
-            Guid.TryParse(_userContext.UserId, out var createdByUserId);
+            Guid.TryParse(_userContext.UserId, out var userId);
 
             var agentExists = await _agentRepository.IsAny(x => x.Id == request.AgentId && x.IsActive, ct);
-            if (!agentExists)
+            if (agentExists == false)
                 throw new ArgumentException("Agent not found or inactive.");
 
             var propertyExists = await _propertyRepository.IsAny(x => x.Id == request.PropertyId && x.IsActive, ct);
-            if (!propertyExists)
+            if (propertyExists == false)
                 throw new ArgumentException("Property not found or inactive.");
 
-            var hasOverlap = await _slotRepository.HasOverlappingSlotAsync(request, ct);
+            var hasOverlap = await _slotRepository.HasConflictingSlotAsync(request.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, ct);
 
             if (hasOverlap)
                 throw new InvalidOperationException("Agent already has a slot that overlaps the requested time window for this property.");
@@ -56,7 +59,7 @@ namespace Nexus.Application.Services
                 PropertyId = request.PropertyId,
                 ListingId = request.ListingId ?? Guid.Empty,
                 AgentId = request.AgentId,
-                CreatedByUserId = createdByUserId,
+                UserId = userId,
                 StartAtUtc = request.StartAtUtc,
                 EndAtUtc = request.EndAtUtc,
                 Capacity = request.Capacity,
@@ -85,13 +88,7 @@ namespace Nexus.Application.Services
             if (!agentExists)
                 return Result<InspectionSlotDto>.NotFound("AgentNotFound", "Agent not found or inactive.");
 
-            var hasOverlap = await _slotRepository.HasOverlappingSlotAsync(
-                slot.PropertyId,
-                request.AgentId,
-                request.StartAtUtc,
-                request.EndAtUtc,
-                ct,
-                excludeId: id);
+            var hasOverlap = await _slotRepository.HasConflictingSlotAsync(slot.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, ct, excludeId: id);
 
             if (hasOverlap)
                 return Result<InspectionSlotDto>.Conflict("SlotOverlap", "Agent already has a slot that overlaps the requested time window.");
@@ -118,7 +115,7 @@ namespace Nexus.Application.Services
             if (slot.Status == InspectionSlotStatus.Cancelled)
                 return Result<InspectionSlotDto>.Conflict("SlotAlreadyCancelled", "Slot is already cancelled.");
 
-            var hasActiveBookings = await _slotRepository.HasActiveBookingsAsync(id, ct);
+            var hasActiveBookings = await _bookingRepository.HasActiveBookingsAsync(id, ct);
             if (hasActiveBookings)
                 return Result<InspectionSlotDto>.Conflict("ActiveBookingsExist", "Cannot cancel a slot with active bookings.");
 
@@ -169,7 +166,7 @@ namespace Nexus.Application.Services
             PropertyId = slot.PropertyId,
             ListingId = slot.ListingId,
             AgentId = slot.AgentId,
-            CreatedByUserId = slot.CreatedByUserId,
+            UserId = slot.UserId,
             StartAtUtc = slot.StartAtUtc,
             EndAtUtc = slot.EndAtUtc,
             Capacity = slot.Capacity,

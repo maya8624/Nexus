@@ -5,7 +5,9 @@ namespace Nexus.Application.Common
         Success = 0,
         ValidationError = 1,
         NotFound = 2,
-        Conflict = 3
+        Conflict = 3,
+        Unauthorized = 4,
+        Forbidden = 5
     }
 
     public sealed class ResultError
@@ -61,6 +63,16 @@ namespace Nexus.Application.Common
         public static Result<T> Conflict(string code, string message)
         {
             return new Result<T>(ResultStatus.Conflict, default, new[] { new ResultError(code, message) });
+        }
+
+        public static Result<T> Unauthorized(string code, string message)
+        {
+            return new Result<T>(ResultStatus.Unauthorized, default, new[] { new ResultError(code, message) });
+        }
+
+        public static Result<T> Forbidden(string code, string message)
+        {
+            return new Result<T>(ResultStatus.Forbidden, default, new[] { new ResultError(code, message) });
         }
     }
 }

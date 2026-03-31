@@ -7,10 +7,7 @@ namespace Nexus.Application.Interfaces.Repository
     public interface IInspectionSlotRepository : IRepositoryBase<InspectionSlot>
     {
         Task<InspectionSlot?> GetByIdForUpdateAsync(Guid id, CancellationToken ct);
-        Task<bool> HasOverlappingSlotAsync(CreateInspectionSlotRequest request, CancellationToken ct);
-        Task<bool> HasOverlappingSlotAsync(Guid propertyId, Guid agentId, DateTimeOffset startAtUtc, DateTimeOffset endAtUtc, CancellationToken ct, Guid excludeId);
-        Task<bool> HasActiveBookingsAsync(Guid slotId, CancellationToken ct);
-
+        Task<bool> HasConflictingSlotAsync(Guid propertyId, Guid agentId, DateTimeOffset startAtUtc, DateTimeOffset endAtUtc, CancellationToken ct, Guid? excludeId = null);
         Task<IReadOnlyList<AvailableInspectionSlotReadModel>> GetAvailableSlotsAsync(
             GetAvailableInspectionSlotsRequest request,
             CancellationToken ct);

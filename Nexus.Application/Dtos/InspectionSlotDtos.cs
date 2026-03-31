@@ -8,7 +8,7 @@ namespace Nexus.Application.Dtos
         public Guid ListingId { get; init; }
         public Guid PropertyId { get; init; }
         public Guid AgentId { get; init; }
-        public Guid CreatedByUserId { get; init; }
+        public Guid UserId { get; init; }
         public DateTimeOffset StartAtUtc { get; init; }
         public DateTimeOffset EndAtUtc { get; init; }
         public int Capacity { get; init; }

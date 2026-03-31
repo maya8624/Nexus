@@ -36,12 +36,15 @@ namespace Nexus.Application.Services
             Guid.TryParse(_userContext.UserId, out var userId);
 
             var userExists = await _userRepository.IsAny(x => x.Id == userId && x.IsActive, ct);
-            if (!userExists)
+            if (userExists == false)
                 return Result<InspectionBookingDto>.NotFound("UserNotFound", "User not found or inactive.");
 
             var slot = await _slotRepository.GetByIdForUpdateAsync(request.InspectionSlotId, ct);
-            if (slot is null || slot.Status != InspectionSlotStatus.Open)
-                return Result<InspectionBookingDto>.NotFound("SlotNotFound", "Inspection slot not found or not available.");
+            if (slot is null)
+                return Result<InspectionBookingDto>.NotFound("SlotNotFound", "Inspection slot not found.");
+
+            if (slot.Status != InspectionSlotStatus.Open)
+                return Result<InspectionBookingDto>.Conflict("SlotNotAvailable", "Inspection slot is not available for booking.");
 
             var confirmedCount = await _bookingRepository.GetConfirmedCountForSlotAsync(slot.Id, ct);
             if (confirmedCount >= slot.Capacity)

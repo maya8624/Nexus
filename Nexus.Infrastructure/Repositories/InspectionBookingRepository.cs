@@ -51,6 +51,17 @@ namespace Nexus.Infrastructure.Repositories
                 .AnyAsync(ct);
         }
 
+        public async Task<bool> HasActiveBookingsAsync(Guid slotId, CancellationToken ct)
+        {
+            return await _context.InspectionBookings
+                .AsNoTracking()
+                .Where(x =>
+                    x.InspectionSlotId == slotId &&
+                    x.IsDeleted == false &&
+                    (x.Status == InspectionBookingStatus.Pending || x.Status == InspectionBookingStatus.Confirmed))
+                .AnyAsync(ct);
+        }
+
         public async Task<int> GetConfirmedCountForSlotAsync(Guid slotId, CancellationToken ct)
         {
             return await _context.InspectionBookings
