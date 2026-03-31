@@ -157,8 +157,14 @@ namespace Nexus.Application.Services
             return Result<IReadOnlyList<InspectionSlotDto>>.Success(dtos);
         }
 
-        public Task<Result<InspectionSlotDto>> GetInspectionSlotByIdAsync(Guid id, CancellationToken ct)
-            => throw new NotImplementedException();
+        public async Task<Result<InspectionSlotDto>> GetInspectionSlotByIdAsync(Guid id, CancellationToken ct)
+        {
+            var slot = await _slotRepository.GetByIdAsync(id, ct);
+            if (slot is null)
+                return Result<InspectionSlotDto>.NotFound("SlotNotFound", "Inspection slot not found.");
+
+            return Result<InspectionSlotDto>.Success(MapToDto(slot));
+        }
 
         private static InspectionSlotDto MapToDto(InspectionSlot slot) => new()
         {

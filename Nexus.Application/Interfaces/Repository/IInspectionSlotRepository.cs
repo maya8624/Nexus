@@ -6,6 +6,9 @@ namespace Nexus.Application.Interfaces.Repository
 {
     public interface IInspectionSlotRepository : IRepositoryBase<InspectionSlot>
     {
+        // Public read — no userId filter. When agent dashboard or role-based access is needed,
+        // add GetByIdAsync(Guid id, Guid userId) or GetSlotsByAgentIdAsync(Guid agentId).
+        Task<InspectionSlot?> GetByIdAsync(Guid id, CancellationToken ct);
         Task<InspectionSlot?> GetByIdForUpdateAsync(Guid id, CancellationToken ct);
         Task<bool> HasConflictingSlotAsync(Guid propertyId, Guid agentId, DateTimeOffset startAtUtc, DateTimeOffset endAtUtc, CancellationToken ct, Guid? excludeId = null);
         Task<IReadOnlyList<AvailableInspectionSlotReadModel>> GetAvailableSlotsAsync(

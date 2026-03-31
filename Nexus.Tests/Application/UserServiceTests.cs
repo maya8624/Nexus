@@ -34,7 +34,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task RegisterEmailUser_ShouldReturnUserResponse_WhenEmailIsUnique()
+        public async Task RegisterEmailUser_WithUniqueEmail_ShouldReturnUserResponse()
         {
             // Arrange
             var email = "test@example.com";
@@ -72,7 +72,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task RegisterEmailUser_ShouldThrowUserException_WhenEmailAlreadyExists()
+        public async Task RegisterEmailUser_WithExistingEmail_ShouldThrowUserException()
         {
             // Arrange
             var email = "existing@example.com";
@@ -103,7 +103,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task RegisterEmailUser_ShouldHashPassword_BeforeStoringInDatabase()
+        public async Task RegisterEmailUser_WithPlaintextPassword_ShouldHashPasswordBeforeSaving()
         {
             // Arrange
             var email = "test@example.com";
@@ -134,7 +134,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task RegisterEmailUser_ShouldCreateUserWithCorrectProperties()
+        public async Task RegisterEmailUser_WithValidInput_ShouldCreateUserWithExpectedProperties()
         {
             // Arrange
             var email = "newuser@example.com";
@@ -171,7 +171,7 @@ namespace Nexus.Tests.Application
         [InlineData("user1@example.com", "Password123")]
         [InlineData("user2@test.com", "AnotherPassword456")]
         [InlineData("admin@company.com", "SuperSecure789")]
-        public async Task RegisterEmailUser_ShouldHandleMultipleValidInputs(string email, string password)
+        public async Task RegisterEmailUser_WithMultipleValidInputs_ShouldReturnUserResponse(string email, string password)
         {
             // Arrange
             var hashedPassword = $"hashed_{password}";
@@ -198,7 +198,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task RegisterEmailUser_ShouldReturnUserResponseWithGuidAsString()
+        public async Task RegisterEmailUser_WithValidInput_ShouldReturnGuidStringUserId()
         {
             // Arrange
             var email = "test@example.com";
@@ -226,7 +226,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task RegisterEmailUser_ShouldCallRepositoryCreateExactlyOnce()
+        public async Task RegisterEmailUser_WithValidInput_ShouldCallRepositoryCreateOnce()
         {
             // Arrange
             var email = "test@example.com";
@@ -255,7 +255,7 @@ namespace Nexus.Tests.Application
         #region Login Tests
 
         [Fact]
-        public async Task Login_ShouldReturnTrue_WhenCredentialsAreValid()
+        public async Task Login_WithValidCredentials_ShouldReturnTrue()
         {
             // Arrange
             var email = "test@example.com";
@@ -295,7 +295,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task Login_ShouldReturnFalse_WhenUserDoesNotExist()
+        public async Task Login_WithMissingUser_ShouldReturnFalse()
         {
             // Arrange
             var email = "nonexistent@example.com";
@@ -316,7 +316,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task Login_ShouldReturnFalse_WhenPasswordIsIncorrect()
+        public async Task Login_WithIncorrectPassword_ShouldReturnFalse()
         {
             // Arrange
             var email = "test@example.com";
@@ -350,7 +350,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task Login_ShouldCreateTokenWithCorrectParameters()
+        public async Task Login_WithValidCredentials_ShouldCreateTokenWithExpectedParameters()
         {
             // Arrange
             var email = "test@example.com";
@@ -392,7 +392,7 @@ namespace Nexus.Tests.Application
         [InlineData("user1@example.com", "Password123")]
         [InlineData("user2@test.com", "AnotherPassword456")]
         [InlineData("admin@company.com", "SuperSecure789")]
-        public async Task Login_ShouldHandleMultipleValidCredentials(string email, string password)
+        public async Task Login_WithMultipleValidCredentials_ShouldReturnTrue(string email, string password)
         {
             // Arrange
             var hashedPassword = $"hashed_{password}";
@@ -426,7 +426,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task Login_ShouldNotCreateToken_WhenUserNotFound()
+        public async Task Login_WithMissingUser_ShouldNotCreateToken()
         {
             // Arrange
             var email = "nonexistent@example.com";
@@ -447,7 +447,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task Login_ShouldNotCreateToken_WhenPasswordVerificationFails()
+        public async Task Login_WithFailedPasswordVerification_ShouldNotCreateToken()
         {
             // Arrange
             var email = "test@example.com";
@@ -481,7 +481,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task Login_ShouldCallGetByEmail_BeforeVerifyingPassword()
+        public async Task Login_WithAnyCredentials_ShouldQueryUserBeforeVerifyingPassword()
         {
             // Arrange
             var email = "test@example.com";
@@ -507,7 +507,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public async Task Login_ShouldVerifyPassword_BeforeCreatingToken()
+        public async Task Login_WithValidCredentials_ShouldVerifyPasswordBeforeCreatingToken()
         {
             // Arrange
             var email = "test@example.com";

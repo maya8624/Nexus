@@ -31,7 +31,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public void GetAuthProvider_ShouldReturnCorrectService_WhenProviderExists()
+        public void GetAuthProvider_WithRegisteredProvider_ShouldReturnExpectedService()
         {
             // Act
             var result = _factory.GetAuthProvider("google");
@@ -41,7 +41,7 @@ namespace Nexus.Tests.Application
         }
 
         [Fact]
-        public void GetAuthProvider_ShouldThrowException_WhenProviderDoesNotExist()
+        public void GetAuthProvider_WithUnknownProvider_ShouldThrowException()
         {
             // Act & Assert
             Assert.Throws<NotSupportedException>(() => _factory.GetAuthProvider("apple"));

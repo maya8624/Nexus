@@ -21,6 +21,14 @@ namespace Nexus.Infrastructure.Repositories
             _context = context;
         }
 
+        public async Task<InspectionSlot?> GetByIdAsync(Guid id, CancellationToken ct)
+        {
+            return await _context.InspectionSlots
+                .AsNoTracking()
+                .Where(x => x.Id == id && x.IsDeleted == false)
+                .FirstOrDefaultAsync(ct);
+        }
+
         public async Task<InspectionSlot?> GetByIdForUpdateAsync(Guid id, CancellationToken ct)
         {
             return await _context.InspectionSlots

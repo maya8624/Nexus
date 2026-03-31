@@ -24,7 +24,7 @@ namespace Nexus.Tests.Api
         [InlineData(typeof(PayPalException), NetworkStatusCodes.PayPalIssue, "PAYPAL_ISSUE")]
         [InlineData(typeof(PaymentException), CustomStatusCodes.PaymentIssue, "PAYMENT_ISSUE")]
         [InlineData(typeof(RefundException), CustomStatusCodes.RefundIssue, "REFUND_ISSUE")]
-        public async Task Middleware_Returns_AppException_Correctly(Type exceptionType, int expectedStatus, string expectedName)
+        public async Task InvokeAsync_WithAppException_ShouldReturnMappedErrorResponse(Type exceptionType, int expectedStatus, string expectedName)
         {
             // Arrange
             var context = new DefaultHttpContext();
@@ -62,7 +62,7 @@ namespace Nexus.Tests.Api
         }
 
         [Fact]
-        public async Task Middleware_Handles_Unexpected_Exception_As_500()
+        public async Task InvokeAsync_WithUnexpectedException_ShouldReturnInternalServerError()
         {
             // Arrange
             var context = new DefaultHttpContext();

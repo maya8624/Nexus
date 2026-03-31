@@ -21,7 +21,7 @@ namespace Nexus.Tests.Network
         [InlineData(HttpStatusCode.RequestTimeout, ApiFailureReason.Timeout)]
         [InlineData(HttpStatusCode.InternalServerError, ApiFailureReason.ServerError)]
         [InlineData((HttpStatusCode)499, ApiFailureReason.Unknown)]
-        public void Resolve_ReturnsExpectedFailureReason(HttpStatusCode statusCode, ApiFailureReason expected)
+        public void Resolve_WithKnownStatusCode_ShouldReturnExpectedFailureReason(HttpStatusCode statusCode, ApiFailureReason expected)
         {
             // Act
             var result = HttpStatusFailureMap.Resolve(statusCode);
