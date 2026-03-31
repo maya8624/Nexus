@@ -20,8 +20,11 @@ namespace Nexus.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateInspectionSlotRequest request, CancellationToken ct)
         {
-            var id = await _slotService.CreateAsync(request, ct);
-            return CreatedAtAction(nameof(GetById), new { id }, new { id });
+            var result = await _slotService.CreateAsync(request, ct);
+            if (result.IsSuccess)
+                return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
+
+            return MapFailure(result);
         }
 
         [AllowAnonymous]

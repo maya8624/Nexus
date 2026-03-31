@@ -1,0 +1,45 @@
+ POST /api/inspection-slots — Create slot                                                                                         {                                                                                                                              
+    "propertyId": "14ed6225-ddb3-41f0-a63d-18bd66170bec",                                                                        
+    "listingId": "ef7b944c-5d80-4cf3-8a4b-ba7003d71fe9", 
+    "agentId": "9bdcd19d-6b99-4dc6-856c-13e9974cd57d",
+    "startAtUtc": "2026-04-15T09:00:00Z",
+    "endAtUtc": "2026-04-15T10:00:00Z",
+    "capacity": 5,
+    "notes": "Test slot via Swagger"
+  }
+
+  PATCH /api/inspection-slots/aaaaaaaa-0001-0001-0001-aaaaaaaaaaaa
+  {
+    "agentId": "9bdcd19d-6b99-4dc6-856c-13e9974cd57d",
+    "startAtUtc": "2026-04-16T09:00:00Z",
+    "endAtUtc": "2026-04-16T10:00:00Z",
+    "capacity": 10,
+    "notes": "Updated notes"
+  }
+
+  PATCH /api/inspection-slots/aaaaaaaa-0003-0003-0003-aaaaaaaaaaaa/cancel
+  No body
+
+  GET /api/inspection-slots/available?listingId=ef7b944c-5d80-4cf3-8a4b-ba7003d71fe9
+  No body
+
+  GET /api/inspection-slots/aaaaaaaa-0001-0001-0001-aaaaaaaaaaaa
+  No body
+
+  ---
+  InspectionBooking Endpoints
+
+  POST /api/inspection-bookings — Book slot 2 as bob
+  {
+    "inspectionSlotId": "aaaaaaaa-0002-0002-0002-aaaaaaaaaaaa",
+    "notes": "Is the property pet friendly?"
+  }
+
+  GET /api/inspection-bookings/my
+  No body
+
+  GET /api/inspection-bookings/bbbbbbbb-0001-0001-0001-bbbbbbbbbbbb
+  No body
+
+  PATCH /api/inspection-bookings/bbbbbbbb-0002-0002-0002-bbbbbbbbbbbb/cancel
+  No body

@@ -90,11 +90,11 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             {
                 t.HasCheckConstraint(
                     "CK_inspection_slots_capacity_positive",
-                    "\"Capacity\" > 0");
+                    "capacity > 0");
 
                 t.HasCheckConstraint(
                     "CK_inspection_slots_end_after_start",
-                    "\"EndAtUtc\" > \"StartAtUtc\"");
+                    "end_at_utc > start_at_utc");
             });
         }
     }

@@ -35,22 +35,22 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
-        public async Task<Guid> CreateAsync(CreateInspectionSlotRequest request, CancellationToken ct)
+        public async Task<Result<InspectionSlotDto>> CreateAsync(CreateInspectionSlotRequest request, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
             var agentExists = await _agentRepository.IsAny(x => x.Id == request.AgentId && x.IsActive, ct);
             if (agentExists == false)
-                throw new ArgumentException("Agent not found or inactive.");
+                return Result<InspectionSlotDto>.NotFound("AgentNotFound", "Agent not found or inactive.");
 
             var propertyExists = await _propertyRepository.IsAny(x => x.Id == request.PropertyId && x.IsActive, ct);
             if (propertyExists == false)
-                throw new ArgumentException("Property not found or inactive.");
+                return Result<InspectionSlotDto>.NotFound("PropertyNotFound", "Property not found or inactive.");
 
             var hasOverlap = await _slotRepository.HasConflictingSlotAsync(request.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, ct);
 
             if (hasOverlap)
-                throw new InvalidOperationException("Agent already has a slot that overlaps the requested time window for this property.");
+                return Result<InspectionSlotDto>.Conflict("SlotOverlap", "Agent already has a slot that overlaps the requested time window for this property.");
 
             var now = DateTimeOffset.UtcNow;
             var slot = new InspectionSlot
@@ -72,7 +72,7 @@ namespace Nexus.Application.Services
             await _slotRepository.Create(slot, ct);
             await _uow.SaveChanges();
 
-            return slot.Id;
+            return Result<InspectionSlotDto>.Success(MapToDto(slot));
         }
 
         public async Task<Result<InspectionSlotDto>> Update(Guid id, UpdateInspectionSlotRequest request, CancellationToken ct)

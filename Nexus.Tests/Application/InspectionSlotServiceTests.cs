@@ -47,21 +47,23 @@ namespace Nexus.Tests.Application
         #region CreateAsync
 
         [Fact]
-        public async Task CreateSlot_WithMissingAgent_ShouldThrowArgumentException()
+        public async Task CreateSlot_WithMissingAgent_ShouldReturnNotFound()
         {
             _agentRepository
                 .Setup(x => x.IsAny(It.IsAny<Expression<Func<Agent, bool>>>(), Ct))
                 .ReturnsAsync(false);
 
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.CreateAsync(BuildCreateRequest(), Ct));
+            var result = await _service.CreateAsync(BuildCreateRequest(), Ct);
 
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ResultStatus.NotFound, result.Status);
+            Assert.Equal("AgentNotFound", Assert.Single(result.Errors).Code);
             _slotRepository.Verify(x => x.Create(It.IsAny<InspectionSlot>(), It.IsAny<CancellationToken>()), Times.Never);
             _uow.Verify(x => x.SaveChanges(), Times.Never);
         }
 
         [Fact]
-        public async Task CreateSlot_WithMissingProperty_ShouldThrowArgumentException()
+        public async Task CreateSlot_WithMissingProperty_ShouldReturnNotFound()
         {
             _agentRepository
                 .Setup(x => x.IsAny(It.IsAny<Expression<Func<Agent, bool>>>(), Ct))
@@ -71,16 +73,18 @@ namespace Nexus.Tests.Application
                 .Setup(x => x.IsAny(It.IsAny<Expression<Func<Property, bool>>>(), Ct))
                 .ReturnsAsync(false);
 
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                _service.CreateAsync(BuildCreateRequest(), Ct));
+            var result = await _service.CreateAsync(BuildCreateRequest(), Ct);
 
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ResultStatus.NotFound, result.Status);
+            Assert.Equal("PropertyNotFound", Assert.Single(result.Errors).Code);
             _slotRepository.Verify(x => x.HasConflictingSlotAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>(), It.IsAny<Guid?>()), Times.Never);
             _slotRepository.Verify(x => x.Create(It.IsAny<InspectionSlot>(), It.IsAny<CancellationToken>()), Times.Never);
             _uow.Verify(x => x.SaveChanges(), Times.Never);
         }
 
         [Fact]
-        public async Task CreateSlot_WithConflictingSlot_ShouldThrowInvalidOperationException()
+        public async Task CreateSlot_WithConflictingSlot_ShouldReturnConflict()
         {
             var request = BuildCreateRequest();
 
@@ -96,15 +100,17 @@ namespace Nexus.Tests.Application
                 .Setup(x => x.HasConflictingSlotAsync(request.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, Ct, null))
                 .ReturnsAsync(true);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _service.CreateAsync(request, Ct));
+            var result = await _service.CreateAsync(request, Ct);
 
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ResultStatus.Conflict, result.Status);
+            Assert.Equal("SlotOverlap", Assert.Single(result.Errors).Code);
             _slotRepository.Verify(x => x.Create(It.IsAny<InspectionSlot>(), It.IsAny<CancellationToken>()), Times.Never);
             _uow.Verify(x => x.SaveChanges(), Times.Never);
         }
 
         [Fact]
-        public async Task CreateSlot_WithValidInput_ShouldReturnNewSlotId()
+        public async Task CreateSlot_WithValidInput_ShouldReturnCreatedSlot()
         {
             var request = BuildCreateRequest();
             InspectionSlot? createdSlot = null;
@@ -130,9 +136,10 @@ namespace Nexus.Tests.Application
 
             var result = await _service.CreateAsync(request, Ct);
 
-            Assert.NotEqual(Guid.Empty, result);
+            Assert.True(result.IsSuccess);
             Assert.NotNull(createdSlot);
-            Assert.Equal(result, createdSlot!.Id);
+            Assert.NotNull(result.Value);
+            Assert.Equal(createdSlot!.Id, result.Value!.Id);
             Assert.Equal(request.PropertyId, createdSlot.PropertyId);
             Assert.Equal(request.ListingId, createdSlot.ListingId);
             Assert.Equal(request.AgentId, createdSlot.AgentId);
@@ -144,6 +151,16 @@ namespace Nexus.Tests.Application
             Assert.Equal("Front door access", createdSlot.Notes);
             Assert.True(createdSlot.CreatedAtUtc != default);
             Assert.Equal(createdSlot.CreatedAtUtc, createdSlot.UpdatedAtUtc);
+            Assert.Equal(createdSlot.Id, result.Value.Id);
+            Assert.Equal(createdSlot.PropertyId, result.Value.PropertyId);
+            Assert.Equal(createdSlot.ListingId, result.Value.ListingId);
+            Assert.Equal(createdSlot.AgentId, result.Value.AgentId);
+            Assert.Equal(createdSlot.UserId, result.Value.UserId);
+            Assert.Equal(createdSlot.StartAtUtc, result.Value.StartAtUtc);
+            Assert.Equal(createdSlot.EndAtUtc, result.Value.EndAtUtc);
+            Assert.Equal(createdSlot.Capacity, result.Value.Capacity);
+            Assert.Equal(createdSlot.Status.ToString(), result.Value.Status);
+            Assert.Equal(createdSlot.Notes, result.Value.Notes);
             _slotRepository.Verify(x => x.HasConflictingSlotAsync(request.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, Ct, null), Times.Once);
             _slotRepository.Verify(x => x.Create(It.IsAny<InspectionSlot>(), Ct), Times.Once);
             _uow.Verify(x => x.SaveChanges(), Times.Once);
