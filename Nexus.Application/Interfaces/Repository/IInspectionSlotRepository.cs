@@ -12,10 +12,7 @@ namespace Nexus.Application.Interfaces.Repository
         Task<bool> HasActiveBookingsAsync(Guid slotId, CancellationToken ct);
 
         Task<IReadOnlyList<AvailableInspectionSlotReadModel>> GetAvailableSlotsAsync(
-            Guid listingId,
-            DateTimeOffset fromUtc,
-            DateTimeOffset toUtc,
-            int limit,
+            GetAvailableInspectionSlotsRequest request,
             CancellationToken ct);
     }
 }

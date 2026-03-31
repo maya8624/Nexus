@@ -69,20 +69,17 @@ namespace Nexus.Infrastructure.Repositories
         }
 
         public async Task<IReadOnlyList<AvailableInspectionSlotReadModel>> GetAvailableSlotsAsync(
-            Guid listingId,
-            DateTimeOffset fromUtc,
-            DateTimeOffset toUtc,
-            int limit,
+            GetAvailableInspectionSlotsRequest request,
             CancellationToken ct)
         {
             var query = _context.InspectionSlots
                 .AsNoTracking()
                 .Where(x =>
-                    x.ListingId == listingId &&
+                    x.ListingId == request.ListingId &&
                     x.IsDeleted == false &&
                     x.Status == InspectionSlotStatus.Open &&
-                    x.StartAtUtc >= fromUtc &&
-                    x.StartAtUtc <= toUtc &&
+                    x.StartAtUtc >= request.FromUtc &&
+                    x.StartAtUtc <= request.ToUtc &&
                     x.Listing.IsDeleted == false &&
                     x.Listing.Status == ListingStatus.Active)
                 .Select(x => new
@@ -94,7 +91,7 @@ namespace Nexus.Infrastructure.Repositories
                 })
                 .Where(x => x.ActiveBookingCount < x.Slot.Capacity)
                 .OrderBy(x => x.Slot.StartAtUtc)
-                .Take(limit)
+                .Take(request.Limit!.Value)
                 .Select(x => new AvailableInspectionSlotReadModel
                 {
                     InspectionSlotId = x.Slot.Id,

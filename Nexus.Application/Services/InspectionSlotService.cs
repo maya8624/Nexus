@@ -1,4 +1,5 @@
 using Nexus.Application.Common;
+using Nexus.Application.Constants;
 using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Interfaces;
@@ -130,8 +131,34 @@ namespace Nexus.Application.Services
             return Result<InspectionSlotDto>.Success(MapToDto(slot));
         }
 
-        public Task<Result<IReadOnlyList<InspectionSlotDto>>> GetAvailableSlotsAsync(Guid listingId, CancellationToken ct)
-            => throw new NotImplementedException();
+        public async Task<Result<IReadOnlyList<InspectionSlotDto>>> GetAvailableSlotsAsync(Guid listingId, CancellationToken ct)
+        {
+            var now = DateTimeOffset.UtcNow;
+            var request = new GetAvailableInspectionSlotsRequest
+            {
+                ListingId = listingId,
+                FromUtc = now,
+                ToUtc = now.AddDays(InspectionSlotConstants.AvailabilityWindowDays),
+                Limit = InspectionSlotConstants.AvailableSlotsMaxResults
+            };
+
+            var slots = await _slotRepository.GetAvailableSlotsAsync(request, ct);
+
+            var dtos = slots.Select(s => new InspectionSlotDto
+            {
+                Id = s.InspectionSlotId,
+                ListingId = s.ListingId,
+                PropertyId = s.PropertyId,
+                AgentId = s.AgentId,
+                StartAtUtc = s.StartAtUtc,
+                EndAtUtc = s.EndAtUtc,
+                Capacity = s.Capacity,
+                Status = s.Status.ToString(),
+                Notes = s.Notes
+            }).ToList();
+
+            return Result<IReadOnlyList<InspectionSlotDto>>.Success(dtos);
+        }
 
         public Task<Result<InspectionSlotDto>> GetInspectionSlotByIdAsync(Guid id, CancellationToken ct)
             => throw new NotImplementedException();
