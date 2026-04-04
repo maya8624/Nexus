@@ -19,6 +19,7 @@ namespace Nexus.Application.Services
         private readonly IDepositRepository _depositRepository;
         private readonly IUnitOfWork _uow;
         private readonly IEmailService _emailService;
+        private readonly IListingRepository _listingRepository;
         private readonly IPropertyRepository _propertyRepository;
         private readonly ILogger<DepositService> _logger;
         private readonly StripeSettings _stripeSettings;
@@ -29,6 +30,7 @@ namespace Nexus.Application.Services
             IDepositRepository depositRepository,
             IUnitOfWork uow,
             IEmailService emailService,
+            IListingRepository listingRepository,
             IPropertyRepository propertyRepository,
             ILogger<DepositService> logger,
             IOptions<StripeSettings> stripeSettings,
@@ -42,6 +44,7 @@ namespace Nexus.Application.Services
             _stripeSettings = stripeSettings.Value;
             _sessionService = sessionService;
             _userContext = userContext;
+            _listingRepository = listingRepository;
             _propertyRepository = propertyRepository;
         }
 
@@ -50,22 +53,18 @@ namespace Nexus.Application.Services
             Guid.TryParse(_userContext.UserId, out var userId);
 
             var existingDeposit = await _depositRepository.GetByClientIdempotencyKeyAsync(userId, request.IdempotencyKey, ct);
-            if (existingDeposit != null)
+            if (existingDeposit?.StripeSessionUrl != null)
                 return Result<DepositResponse>.Success(MapDeposit(existingDeposit));
 
             var property = await _propertyRepository.GetByIdAsync(request.PropertyId, ct);
             if (property == null)
                 return Result<DepositResponse>.NotFound("PropertyNotFound", "Property was not found.");
 
-            //var listing = await _listingRepository.GetByIdAsync(request.ListingId, ct);
-            //if (listing == null || listing.IsDeleted || listing.IsPublished == false)
-            //    return Result<DepositResponse>.NotFound("ListingNotFound", "Active published listing was not found.");
+            var listing = await _listingRepository.GetByTypeAsync(ListingType.Rent, request.ListingId, ct);
+            if (listing == null || listing.IsPublished == false)
+                return Result<DepositResponse>.NotFound("ListingNotFound", "Active published listing was not found.");
 
-            //if (listing.PropertyId != request.PropertyId)
-            //    return Result<DepositResponse>.ValidationError(
-            //        new ResultError("ListingPropertyMismatch", "Listing does not belong to the specified property."));
-
-            var deposit = new Deposit
+            var deposit = existingDeposit ?? new Deposit
             {
                 Id = Guid.NewGuid(),
                 PropertyId = request.PropertyId,
@@ -79,15 +78,36 @@ namespace Nexus.Application.Services
                 UpdatedAtUtc = DateTimeOffset.UtcNow
             };
 
-            await _depositRepository.Create(deposit, ct);
+            if (existingDeposit == null)
+            {
+                await _depositRepository.Create(deposit, ct);
+                await _uow.SaveChanges();
+            }
+
+            SessionCreateOptions sessionOptions = CreateSessionOptions(property, deposit);
+
+            var session = await _sessionService.CreateAsync(
+                sessionOptions,
+                new RequestOptions { IdempotencyKey = $"checkout-session-deposit-{deposit.Id}" },
+                ct);
+
+            deposit.StripeSessionId = session.Id;
+            deposit.StripeSessionUrl = session.Url;
+
+            _depositRepository.Update(deposit);
             await _uow.SaveChanges();
 
-            var sessionOptions = new SessionCreateOptions
+            return Result<DepositResponse>.Success(MapDeposit(deposit));
+        }
+
+        private SessionCreateOptions CreateSessionOptions(ReadModels.PropertyReadModel property, Deposit deposit)
+        {
+            return new SessionCreateOptions
             {
                 PaymentMethodTypes = ["card"],
                 LineItems =
-                [
-                    new SessionLineItemOptions
+                            [
+                                new SessionLineItemOptions
                     {
                         PriceData = new SessionLineItemPriceDataOptions
                         {
@@ -101,7 +121,7 @@ namespace Nexus.Application.Services
                         },
                         Quantity = 1
                     }
-                ],
+                            ],
                 Mode = "payment",
                 CustomerEmail = _userContext.Email,
                 SuccessUrl = _stripeSettings.SuccessUrl,
@@ -111,19 +131,8 @@ namespace Nexus.Application.Services
                     ["deposit_id"] = deposit.Id.ToString()
                 }
             };
-
-            var session = await _sessionService.CreateAsync(
-                sessionOptions,
-                new RequestOptions { IdempotencyKey = $"checkout-session-deposit-{deposit.Id}" },
-                ct);
-
-            deposit.StripeSessionId = session.Id;
-            deposit.StripeSessionUrl = session.Url;
-            _depositRepository.Update(deposit);
-            await _uow.SaveChanges();
-
-            return Result<DepositResponse>.Success(MapDeposit(deposit));
         }
+
 
         public async Task FulfillDepositAsync(string stripeSessionId, CancellationToken ct)
         {
