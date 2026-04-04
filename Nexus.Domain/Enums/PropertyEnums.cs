@@ -56,4 +56,12 @@ namespace Nexus.Domain.Enums
         Closed = 2,
         Cancelled = 3
     }
+
+    public enum DepositStatus
+    {
+        Pending = 1,
+        Paid = 2,
+        Refunded = 3,
+        Failed = 4
+    }
 }

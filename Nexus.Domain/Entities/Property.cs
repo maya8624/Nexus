@@ -55,5 +55,7 @@ namespace Nexus.Domain.Entities
         public ICollection<InspectionBooking> InspectionBookings { get; set; } = new List<InspectionBooking>();
 
         public ICollection<InspectionSlot> InspectionSlots { get; set; } = new List<InspectionSlot>();
+
+        public ICollection<Deposit> Deposits { get; set; } = new List<Deposit>();
     }
 }

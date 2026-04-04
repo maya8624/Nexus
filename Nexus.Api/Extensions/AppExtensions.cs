@@ -15,9 +15,9 @@ using Nexus.Network.Services;
 namespace Nexus.Application.Extensions
 {
     public static class AppExtensions
-    {   
+    {
         public static void AddApplicationServices(this IServiceCollection services)
-        {            
+        {
             services.AddHttpClient();
             services.AddControllers();
 
@@ -27,13 +27,13 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IPropertyService, PropertyService>();
-            services.AddScoped<IPaymentService, PaymentServcie>();
             services.AddScoped<IPayPalService, PayPalService>();
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IPropertyRepository, PropertyRepository>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IListingRepository, ListingRepository>();
             services.AddScoped<IAuthServiceFactory, AuthServiceFactory>();
             services.AddScoped<IAuthService, AuthGoogleService>();
             services.AddScoped<ITokenService, TokenService>();
@@ -43,10 +43,14 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IInspectionBookingRepository, InspectionBookingRepository>();
             services.AddScoped<IInspectionSlotService, InspectionSlotService>();
             services.AddScoped<IInspectionSlotRepository, InspectionSlotRepository>();
+            services.AddScoped<IDepositService, DepositService>();
+            services.AddScoped<IDepositRepository, DepositRepository>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IAgentRepository, AgentRepository>();
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
             services.AddScoped<IValidator<RefundRequest>, RefundRequestValidator>();
             services.AddScoped<IValidator<OrderPaymentRequest>, OrderPaymentRequestValidator>();
+            services.AddScoped<IValidator<CreateDepositRequest>, CreateDepositRequestValidator>();
             services.AddScoped<IValidator<EmailLoginRequest>, EmailLoginRequestValidator>();
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
             services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();

@@ -1,9 +1,6 @@
-﻿using Nexus.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Nexus.Application.Common;
+using Nexus.Application.Dtos.Requests;
+using Nexus.Application.Dtos.Responses;
 
 namespace Nexus.Application.Interfaces.Business
 {

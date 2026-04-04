@@ -26,6 +26,7 @@ namespace Nexus.Infrastructure.Persistence
         public DbSet<Listing> Listings => Set<Listing>();
         public DbSet<PropertyAddress> PropertyAddresses => Set<PropertyAddress>();
         public DbSet<Property> Properties => Set<Property>();
+        public DbSet<Deposit> Deposits => Set<Deposit>();
         public DbSet<PropertyImage> PropertyImages => Set<PropertyImage>();
         public DbSet<PropertyType> PropertyTypes => Set<PropertyType>();
         public DbSet<SavedProperty> SavedProperties => Set<SavedProperty>();

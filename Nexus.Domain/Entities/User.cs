@@ -33,6 +33,8 @@ namespace Nexus.Domain.Entities
         public ICollection<ChatSession> ChatSessions { get; set; } = new List<ChatSession>();
 
         public ICollection<InspectionSlot> CreatedSlots { get; set; } = new List<InspectionSlot>();
+
+        public ICollection<Deposit> Deposits { get; set; } = new List<Deposit>();
     }
 
 

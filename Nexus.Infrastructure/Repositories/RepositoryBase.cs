@@ -32,10 +32,10 @@ namespace Nexus.Infrastructure.Repositories
 
         public async Task<T?> Find(int id, CancellationToken ct)
             => await _dbSet.FindAsync(id, ct);
-         
+
         public async Task<bool> IsAny(Expression<Func<T, bool>> expression, CancellationToken ct)
             => await _dbSet.AnyAsync(expression, ct);
-           
+
         public void Update(T entity)
             => _dbSet.Update(entity);
     }
