@@ -36,17 +36,17 @@ namespace Nexus.Infrastructure.Repositories
                 .FirstOrDefaultAsync(ct);
         }
 
-        public async Task<bool> HasConflictingSlotAsync(Guid propertyId, Guid agentId, DateTimeOffset startAtUtc, DateTimeOffset endAtUtc, CancellationToken ct, Guid? excludeId = null)
+        public async Task<bool> HasConflictingSlotAsync(InspectionSlotRequest request, CancellationToken ct, Guid? excludeId = null)
         {
             return await _context.InspectionSlots
                 .AsNoTracking()
                 .Where(x =>
-                    x.PropertyId == propertyId &&
-                    x.AgentId == agentId &&
+                    x.PropertyId == request.PropertyId &&
+                    x.AgentId == request.AgentId &&
                     x.IsDeleted == false &&
                     x.Status != InspectionSlotStatus.Cancelled &&
-                    x.StartAtUtc < endAtUtc &&
-                    x.EndAtUtc > startAtUtc &&
+                    x.StartAtUtc < request.EndAtUtc &&
+                    x.EndAtUtc > request.StartAtUtc &&
                     (excludeId == null || x.Id != excludeId))
                 .AnyAsync(ct);
         }

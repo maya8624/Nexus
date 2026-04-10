@@ -43,7 +43,8 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.UpdatedAtUtc)
                 .IsRequired();
 
-            builder.Property(x => x.RowVersion)
+            builder.Property<uint>("xmin")
+                .HasColumnType("xid")
                 .IsRowVersion();
 
             builder.Property(x => x.IsDeleted)

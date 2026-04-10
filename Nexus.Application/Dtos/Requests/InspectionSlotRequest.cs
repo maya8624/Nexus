@@ -6,7 +6,7 @@ using FluentValidation;
 
 namespace Nexus.Application.Dtos.Requests
 {
-    public sealed class CreateInspectionSlotRequest
+    public sealed class InspectionSlotRequest
     {
         public Guid PropertyId { get; init; }
         public Guid? ListingId { get; init; }
@@ -17,9 +17,9 @@ namespace Nexus.Application.Dtos.Requests
         public string? Notes { get; init; }
     }
 
-    public sealed class CreateInspectionSlotRequestValidator : AbstractValidator<CreateInspectionSlotRequest>
+    public sealed class InspectionSlotRequestValidator : AbstractValidator<InspectionSlotRequest>
     {
-        public CreateInspectionSlotRequestValidator()
+        public InspectionSlotRequestValidator()
         {
             RuleFor(x => x.PropertyId)
                 .NotEmpty();

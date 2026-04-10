@@ -78,7 +78,7 @@ namespace Nexus.Tests.Application
             Assert.False(result.IsSuccess);
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("PropertyNotFound", Assert.Single(result.Errors).Code);
-            _slotRepository.Verify(x => x.HasConflictingSlotAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>(), It.IsAny<Guid?>()), Times.Never);
+            _slotRepository.Verify(x => x.HasConflictingSlotAsync(It.IsAny<InspectionSlotRequest>(), It.IsAny<CancellationToken>(), It.IsAny<Guid?>()), Times.Never);
             _slotRepository.Verify(x => x.Create(It.IsAny<InspectionSlot>(), It.IsAny<CancellationToken>()), Times.Never);
             _uow.Verify(x => x.SaveChanges(), Times.Never);
         }
@@ -97,7 +97,7 @@ namespace Nexus.Tests.Application
                 .ReturnsAsync(true);
 
             _slotRepository
-                .Setup(x => x.HasConflictingSlotAsync(request.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, Ct, null))
+                .Setup(x => x.HasConflictingSlotAsync(request, Ct, null))
                 .ReturnsAsync(true);
 
             var result = await _service.CreateAsync(request, Ct);
@@ -124,7 +124,7 @@ namespace Nexus.Tests.Application
                 .ReturnsAsync(true);
 
             _slotRepository
-                .Setup(x => x.HasConflictingSlotAsync(request.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, Ct, null))
+                .Setup(x => x.HasConflictingSlotAsync(request, Ct, null))
                 .ReturnsAsync(false);
 
             _slotRepository
@@ -161,7 +161,7 @@ namespace Nexus.Tests.Application
             Assert.Equal(createdSlot.Capacity, result.Value.Capacity);
             Assert.Equal(createdSlot.Status.ToString(), result.Value.Status);
             Assert.Equal(createdSlot.Notes, result.Value.Notes);
-            _slotRepository.Verify(x => x.HasConflictingSlotAsync(request.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, Ct, null), Times.Once);
+            _slotRepository.Verify(x => x.HasConflictingSlotAsync(request, Ct, null), Times.Once);
             _slotRepository.Verify(x => x.Create(It.IsAny<InspectionSlot>(), Ct), Times.Once);
             _uow.Verify(x => x.SaveChanges(), Times.Once);
         }
@@ -213,7 +213,7 @@ namespace Nexus.Tests.Application
 
             Assert.False(result.IsSuccess);
             Assert.Equal(ResultStatus.NotFound, result.Status);
-            _slotRepository.Verify(x => x.HasConflictingSlotAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>(), It.IsAny<Guid?>()), Times.Never);
+            _slotRepository.Verify(x => x.HasConflictingSlotAsync(It.IsAny<InspectionSlotRequest>(), It.IsAny<CancellationToken>(), It.IsAny<Guid?>()), Times.Never);
             _uow.Verify(x => x.SaveChanges(), Times.Never);
         }
 
@@ -231,7 +231,7 @@ namespace Nexus.Tests.Application
                 .ReturnsAsync(true);
 
             _slotRepository
-                .Setup(x => x.HasConflictingSlotAsync(PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, Ct, SlotId))
+                .Setup(x => x.HasConflictingSlotAsync(It.Is<InspectionSlotRequest>(r => r.PropertyId == PropertyId && r.AgentId == request.AgentId && r.StartAtUtc == request.StartAtUtc && r.EndAtUtc == request.EndAtUtc), Ct, SlotId))
                 .ReturnsAsync(true);
 
             var result = await _service.Update(SlotId, request, Ct);
@@ -258,7 +258,7 @@ namespace Nexus.Tests.Application
                 .ReturnsAsync(true);
 
             _slotRepository
-                .Setup(x => x.HasConflictingSlotAsync(PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, Ct, SlotId))
+                .Setup(x => x.HasConflictingSlotAsync(It.Is<InspectionSlotRequest>(r => r.PropertyId == PropertyId && r.AgentId == request.AgentId && r.StartAtUtc == request.StartAtUtc && r.EndAtUtc == request.EndAtUtc), Ct, SlotId))
                 .ReturnsAsync(false);
 
             _uow.Setup(x => x.SaveChanges()).ReturnsAsync(1);
@@ -278,7 +278,7 @@ namespace Nexus.Tests.Application
             Assert.Equal(request.Capacity, slot.Capacity);
             Assert.Equal("Bring brochure", slot.Notes);
             Assert.True(slot.UpdatedAtUtc >= previousUpdatedAtUtc);
-            _slotRepository.Verify(x => x.HasConflictingSlotAsync(PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, Ct, SlotId), Times.Once);
+            _slotRepository.Verify(x => x.HasConflictingSlotAsync(It.Is<InspectionSlotRequest>(r => r.PropertyId == PropertyId && r.AgentId == request.AgentId && r.StartAtUtc == request.StartAtUtc && r.EndAtUtc == request.EndAtUtc), Ct, SlotId), Times.Once);
             _slotRepository.Verify(x => x.Update(slot), Times.Once);
             _uow.Verify(x => x.SaveChanges(), Times.Once);
         }
@@ -418,7 +418,7 @@ namespace Nexus.Tests.Application
 
         #region Helpers
 
-        private static CreateInspectionSlotRequest BuildCreateRequest() => new()
+        private static InspectionSlotRequest BuildCreateRequest() => new()
         {
             PropertyId = PropertyId,
             ListingId = ListingId,
@@ -450,8 +450,7 @@ namespace Nexus.Tests.Application
             Capacity = 5,
             Status = status,
             CreatedAtUtc = DateTimeOffset.UtcNow,
-            UpdatedAtUtc = DateTimeOffset.UtcNow,
-            RowVersion = []
+            UpdatedAtUtc = DateTimeOffset.UtcNow
         };
 
         #endregion
