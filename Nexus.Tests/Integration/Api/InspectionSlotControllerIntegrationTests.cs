@@ -24,6 +24,7 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
         using var scope = CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seed = await SeedDataBuilder.SeedAsync(db, PropertyTypeId);
+        JwtTokenHelper.AuthenticateClient(Client, seed.UserId, seed.UserEmail);
 
         var request = new InspectionSlotRequest
         {
@@ -56,10 +57,12 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
         using var scope = CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seed = await SeedDataBuilder.SeedAsync(db, PropertyTypeId);
+        JwtTokenHelper.AuthenticateClient(Client, seed.UserId, seed.UserEmail);
 
         var request = new InspectionSlotRequest
         {
             PropertyId = seed.PropertyId,
+            ListingId = seed.ListingId,
             AgentId = seed.AgentId,
             StartAtUtc = DateTimeOffset.UtcNow.AddDays(3),
             EndAtUtc = DateTimeOffset.UtcNow.AddDays(3).AddHours(1),

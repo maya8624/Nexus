@@ -56,7 +56,7 @@ namespace Nexus.Application.Services
             {
                 Id = Guid.NewGuid(),
                 PropertyId = request.PropertyId,
-                ListingId = request.ListingId ?? Guid.Empty,
+                ListingId = request.ListingId,
                 AgentId = request.AgentId,
                 UserId = userId,
                 StartAtUtc = request.StartAtUtc,

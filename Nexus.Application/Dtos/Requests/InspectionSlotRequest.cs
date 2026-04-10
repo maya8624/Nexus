@@ -9,7 +9,7 @@ namespace Nexus.Application.Dtos.Requests
     public sealed class InspectionSlotRequest
     {
         public Guid PropertyId { get; init; }
-        public Guid? ListingId { get; init; }
+        public Guid ListingId { get; init; }
         public Guid AgentId { get; init; }
         public DateTimeOffset StartAtUtc { get; init; }
         public DateTimeOffset EndAtUtc { get; init; }
@@ -22,6 +22,9 @@ namespace Nexus.Application.Dtos.Requests
         public InspectionSlotRequestValidator()
         {
             RuleFor(x => x.PropertyId)
+                .NotEmpty();
+
+            RuleFor(x => x.ListingId)
                 .NotEmpty();
 
             RuleFor(x => x.AgentId)
