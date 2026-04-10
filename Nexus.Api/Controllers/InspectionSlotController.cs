@@ -17,8 +17,8 @@ namespace Nexus.Api.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateInspectionSlotRequest request, CancellationToken ct)
+        [HttpPost()]
+        public async Task<IActionResult> Create([FromBody] InspectionSlotRequest request, CancellationToken ct)
         {
             var result = await _slotService.CreateAsync(request, ct);
             if (result.IsSuccess)

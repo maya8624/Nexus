@@ -8,6 +8,7 @@ using Nexus.Infrastructure.Persistence;
 using Nexus.Tests.Integration.Helpers;
 using System.Net;
 using System.Net.Http.Json;
+using Xunit;
 
 namespace Nexus.Tests.Integration.Api;
 

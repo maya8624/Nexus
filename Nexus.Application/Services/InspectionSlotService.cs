@@ -35,7 +35,7 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
-        public async Task<Result<InspectionSlotDto>> CreateAsync(CreateInspectionSlotRequest request, CancellationToken ct)
+        public async Task<Result<InspectionSlotDto>> CreateAsync(InspectionSlotRequest request, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
@@ -47,8 +47,7 @@ namespace Nexus.Application.Services
             if (propertyExists == false)
                 return Result<InspectionSlotDto>.NotFound("PropertyNotFound", "Property not found or inactive.");
 
-            var hasOverlap = await _slotRepository.HasConflictingSlotAsync(request.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, ct);
-
+            var hasOverlap = await _slotRepository.HasConflictingSlotAsync(request, ct);
             if (hasOverlap)
                 return Result<InspectionSlotDto>.Conflict("SlotOverlap", "Agent already has a slot that overlaps the requested time window for this property.");
 
@@ -85,11 +84,20 @@ namespace Nexus.Application.Services
                 return Result<InspectionSlotDto>.Conflict("SlotCancelled", "A cancelled slot cannot be updated.");
 
             var agentExists = await _agentRepository.IsAny(x => x.Id == request.AgentId && x.IsActive, ct);
-            if (!agentExists)
+            if (agentExists == false)
                 return Result<InspectionSlotDto>.NotFound("AgentNotFound", "Agent not found or inactive.");
 
-            var hasOverlap = await _slotRepository.HasConflictingSlotAsync(slot.PropertyId, request.AgentId, request.StartAtUtc, request.EndAtUtc, ct, excludeId: id);
+            var inspectionSlotRequest = new InspectionSlotRequest
+            {
+                PropertyId = slot.PropertyId,
+                AgentId = request.AgentId,
+                StartAtUtc = request.StartAtUtc,
+                EndAtUtc = request.EndAtUtc,
+                Capacity = request.Capacity,
+                Notes = request.Notes
+            };
 
+            var hasOverlap = await _slotRepository.HasConflictingSlotAsync(inspectionSlotRequest, ct, excludeId: id);
             if (hasOverlap)
                 return Result<InspectionSlotDto>.Conflict("SlotOverlap", "Agent already has a slot that overlaps the requested time window.");
 

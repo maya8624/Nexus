@@ -55,7 +55,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
             services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();
             services.AddScoped<IValidator<CreateInspectionBookingRequest>, CreateInspectionBookingRequestValidator>();
-            services.AddScoped<IValidator<CreateInspectionSlotRequest>, CreateInspectionSlotRequestValidator>();
+            services.AddScoped<IValidator<InspectionSlotRequest>, InspectionSlotRequestValidator>();
             services.AddScoped<IValidator<PropertyQueryRequest>, PropertyQueryRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
         }

@@ -35,8 +35,6 @@ namespace Nexus.Domain.Entities
 
         public DateTimeOffset UpdatedAtUtc { get; set; }
 
-        public byte[] RowVersion { get; set; } = [];
-
         public Property Property { get; set; } = null!;
 
         public Listing Listing { get; set; } = null!;

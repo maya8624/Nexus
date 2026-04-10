@@ -31,8 +31,6 @@ namespace Nexus.Domain.Entities
 
         public bool IsDeleted { get; set; }
 
-        public byte[] RowVersion { get; set; } = [];
-
         public User User { get; set; } = null!;
 
         public Property Property { get; set; } = null!;

@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit;
 using Nexus.Domain.Entities;
 using Nexus.Infrastructure.Persistence;
 using System.Text.Json;
@@ -35,14 +37,15 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await db.Database.MigrateAsync();
 
-        var propertyType = new PropertyType
-        {
-            Name = "House",
-            IsActive = true,
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-            UpdatedAtUtc = DateTimeOffset.UtcNow
-        };
-        db.PropertyTypes.Add(propertyType);
+        var propertyType = await db.PropertyTypes.FirstOrDefaultAsync(x => x.Name == "House")
+            ?? (await db.PropertyTypes.AddAsync(new PropertyType
+            {
+                Name = "House",
+                IsActive = true,
+                CreatedAtUtc = DateTimeOffset.UtcNow,
+                UpdatedAtUtc = DateTimeOffset.UtcNow
+            })).Entity;
+
         await db.SaveChangesAsync();
 
         PropertyTypeId = propertyType.Id;

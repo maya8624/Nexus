@@ -10,7 +10,7 @@ namespace Nexus.Application.Interfaces.Repository
         // add GetByIdAsync(Guid id, Guid userId) or GetSlotsByAgentIdAsync(Guid agentId).
         Task<InspectionSlot?> GetByIdAsync(Guid id, CancellationToken ct);
         Task<InspectionSlot?> GetByIdForUpdateAsync(Guid id, CancellationToken ct);
-        Task<bool> HasConflictingSlotAsync(Guid propertyId, Guid agentId, DateTimeOffset startAtUtc, DateTimeOffset endAtUtc, CancellationToken ct, Guid? excludeId = null);
+        Task<bool> HasConflictingSlotAsync(InspectionSlotRequest request, CancellationToken ct, Guid? excludeId = null);
         Task<IReadOnlyList<AvailableInspectionSlotReadModel>> GetAvailableSlotsAsync(
             GetAvailableInspectionSlotsRequest request,
             CancellationToken ct);

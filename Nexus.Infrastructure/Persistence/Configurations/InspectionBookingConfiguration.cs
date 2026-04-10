@@ -37,7 +37,8 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.IsDeleted)
                .HasDefaultValue(false);
 
-            builder.Property(x => x.RowVersion)
+            builder.Property<uint>("xmin")
+                .HasColumnType("xid")
                 .IsRowVersion();
 
             builder.HasOne(x => x.InspectionSlot)
