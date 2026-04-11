@@ -9,7 +9,7 @@ using Xunit;
 using Nexus.Application.ReadModels;
 using Nexus.Application.Interfaces.Repository;
 
-namespace Nexus.Tests.Application
+namespace Nexus.Tests.Unit.Application
 {
     public class PropertyServiceTests
     {

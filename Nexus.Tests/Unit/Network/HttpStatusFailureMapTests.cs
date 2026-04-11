@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Nexus.Tests.Network
+namespace Nexus.Tests.Unit.Network
 {
     public class HttpStatusFailureMapTests
     {

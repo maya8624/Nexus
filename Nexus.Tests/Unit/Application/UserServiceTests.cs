@@ -8,7 +8,7 @@ using Nexus.Application.Services;
 using Nexus.Domain.Entities;
 using Xunit;
 
-namespace Nexus.Tests.Application
+namespace Nexus.Tests.Unit.Application
 {
     public class UserServiceTests
     {

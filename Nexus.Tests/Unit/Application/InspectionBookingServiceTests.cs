@@ -10,7 +10,7 @@ using Nexus.Domain.Entities;
 using Nexus.Domain.Enums;
 using Xunit;
 
-namespace Nexus.Tests.Application
+namespace Nexus.Tests.Unit.Application
 {
     public class InspectionBookingServiceTests
     {

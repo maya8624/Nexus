@@ -11,12 +11,12 @@ using Nexus.Application.Services;
 using Nexus.Application.Settings;
 using Nexus.Domain.Entities;
 using Nexus.Domain.Enums;
-using Nexus.Tests.Helpers;
+using Nexus.Tests.Unit.Helpers;
 using Stripe;
 using Stripe.Checkout;
 using Xunit;
 
-namespace Nexus.Tests.Application
+namespace Nexus.Tests.Unit.Application
 {
     public class DepositServiceTests
     {

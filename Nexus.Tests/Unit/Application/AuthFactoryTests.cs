@@ -3,7 +3,7 @@ using Nexus.Application.Factories;
 using Nexus.Application.Interfaces;
 using Xunit;
 
-namespace Nexus.Tests.Application
+namespace Nexus.Tests.Unit.Application
 {
     public class AuthFactoryTests
     {

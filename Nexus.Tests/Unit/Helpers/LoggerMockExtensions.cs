@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace Nexus.Tests.Helpers
+namespace Nexus.Tests.Unit.Helpers
 {
     internal static class LoggerMockExtensions
     {

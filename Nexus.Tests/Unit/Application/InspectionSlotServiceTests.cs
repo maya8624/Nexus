@@ -12,7 +12,7 @@ using Nexus.Domain.Enums;
 using System.Linq.Expressions;
 using Xunit;
 
-namespace Nexus.Tests.Application
+namespace Nexus.Tests.Unit.Application
 {
     public class InspectionSlotServiceTests
     {

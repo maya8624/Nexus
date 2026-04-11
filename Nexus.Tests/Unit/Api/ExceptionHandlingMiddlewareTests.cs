@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nexus.Network.Constants;
 
-namespace Nexus.Tests.Api
+namespace Nexus.Tests.Unit.Api
 {
     public class ExceptionHandlingMiddlewareTests
     {
