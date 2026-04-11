@@ -11,6 +11,6 @@ namespace Nexus.Application.Interfaces
 {
     public interface IFraudDetectionService
     {
-        Task<FraudPredictionResponse> CheckTransaction(FraudPredictionRequest request);
+        Task<FraudPredictionResponse> CheckTransaction(FraudPredictionRequest request, CancellationToken ct);
     }
 }

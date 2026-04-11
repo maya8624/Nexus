@@ -23,7 +23,7 @@ namespace Nexus.Application.Services
             _logger = logger;
         }
 
-        public async Task<FraudPredictionResponse> CheckTransaction(FraudPredictionRequest request)
+        public async Task<FraudPredictionResponse> CheckTransaction(FraudPredictionRequest request, CancellationToken ct)
         {
             try
             {
@@ -42,7 +42,7 @@ namespace Nexus.Application.Services
                 };
 
                 var message = HttpRequestFactory.CreateHttpRequestMessage(options);
-                var result = await _httpClientService.ExecuteRequest<FraudPredictionResponse>(message);
+                var result = await _httpClientService.ExecuteRequest<FraudPredictionResponse>(message, ct);
 
                 if (result.IsFraud && result.ConfidenceScore > 0.85)
                     _logger.LogWarning("Fraudulent activity detected. Score: {Score}", result.ConfidenceScore);

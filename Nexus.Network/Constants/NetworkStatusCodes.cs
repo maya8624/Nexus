@@ -10,5 +10,6 @@ namespace Nexus.Network.Constants
     {
         public const int PayPalIssue = 3000;
         public const int NetworkIssue = 3100;
+        public const int AiServiceIssue = 3200;
     }
 }

@@ -16,16 +16,16 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpPost("create-order")]
-        public async Task<ActionResult<PayPalOrderResultResponse>> CreatePayPalOrder([FromBody] OrderPaymentRequest request)
+        public async Task<ActionResult<PayPalOrderResultResponse>> CreatePayPalOrder([FromBody] OrderPaymentRequest request, CancellationToken ct)
         {
-            var result = await _paypalService.CreateOrder(request.OrderId);
+            var result = await _paypalService.CreateOrder(request.OrderId, ct);
             return Ok(result);
         }
 
         [HttpPost("capture-order")]
-        public async Task<ActionResult<PayPalCaptureResponse>> CaptureOrder([FromBody] OrderPaymentRequest request)
+        public async Task<ActionResult<PayPalCaptureResponse>> CaptureOrder([FromBody] OrderPaymentRequest request, CancellationToken ct)
         {
-            var result = await _paypalService.CaptureOrder(request.OrderId);
+            var result = await _paypalService.CaptureOrder(request.OrderId, ct);
 
             if (result == null)
                 return NotFound();

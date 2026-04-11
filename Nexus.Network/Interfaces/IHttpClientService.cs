@@ -8,7 +8,7 @@ namespace Nexus.Network.Interfaces
 {
     public interface IHttpClientService
     {
-        Task<T> ExecuteRequest<T>(HttpRequestMessage request);
+        Task<T> ExecuteRequest<T>(HttpRequestMessage request, CancellationToken ct);
         Task ExecuteRequest(HttpRequestMessage request, CancellationToken ct);
     }
 }

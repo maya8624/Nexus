@@ -23,12 +23,12 @@ namespace Nexus.Network.Services
         }
 
         //TODO: cache a token and reuse it until expires?
-        public async Task<string> GetAccessToken()
-        {            
+        public async Task<string> GetAccessToken(CancellationToken ct)
+        {
             var options = BuildTokenRequest();
             var request = HttpRequestFactory.CreateHttpRequestMessage(options);
 
-            var response = await _httClientService.ExecuteRequest<PayPalTokenResponse>(request);
+            var response = await _httClientService.ExecuteRequest<PayPalTokenResponse>(request, ct);
             var token = response?.AccessToken;
 
             if (string.IsNullOrWhiteSpace(token))

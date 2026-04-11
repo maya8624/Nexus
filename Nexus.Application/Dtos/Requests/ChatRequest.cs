@@ -17,7 +17,7 @@ namespace Nexus.Application.Dtos.Requests
     {
         public ChatRequestValidator()
         {
-            RuleFor(x => x.Message).NotEmpty();
+            RuleFor(x => x.Message).NotEmpty().MaximumLength(1000);
             RuleFor(x => x.SessionId).NotEmpty();
         }
     }

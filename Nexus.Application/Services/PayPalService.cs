@@ -50,7 +50,7 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
-        public async Task<PayPalOrderResultResponse?> CreateOrder(int orderId)
+        public async Task<PayPalOrderResultResponse?> CreateOrder(int orderId, CancellationToken ct)
         {
             var order = await _orderRepository.GetOrderForPayment(orderId);
 
@@ -65,9 +65,9 @@ namespace Nexus.Application.Services
                 payment = await SavePaymentRecord(order, idempotencyKey);
             }
 
-            var accessToken = await _authService.GetAccessToken();
+            var accessToken = await _authService.GetAccessToken(ct);
             var request = BuildCreateRequest(order, payment.BackendIdempotencyKey, accessToken);
-            var result = await _httpClientService.ExecuteRequest<PayPalOrderResponse>(request);
+            var result = await _httpClientService.ExecuteRequest<PayPalOrderResponse>(request, ct);
             
             var approveUrl = ValidatePayPalCreateOrderResult(result);
             await UpdatePayment(payment, result.Id);
@@ -91,7 +91,7 @@ namespace Nexus.Application.Services
             return payment;
         }
 
-        public async Task<PayPalCaptureResponse?> CaptureOrder(int orderId)
+        public async Task<PayPalCaptureResponse?> CaptureOrder(int orderId, CancellationToken ct)
         {
             var payment = await _paymentRepository.GetByOrderId(orderId);
 
@@ -101,9 +101,9 @@ namespace Nexus.Application.Services
             if (payment.Status == PaymentStatus.Completed && string.IsNullOrEmpty(payment.RawResponse) == false)
                 return payment.RawResponse.SafeDeserialize<PayPalCaptureResponse>();
 
-            var accessToken = await _authService.GetAccessToken();
+            var accessToken = await _authService.GetAccessToken(ct);
             var request = BuildCaptureRequest(payment.ProviderOrderId, payment.BackendIdempotencyKey, accessToken);
-            var response = await _httpClientService.ExecuteRequest<PayPalCaptureResponse>(request);
+            var response = await _httpClientService.ExecuteRequest<PayPalCaptureResponse>(request, ct);
 
             await UpdateCaptureResult(payment, response);
             return response;
@@ -115,11 +115,11 @@ namespace Nexus.Application.Services
             ValidatePaymentForRefund(payment, amount);
 
             var idempotencyKey = Guid.NewGuid().ToString();
-            var accessToken = await _authService.GetAccessToken();
+            var accessToken = await _authService.GetAccessToken(ct);
             var options = BuildRefundRequest(payment, amount, idempotencyKey, accessToken);
 
             var request = HttpRequestFactory.CreateHttpRequestMessage(options);
-            var response = await _httpClientService.ExecuteRequest<PayPalRefundResponse>(request);
+            var response = await _httpClientService.ExecuteRequest<PayPalRefundResponse>(request, ct);
 
             var refund = CreateRefundRecord(payment, amount, response, idempotencyKey);
             await _refundRepository.Create(refund, ct);

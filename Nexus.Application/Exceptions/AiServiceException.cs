@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Nexus.Network.Constants;
 
 namespace Nexus.Application.Exceptions
 {
@@ -10,8 +6,11 @@ namespace Nexus.Application.Exceptions
     /// Thrown when the Python AI service call fails.
     /// Caught by the global exception handler in API layer.
     /// </summary>
-    public class AiServiceException : Exception
+    public class AiServiceException : NetworkException
     {
+        public override int StatusCode => NetworkStatusCodes.AiServiceIssue;
+        public override string Name => "AI_SERVICE_ERROR";
+
         public AiServiceException(string message) : base(message) { }
         public AiServiceException(string message, Exception inner) : base(message, inner) { }
     }

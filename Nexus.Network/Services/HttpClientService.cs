@@ -15,42 +15,43 @@ namespace Nexus.Network.Services
             _logger = logger;
         }
 
-        public async Task<T> ExecuteRequest<T>(HttpRequestMessage request)//, CancellationToken? cancellationToken)
+        public async Task<T> ExecuteRequest<T>(HttpRequestMessage request, CancellationToken ct)
         {
             try
             {
                 using var http = _httpClient.CreateClient();
-                var response = await http.SendAsync(request);
+                var response = await http.SendAsync(request, ct);
 
-                if (response.IsSuccessStatusCode == false)
+                if (!response.IsSuccessStatusCode)
                 {
-                    var errorBody = await response.Content.ReadAsStringAsync();
+                    var errorBody = await response.Content.ReadAsStringAsync(ct);
                     var failureReason = HttpStatusFailureMap.Resolve(response.StatusCode);
 
                     _logger.LogWarning(
-                        "HTTP request failed with {StatusCode} mapped to {FailureReason}",
+                        "HTTP request failed. StatusCode: {StatusCode}, Reason: {FailureReason}, Body: {ErrorBody}",
                         response.StatusCode,
+                        failureReason,
                         errorBody);
 
-                    throw new HttpRequestException($"HTTP request failed with {response.StatusCode} mapped to {failureReason}");
+                    throw new HttpRequestException($"HTTP request failed with {response.StatusCode}: {failureReason}");
                 }
 
-                var content = await response.Content.ReadFromJsonAsync<T>();
-                if (content == null)
+                var content = await response.Content.ReadFromJsonAsync<T>(ct);
+                if (content is null)
                 {
-                    _logger.LogError("Empty response body.");
-                     throw new HttpRequestException("Empty response body");
+                    _logger.LogError("Empty response body from {RequestUri}.", request.RequestUri);
+                    throw new HttpRequestException("Empty response body.");
                 }
 
                 return content;
             }
             catch (TaskCanceledException ex)
             {
-                throw new TaskCanceledException("Request timed out", ex);
+                throw new TaskCanceledException("Request timed out.", ex);
             }
             catch (HttpRequestException ex)
             {
-                throw new HttpRequestException("Network error occurred", ex);
+                throw new HttpRequestException("Network error occurred.", ex);
             }
         }
 

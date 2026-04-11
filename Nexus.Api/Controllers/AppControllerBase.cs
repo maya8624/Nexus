@@ -11,7 +11,7 @@ namespace Nexus.Api.Controllers
     [Route("api/[controller]")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public class AppControllerBase : ControllerBase
     {
         protected ObjectResult MapFailure<T>(Result<T> result)
@@ -23,7 +23,7 @@ namespace Nexus.Api.Controllers
                 ResultStatus.Conflict        => StatusCodes.Status409Conflict,
                 ResultStatus.Unauthorized    => StatusCodes.Status401Unauthorized,
                 ResultStatus.Forbidden       => StatusCodes.Status403Forbidden,
-                _                            => StatusCodes.Status500InternalServerError
+                _                            => throw new InvalidOperationException($"Unhandled ResultStatus: {result.Status}")
             };
 
             var firstError = result.Errors.FirstOrDefault();

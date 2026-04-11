@@ -8,6 +8,6 @@ namespace Nexus.Network.Interfaces
 {
     public interface IPayPalAuthService
     {
-        Task<string> GetAccessToken();
+        Task<string> GetAccessToken(CancellationToken ct);
     }
 }

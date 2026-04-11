@@ -1,4 +1,5 @@
-﻿using Nexus.Application.Dtos;
+﻿using Nexus.Application.Common;
+using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Responses;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace Nexus.Application.Interfaces
 {
     public interface IAiService
     {
-        Task<ChatResponse> SendMessage(string message, string sessionId, CancellationToken cancellationToken = default);
-        Task<ChatResponse> GetAnswer(string message, string sessionId, CancellationToken cancellationToken = default);
+        Task<ChatResponse> SendMessage(string message, string sessionId, CancellationToken ct);
+        Task<Result<ChatResponse>> GetAnswer(string message, string sessionId, CancellationToken ct);
     }
 }

@@ -12,8 +12,6 @@ namespace Nexus.Application.Settings
     /// </summary>
     public class AiServiceSettings
     {
-        public const string SectionName = "AiService";
-
         public required string BaseUrl { get; init; }
         public required string ApiKey { get; init; }
         public int TimeoutSeconds { get; init; } = 30;

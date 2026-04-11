@@ -39,8 +39,12 @@ namespace Nexus.Api.Controllers
         [HttpPost("chat")]
         public async Task<ActionResult<ChatResponse>> GetAnswer([FromBody] ChatRequest request, CancellationToken cancellationToken)
         {
-            var response = await _aiService.GetAnswer(request.Message, request.SessionId, cancellationToken);
-            return response;
+            var result = await _aiService.GetAnswer(request.Message, request.SessionId, cancellationToken);
+
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return MapFailure(result);
 
             //     // Extract userId from JWT claims — set by your auth middleware
             //     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
