@@ -11,7 +11,7 @@ namespace Nexus.Application.Interfaces
 {
     public interface IAiService
     {
-        Task<ChatResponse> SendMessage(string message, string sessionId, CancellationToken ct);
-        Task<Result<ChatResponse>> GetAnswer(string message, string sessionId, CancellationToken ct);
+        Task<ChatResponse> SendMessage(string message, string threadId, CancellationToken ct);
+        Task<Result<ChatResponse>> GetAnswer(string message, string threadId, string? propertyId, CancellationToken ct);
     }
 }

@@ -16,6 +16,7 @@ namespace Nexus.Application.Dtos.Requests
         public required string Message { get; init; }
 
         // snake_case to match Python FastAPI schema
-        public required string session_id { get; init; }
+        public required string thread_id { get; init; }
+        public string? property_id { get; init; }
     }
 }

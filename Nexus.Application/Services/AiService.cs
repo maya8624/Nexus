@@ -36,7 +36,7 @@ namespace Nexus.Application.Services
             _userRepository = userRepository;
         }
 
-        public async Task<Result<ChatResponse>> GetAnswer(string message, string sessionId, CancellationToken ct)
+        public async Task<Result<ChatResponse>> GetAnswer(string message, string threadId, string? propertyId, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
@@ -47,7 +47,8 @@ namespace Nexus.Application.Services
             var request = new AiServiceRequest
             {
                 Message = message,
-                session_id = sessionId,
+                thread_id = threadId,
+                property_id = propertyId,
             };
 
             var options = new RequestBuilderOptions
@@ -70,17 +71,17 @@ namespace Nexus.Application.Services
                 return Result<ChatResponse>.Success(new ChatResponse
                 {
                     Answer = result.Reply,
-                    SessionId = result.session_id,
+                    ThreadId = result.thread_id,
                 });
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
             {
-                _logger.LogError(ex, "AI service call failed for session {SessionId}", sessionId);
+                _logger.LogError(ex, "AI service call failed for thread {ThreadId}", threadId);
                 throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
             }
         }
 
-        public Task<ChatResponse> SendMessage(string message, string sessionId, CancellationToken cancellationToken = default)
+        public Task<ChatResponse> SendMessage(string message, string threadId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

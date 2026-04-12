@@ -13,6 +13,6 @@ namespace Nexus.Application.Dtos.Responses
     public class AiServiceResponse
     {
         public required string Reply { get; init; }
-        public required string session_id { get; init; }
+        public required string thread_id { get; init; }
     }
 }

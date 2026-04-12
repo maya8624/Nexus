@@ -10,7 +10,8 @@ namespace Nexus.Application.Dtos.Requests
     public class ChatRequest
     {
         public required string Message { get; set; }
-        public required string SessionId { get; set; }
+        public required string ThreadId { get; set; }
+        public string? PropertyId { get; set; }
     }
 
     public class ChatRequestValidator : AbstractValidator<ChatRequest>
@@ -18,7 +19,7 @@ namespace Nexus.Application.Dtos.Requests
         public ChatRequestValidator()
         {
             RuleFor(x => x.Message).NotEmpty().MaximumLength(1000);
-            RuleFor(x => x.SessionId).NotEmpty();
+            RuleFor(x => x.ThreadId).NotEmpty();
         }
     }
 }
