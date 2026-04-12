@@ -10,7 +10,7 @@ namespace Nexus.Api.Extensions
             var result = exception switch
             {
                 AppException appEx => (
-                    appEx.StatusCode,
+                    appEx.HttpStatusCode,
                      new ErrorResponse
                      {
                          Name = appEx.Name,
@@ -18,7 +18,7 @@ namespace Nexus.Api.Extensions
                          Message = appEx.Message,
                      }),
                 NetworkException netEx => (
-                   netEx.StatusCode,
+                    netEx.HttpStatusCode,
                     new ErrorResponse
                     {
                         Name = netEx.Name,

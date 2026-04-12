@@ -12,6 +12,7 @@ namespace Nexus.Application.Exceptions
         public AppException(string message, Exception inner) : base(message, inner) { }
 
         public abstract int StatusCode { get; }
+        public abstract int HttpStatusCode { get; }
         public abstract string Name { get; }
     }
 }

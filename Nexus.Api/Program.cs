@@ -1,6 +1,7 @@
 using Microsoft.OpenApi;
 using Nexus.Api.Extensions;
 using Nexus.Application.Extensions;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text.Json.Serialization;
 
@@ -11,6 +12,8 @@ builder.Services.AddApplicationServices();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 

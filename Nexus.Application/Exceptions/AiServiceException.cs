@@ -1,4 +1,5 @@
-﻿using Nexus.Network.Constants;
+﻿using Microsoft.AspNetCore.Http;
+using Nexus.Network.Constants;
 
 namespace Nexus.Application.Exceptions
 {
@@ -9,6 +10,7 @@ namespace Nexus.Application.Exceptions
     public class AiServiceException : NetworkException
     {
         public override int StatusCode => NetworkStatusCodes.AiServiceIssue;
+        public override int HttpStatusCode => StatusCodes.Status503ServiceUnavailable;
         public override string Name => "AI_SERVICE_ERROR";
 
         public AiServiceException(string message) : base(message) { }

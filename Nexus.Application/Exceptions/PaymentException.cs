@@ -1,4 +1,5 @@
-﻿using Nexus.Application.Constants;
+﻿using Microsoft.AspNetCore.Http;
+using Nexus.Application.Constants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,7 @@ namespace Nexus.Application.Exceptions
     public class PaymentException : AppException
     {
         public override int StatusCode => CustomStatusCodes.PaymentIssue;
+        public override int HttpStatusCode => StatusCodes.Status402PaymentRequired;
         public override string Name => "PAYMENT_ISSUE";
 
         public PaymentException(string message) : base(message) { }
