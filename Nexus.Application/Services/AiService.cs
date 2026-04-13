@@ -36,7 +36,7 @@ namespace Nexus.Application.Services
             _userRepository = userRepository;
         }
 
-        public async Task<Result<ChatResponse>> GetAnswer(string message, string threadId, string? propertyId, CancellationToken ct)
+        public async Task<Result<ChatResponse>> GetReply(ChatRequest request, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
@@ -44,11 +44,18 @@ namespace Nexus.Application.Services
             if (userExists == false)
                 return Result<ChatResponse>.NotFound("UserNotFound", "User not found or inactive.");
 
-            var request = new AiServiceRequest
+            var isNewConversation = string.IsNullOrWhiteSpace(request.ThreadId);
+            var threadId = isNewConversation
+                ? Guid.NewGuid().ToString()
+                : request.ThreadId;
+
+            var aiServiceRequest = new AiServiceRequest
             {
-                Message = message,
+                message = request.Message,
                 thread_id = threadId,
-                property_id = propertyId,
+                property_id = request.PropertyId,
+                user_id = userId,
+                is_new_conversation = isNewConversation
             };
 
             var options = new RequestBuilderOptions
@@ -59,7 +66,7 @@ namespace Nexus.Application.Services
                 {
                     ["X-API-Key"] = _settings.ApiKey
                 },
-                Body = request,
+                Body = aiServiceRequest,
                 Url = $"{_settings.BaseUrl}/chat",
             };
 
@@ -70,7 +77,7 @@ namespace Nexus.Application.Services
 
                 return Result<ChatResponse>.Success(new ChatResponse
                 {
-                    Answer = result.Reply,
+                    Reply = result.Reply,
                     ThreadId = result.thread_id,
                 });
             }

@@ -10,7 +10,7 @@ namespace Nexus.Application.Dtos.Requests
     public class ChatRequest
     {
         public required string Message { get; set; }
-        public required string ThreadId { get; set; }
+        public string? ThreadId { get; set; }
         public string? PropertyId { get; set; }
     }
 
@@ -19,7 +19,6 @@ namespace Nexus.Application.Dtos.Requests
         public ChatRequestValidator()
         {
             RuleFor(x => x.Message).NotEmpty().MaximumLength(1000);
-            RuleFor(x => x.ThreadId).NotEmpty();
         }
     }
 }

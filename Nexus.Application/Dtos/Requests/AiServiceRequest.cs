@@ -13,10 +13,12 @@ namespace Nexus.Application.Dtos.Requests
     /// </summary>
     public class AiServiceRequest
     {
-        public required string Message { get; init; }
-
         // snake_case to match Python FastAPI schema
+        public required string message { get; init; }
+
         public required string thread_id { get; init; }
         public string? property_id { get; init; }
+        public Guid user_id { get; init; }
+        public bool is_new_conversation { get; init; }
     }
 }

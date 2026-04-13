@@ -8,7 +8,7 @@ namespace Nexus.Application.Dtos.Responses
 {
     public class ChatResponse
     {
-        public required string Answer { get; init; }
+        public required string Reply { get; init; }
         public required string ThreadId { get; init; }
     }
 }
