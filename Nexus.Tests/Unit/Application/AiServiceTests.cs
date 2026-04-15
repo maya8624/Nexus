@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nexus.Application.Common;
+using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
@@ -43,13 +44,13 @@ namespace Nexus.Tests.Unit.Application
         }
 
         [Fact]
-        public async Task GetAnswer_WithMissingUser_ShouldReturnNotFound()
+        public async Task GetReply_WithMissingUser_ShouldReturnNotFound()
         {
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
 
-            var result = await _service.GetAnswer("Hello", "session-1", null, CancellationToken.None);
+            var result = await _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None);
 
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("UserNotFound", Assert.Single(result.Errors).Code);
@@ -59,7 +60,7 @@ namespace Nexus.Tests.Unit.Application
         }
 
         [Fact]
-        public async Task GetAnswer_WithValidInput_ShouldReturnSuccess()
+        public async Task GetReply_WithValidInput_ShouldReturnSuccess()
         {
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
@@ -68,15 +69,15 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.ExecuteRequest<AiServiceResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AiServiceResponse { Reply = "Hello!", thread_id = "session-1" });
 
-            var result = await _service.GetAnswer("Hello", "session-1", null, CancellationToken.None);
+            var result = await _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.Equal("Hello!", result.Value!.Answer);
+            Assert.Equal("Hello!", result.Value!.Reply);
             Assert.Equal("session-1", result.Value.ThreadId);
         }
 
         [Fact]
-        public async Task GetAnswer_WhenHttpRequestExceptionThrown_ShouldThrowAiServiceException()
+        public async Task GetReply_WhenHttpRequestExceptionThrown_ShouldThrowAiServiceException()
         {
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
@@ -86,11 +87,11 @@ namespace Nexus.Tests.Unit.Application
                 .ThrowsAsync(new HttpRequestException("Network error."));
 
             await Assert.ThrowsAsync<AiServiceException>(() =>
-                _service.GetAnswer("Hello", "session-1", null, CancellationToken.None));
+                _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetAnswer_WhenTaskCanceledExceptionThrown_ShouldThrowAiServiceException()
+        public async Task GetReply_WhenTaskCanceledExceptionThrown_ShouldThrowAiServiceException()
         {
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
@@ -100,11 +101,11 @@ namespace Nexus.Tests.Unit.Application
                 .ThrowsAsync(new TaskCanceledException("Request timed out."));
 
             await Assert.ThrowsAsync<AiServiceException>(() =>
-                _service.GetAnswer("Hello", "session-1", null, CancellationToken.None));
+                _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None));
         }
 
         [Fact]
-        public async Task GetAnswer_WhenHttpRequestExceptionThrown_ShouldLogError()
+        public async Task GetReply_WhenHttpRequestExceptionThrown_ShouldLogError()
         {
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
@@ -114,7 +115,7 @@ namespace Nexus.Tests.Unit.Application
                 .ThrowsAsync(new HttpRequestException("Network error."));
 
             await Assert.ThrowsAsync<AiServiceException>(() =>
-                _service.GetAnswer("Hello", "session-1", null, CancellationToken.None));
+                _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None));
 
             _loggerMock.Verify(
                 x => x.Log(

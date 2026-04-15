@@ -38,11 +38,12 @@ namespace Nexus.Application.Services
 
         public async Task<Result<ChatResponse>> GetReply(ChatRequest request, CancellationToken ct)
         {
-            Guid.TryParse(_userContext.UserId, out var userId);
+            //TODO: commented out user validation for now, will add back in once we have user context working properly
+            //Guid.TryParse(_userContext.UserId, out var userId);
 
-            var userExists = await _userRepository.IsAny(x => x.Id == userId && x.IsActive, ct);
-            if (userExists == false)
-                return Result<ChatResponse>.NotFound("UserNotFound", "User not found or inactive.");
+            //var userExists = await _userRepository.IsAny(x => x.Id == userId && x.IsActive, ct);
+            //if (userExists == false)
+            //    return Result<ChatResponse>.NotFound("UserNotFound", "User not found or inactive.");
 
             var isNewConversation = string.IsNullOrWhiteSpace(request.ThreadId);
             var threadId = isNewConversation
@@ -54,7 +55,7 @@ namespace Nexus.Application.Services
                 message = request.Message,
                 thread_id = threadId,
                 property_id = request.PropertyId,
-                user_id = userId,
+                user_id = Guid.NewGuid(), //userId,
                 is_new_conversation = isNewConversation
             };
 
@@ -67,7 +68,7 @@ namespace Nexus.Application.Services
                     ["X-API-Key"] = _settings.ApiKey
                 },
                 Body = aiServiceRequest,
-                Url = $"{_settings.BaseUrl}/chat",
+                Url = $"{_settings.BaseUrl}/api/chat",
             };
 
             try

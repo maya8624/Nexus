@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Nexus.Application.Dtos.Requests;
-using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Settings;
 using Stripe;
@@ -23,7 +22,7 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpPost("checkout")]
-        public async Task<ActionResult<DepositResponse>> CreateCheckoutSession([FromBody] CreateDepositRequest request, CancellationToken ct)
+        public async Task<IActionResult> CreateCheckoutSession([FromBody] CreateDepositRequest request, CancellationToken ct)
         {
             var result = await _depositService.CreateCheckoutSessionAsync(request, ct);
             if (result.IsSuccess)
