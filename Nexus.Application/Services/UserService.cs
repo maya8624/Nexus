@@ -27,7 +27,7 @@ namespace Nexus.Application.Services
             _tokenService = tokenService;
         }
 
-        public async Task<Result<UserResponse>> RegisterEmailUser(string email, string password, CancellationToken cancellationToken = default)
+        public async Task<Result<UserResponse>> RegisterEmailUser(string email, string password, string? firstName = null, string? lastName = null, CancellationToken cancellationToken = default)
         {
             var existing = await _userRepo.GetByEmail(email);
 
@@ -41,17 +41,21 @@ namespace Nexus.Application.Services
                 Id = Guid.NewGuid(),
                 Email = email,
                 PasswordHash = hashedPassword,
+                FirstName = firstName,
+                LastName = lastName,
                 CreatedAtUtc = DateTimeOffset.UtcNow,
             };
 
             await _userRepo.Create(user, cancellationToken);
             await _uow.SaveChanges();
-            _tokenService.CreateToken(user.Id.ToString(), user.Email);
+            _tokenService.CreateToken(user.Id.ToString(), user.Email, user.FirstName, user.LastName);
 
             return Result<UserResponse>.Success(new UserResponse
             {
-                Email = user.Email,
                 UserId = user.Id.ToString(),
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
             });
         }
 
@@ -91,12 +95,14 @@ namespace Nexus.Application.Services
             if (user == null || !_passwordHasher.VerifyPassword(user.PasswordHash, password))
                 return Result<UserResponse>.Unauthorized("INVALID_CREDENTIALS", "Invalid email or password");
 
-            _tokenService.CreateToken(user.Id.ToString(), email);
+            _tokenService.CreateToken(user.Id.ToString(), email, user.FirstName, user.LastName);
 
             return Result<UserResponse>.Success(new UserResponse
             {
-                Email = user.Email,
                 UserId = user.Id.ToString(),
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
             });
         }
 

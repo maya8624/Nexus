@@ -47,12 +47,14 @@ namespace Nexus.Application.Services
 
                 var user = await _userService.CreateAuthUser(externalUser, provider, cancellationToken);
 
-                _tokenService.CreateToken(user.Id.ToString(), user.Email);
+                _tokenService.CreateToken(user.Id.ToString(), user.Email, user.FirstName, user.LastName);
 
                 return Result<UserResponse>.Success(new UserResponse
                 {
-                    Email = user.Email,
                     UserId = user.Id.ToString(),
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
                 });
             }
             catch (InvalidJwtException)

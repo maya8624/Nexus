@@ -37,10 +37,10 @@ public class AiControllerIntegrationTests : IntegrationTestBase
         // Arrange
         var aiServiceMock = new Mock<IAiService>();
         aiServiceMock
-            .Setup(x => x.GetAnswer(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetReply(It.IsAny<ChatRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ChatResponse>.Success(new ChatResponse
             {
-                Answer = "Here are some properties for you.",
+                Reply = "Here are some properties for you.",
                 ThreadId = "session-abc"
             }));
 
@@ -55,7 +55,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
 
         var body = await response.Content.ReadFromJsonAsync<ChatResponse>(JsonOptions);
         body.Should().NotBeNull();
-        body!.Answer.Should().Be("Here are some properties for you.");
+        body!.Reply.Should().Be("Here are some properties for you.");
         body.ThreadId.Should().Be("session-abc");
     }
 
@@ -65,7 +65,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
         // Arrange
         var aiServiceMock = new Mock<IAiService>();
         aiServiceMock
-            .Setup(x => x.GetAnswer(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetReply(It.IsAny<ChatRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ChatResponse>.NotFound("UserNotFound", "User not found or inactive."));
 
         var client = CreateClientWith(aiServiceMock);
@@ -115,7 +115,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
         // Arrange
         var aiServiceMock = new Mock<IAiService>();
         aiServiceMock
-            .Setup(x => x.GetAnswer(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetReply(It.IsAny<ChatRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new AiServiceException("The AI service is currently unavailable. Please try again later."));
 
         var client = CreateClientWith(aiServiceMock);

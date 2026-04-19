@@ -25,12 +25,10 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.PasswordHash);
 
             builder.Property(x => x.FirstName)
-                .HasMaxLength(100)
-                .IsRequired();
+                .HasMaxLength(100);
 
             builder.Property(x => x.LastName)
-                .HasMaxLength(100)
-                .IsRequired();
+                .HasMaxLength(100);
 
             builder.Property(x => x.PhoneNumber)
                 .HasMaxLength(30);

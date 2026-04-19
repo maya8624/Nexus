@@ -27,7 +27,7 @@ namespace Nexus.Api.Extensions
                 options.AddDefaultPolicy(
                     builder =>
                     {
-                        builder.WithOrigins(["http://localhost:5173", "http://127.0.0.1:5500", "https://localhost:7289"])
+                        builder.WithOrigins(["http://localhost:5173", "http://localhost:5174","http://127.0.0.1:5500", "https://localhost:7289"])
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();

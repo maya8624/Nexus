@@ -8,9 +8,9 @@ namespace Nexus.Application.Settings
 {
     public class JwtSettings
     {
-        public string Key { get; }
-        public string Issuer { get; }
-        public string Audience { get; }
-        public string CookieName { get; }
+        public string Key { get; init; } = default!;
+        public string Issuer { get; init; } = default!;
+        public string Audience { get; init; } = default!;
+        public string CookieName { get; init; } = default!;
     }
 }

@@ -21,6 +21,7 @@ namespace Nexus.Api.Controllers
             _userService = userService;
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<ActionResult<UserResponse>> Login([FromBody] EmailLoginRequest request, CancellationToken cancellationToken)
         {
@@ -31,10 +32,11 @@ namespace Nexus.Api.Controllers
             return Ok(result.Value);
         }
 
+        [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<ActionResult<UserResponse>> Register([FromBody] EmailLoginRequest request, CancellationToken cancellationToken)
+        public async Task<ActionResult<UserResponse>> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
         {
-            var result = await _userService.RegisterEmailUser(request.Email, request.Password, cancellationToken);
+            var result = await _userService.RegisterEmailUser(request.Email, request.Password, request.FirstName, request.LastName, cancellationToken);
             if (!result.IsSuccess)
                 return MapFailure(result);
 

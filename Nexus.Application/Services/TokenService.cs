@@ -24,15 +24,17 @@ namespace Nexus.Application.Services
             _userContext = userContext;
         }
 
-        public string CreateToken(string userId, string email)
+        public string CreateToken(string userId, string email, string? firstName = null, string? lastName = null)
         {
-            // 1. Define the User's "Claims" (The data inside the token)
             var claims = new List<Claim>
             {
                 new(JwtRegisteredClaimNames.Sub, userId),
                 new(JwtRegisteredClaimNames.Email, email),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) // Unique ID for this specific token
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
+
+            if (firstName != null) claims.Add(new(JwtRegisteredClaimNames.GivenName, firstName));
+            if (lastName != null)  claims.Add(new(JwtRegisteredClaimNames.FamilyName, lastName));
 
             // 2. Setup the Key and Credentials
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
@@ -71,8 +73,10 @@ namespace Nexus.Application.Services
 
             return new UserResponse
             {
-                Email = _userContext.Email,
                 UserId = _userContext.UserId,
+                Email = _userContext.Email,
+                FirstName = _httpContextAccessor.HttpContext?.User.FindFirstValue(JwtRegisteredClaimNames.GivenName),
+                LastName = _httpContextAccessor.HttpContext?.User.FindFirstValue(JwtRegisteredClaimNames.FamilyName),
             };
         }
 
