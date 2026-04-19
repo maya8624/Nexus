@@ -1,10 +1,10 @@
-﻿using Nexus.Application.Dtos;
+﻿using Nexus.Application.Common;
+using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Responses;
-using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
-using Nexus.Domain.Entities;
-using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Interfaces.Business;
+using Nexus.Application.Interfaces.Repository;
+using Nexus.Domain.Entities;
 
 namespace Nexus.Application.Services
 {
@@ -27,12 +27,12 @@ namespace Nexus.Application.Services
             _tokenService = tokenService;
         }
 
-        public async Task<UserResponse> RegisterEmailUser(string email, string password)
+        public async Task<Result<UserResponse>> RegisterEmailUser(string email, string password, CancellationToken cancellationToken = default)
         {
             var existing = await _userRepo.GetByEmail(email);
 
             if (existing != null)
-                throw new UserException("Email already registered");
+                return Result<UserResponse>.Conflict("EMAIL_TAKEN", "Email already registered");
 
             var hashedPassword = _passwordHasher.HashPassword(password);
 
@@ -44,16 +44,18 @@ namespace Nexus.Application.Services
                 CreatedAtUtc = DateTimeOffset.UtcNow,
             };
 
-            await _userRepo.Create(user, CancellationToken.None);
+            await _userRepo.Create(user, cancellationToken);
+            await _uow.SaveChanges();
+            _tokenService.CreateToken(user.Id.ToString(), user.Email);
 
-            return new UserResponse
+            return Result<UserResponse>.Success(new UserResponse
             {
                 Email = user.Email,
-                UserId = user.Id.ToString(), // TODO: need to return????
-            };
+                UserId = user.Id.ToString(),
+            });
         }
 
-        public async Task<User> CreateAuthUser(ExternalUserResponse externalUser, string providerName)
+        public async Task<User> CreateAuthUser(ExternalUserResponse externalUser, string providerName, CancellationToken cancellationToken = default)
         {
             var existing = await _userRepo.GetByEmail(externalUser.Email);
 
@@ -77,27 +79,25 @@ namespace Nexus.Application.Services
                 ]
             };
 
-            await _userRepo.Create(user, CancellationToken.None);
+            await _userRepo.Create(user, cancellationToken);
             await _uow.SaveChanges();
             return user;
         }
 
-        public async Task<bool> Login(string email, string password)
+        public async Task<Result<UserResponse>> Login(string email, string password, CancellationToken cancellationToken = default)
         {
             var user = await _userRepo.GetByEmail(email);
 
-            if (user == null)
-                return false;
-                
-            var isVerified = _passwordHasher.VerifyPassword(user.PasswordHash, password);
+            if (user == null || !_passwordHasher.VerifyPassword(user.PasswordHash, password))
+                return Result<UserResponse>.Unauthorized("INVALID_CREDENTIALS", "Invalid email or password");
 
-            if (isVerified == false)
-                return false;
+            _tokenService.CreateToken(user.Id.ToString(), email);
 
-            // Generate OUR token (Doesn't matter which provider they used)
-            var jwtToken = _tokenService.CreateToken(user.Id.ToString(), email);
-
-            return true;
+            return Result<UserResponse>.Success(new UserResponse
+            {
+                Email = user.Email,
+                UserId = user.Id.ToString(),
+            });
         }
 
         //public async Task<User?> GetByProviderId(string provider, string providerUserId)

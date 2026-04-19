@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Factories;
@@ -23,40 +22,35 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<bool>> Login([FromBody] EmailLoginRequest request)
+        public async Task<ActionResult<UserResponse>> Login([FromBody] EmailLoginRequest request, CancellationToken cancellationToken)
         {
-            var result = await _userService.Login(request.Email, request.Password);
-            
-            if (result == false)
-            {
-                return Unauthorized(new
-                {
-                    message = "Invalid email or password"
-                });
-            }
+            var result = await _userService.Login(request.Email, request.Password, cancellationToken);
+            if (!result.IsSuccess)
+                return MapFailure(result);
 
-            return Ok(result);
+            return Ok(result.Value);
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<UserResponse>> Register([FromBody] EmailLoginRequest request)
+        public async Task<ActionResult<UserResponse>> Register([FromBody] EmailLoginRequest request, CancellationToken cancellationToken)
         {
-            var user = await _userService.RegisterEmailUser(request.Email, request.Password);
-            return Ok(user);
+            var result = await _userService.RegisterEmailUser(request.Email, request.Password, cancellationToken);
+            if (!result.IsSuccess)
+                return MapFailure(result);
+
+            return StatusCode(201, result.Value);
         }
 
         [AllowAnonymous]
         [HttpPost("external-login")]
-        public async Task<ActionResult<UserResponse>> ExternalLogin([FromBody] ExternalLoginRequest request)
+        public async Task<ActionResult<UserResponse>> ExternalLogin([FromBody] ExternalLoginRequest request, CancellationToken cancellationToken)
         {
             var authService = _authFactory.GetAuthProvider(request.Provider);
+            var result = await authService.Authenticate(request.Provider, request.IdToken, cancellationToken);
+            if (!result.IsSuccess)
+                return MapFailure(result);
 
-            var user = await authService.Authenticate(request.Provider, request.IdToken);
-
-            if (user == null) 
-                return Unauthorized();
-
-            return Ok(user);
+            return Ok(result.Value);
         }
 
         [HttpPost("logout")]

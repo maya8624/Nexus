@@ -1,5 +1,6 @@
 ﻿using Google.Apis.Auth;
 using Microsoft.Extensions.Options;
+using Nexus.Application.Common;
 using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Interfaces;
@@ -22,22 +23,19 @@ namespace Nexus.Application.Services
             _userService = userService;
         }
 
-        public async Task<ExternalUserResponse?> Authenticate(string provider, string token)
+        public async Task<Result<UserResponse>> Authenticate(string provider, string token, CancellationToken cancellationToken = default)
         {
             try
             {
                 var settings = new GoogleJsonWebSignature.ValidationSettings()
                 {
-                    // Ensure this matches the Client ID you'll put in your React app
                     Audience = [_settings.GoogleClientId]
                 };
 
-                // Validate the token cryptographically
                 var payload = await GoogleJsonWebSignature.ValidateAsync(token, settings);
 
-                // BEST PRACTICE: Only allow login if Google has verified the email address
-                if (payload == null || payload.EmailVerified == false) 
-                    return null;
+                if (payload == null || payload.EmailVerified == false)
+                    return Result<UserResponse>.Unauthorized("GOOGLE_AUTH_FAILED", "Google token is invalid or email is not verified");
 
                 var externalUser = new ExternalUserResponse
                 {
@@ -47,23 +45,23 @@ namespace Nexus.Application.Services
                     Picture = payload.Picture
                 };
 
-                // Find/Create user and link the provider in SQL
-                var user = await _userService.CreateAuthUser(externalUser, provider);
-                
-                // Generate OUR token (Doesn't matter which provider they used)
-                var jwtToken = _tokenService.CreateToken(externalUser.ProviderKey, externalUser.Email);
+                var user = await _userService.CreateAuthUser(externalUser, provider, cancellationToken);
 
-                return externalUser;
+                _tokenService.CreateToken(user.Id.ToString(), user.Email);
+
+                return Result<UserResponse>.Success(new UserResponse
+                {
+                    Email = user.Email,
+                    UserId = user.Id.ToString(),
+                });
             }
             catch (InvalidJwtException)
             {
-                // Token is expired, malformed, or has an invalid signature
-                return null;
+                return Result<UserResponse>.Unauthorized("GOOGLE_TOKEN_INVALID", "Google token is expired or has an invalid signature");
             }
             catch (Exception)
             {
-                // General error (e.g., network issues reaching Google's public keys)
-                return null;
+                return Result<UserResponse>.Unauthorized("GOOGLE_AUTH_ERROR", "An error occurred while authenticating with Google");
             }
         }
     }
