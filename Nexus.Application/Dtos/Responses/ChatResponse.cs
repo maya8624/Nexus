@@ -10,5 +10,6 @@ namespace Nexus.Application.Dtos.Responses
     {
         public required string Reply { get; init; }
         public required string ThreadId { get; init; }
+        public string? PropertyId { get; init; }
     }
 }

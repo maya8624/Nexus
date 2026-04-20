@@ -82,13 +82,18 @@ namespace Nexus.Application.Services
 
         private void CreateJwtCookie(string token)
         {
+            // SameSite=None is required when frontend (http) and backend (https) run on different schemes
+            // in local dev — modern browsers treat http://localhost and https://localhost as cross-site.
+            // SameSite=None requires Secure=true, so both flags are tied together.
+            var isHttps = _httpContextAccessor.HttpContext?.Request.IsHttps ?? false;
+
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = isHttps,
+                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
                 Path = "/",
-                Expires = DateTimeOffset.UtcNow.AddMinutes(5)
+                Expires = DateTimeOffset.UtcNow.AddHours(2)
             };
 
             _httpContextAccessor.HttpContext?.Response.Cookies.Append(_jwtSettings.CookieName, token, cookieOptions);

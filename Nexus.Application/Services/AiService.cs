@@ -80,6 +80,7 @@ namespace Nexus.Application.Services
                 {
                     Reply = result.Reply,
                     ThreadId = result.thread_id,
+                    PropertyId = result.property_id
                 });
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)

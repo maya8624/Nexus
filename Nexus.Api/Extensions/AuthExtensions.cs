@@ -38,13 +38,32 @@ namespace Nexus.Api.Extensions
                 {
                     OnMessageReceived = context =>
                     {
-                        // Look for the cookie we set in the login method
                         var token = context.Request.Cookies[config["JwtSettings:CookieName"]!];
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
 
                         if (string.IsNullOrEmpty(token) == false)
                         {
                             context.Token = token;
+                            logger.LogInformation("JWT cookie found");
                         }
+                        else
+                        {
+                            logger.LogWarning("JWT cookie missing. Cookies received: {Cookies}",
+                                string.Join(", ", context.Request.Cookies.Keys));
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                    OnAuthenticationFailed = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogError("JWT authentication failed: {Error}", context.Exception.Message);
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = context =>
+                    {
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
+                        logger.LogInformation("JWT token validated for {User}", context.Principal?.Identity?.Name);
                         return Task.CompletedTask;
                     }
                 };
