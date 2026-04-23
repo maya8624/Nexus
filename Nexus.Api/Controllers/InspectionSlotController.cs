@@ -29,9 +29,9 @@ namespace Nexus.Api.Controllers
 
         [AllowAnonymous]
         [HttpGet("available")]
-        public async Task<IActionResult> GetAvailableSlots([FromQuery] Guid listingId, CancellationToken ct)
+        public async Task<IActionResult> GetAvailableSlots([FromQuery] Guid propertyId, CancellationToken ct)
         {
-            var result = await _slotService.GetAvailableSlotsAsync(listingId, ct);
+            var result = await _slotService.GetAvailableSlotsAsync(propertyId, ct);
             if (result.IsSuccess)
                 return Ok(result.Value);
 
@@ -69,13 +69,6 @@ namespace Nexus.Api.Controllers
                 return Ok(result.Value);
 
             return MapFailure(result);
-        }
-
-        [AllowAnonymous]
-        [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
-        {
-            return Ok();
         }
     }
 }

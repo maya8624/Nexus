@@ -25,6 +25,7 @@ namespace Nexus.Infrastructure.Repositories
         {
             return await _context.InspectionSlots
                 .AsNoTracking()
+                .Include(x => x.Agent)
                 .Where(x => x.Id == id && x.IsDeleted == false)
                 .FirstOrDefaultAsync(ct);
         }
@@ -58,7 +59,8 @@ namespace Nexus.Infrastructure.Repositories
             var query = _context.InspectionSlots
                 .AsNoTracking()
                 .Where(x =>
-                    x.ListingId == request.ListingId &&
+                    x.PropertyId == request.PropertyId &&
+                    //x.ListingId == request.ListingId &&
                     x.IsDeleted == false &&
                     x.Status == InspectionSlotStatus.Open &&
                     x.StartAtUtc >= request.FromUtc &&

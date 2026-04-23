@@ -46,11 +46,11 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpPatch("{id:guid}/cancel")]
-        public async Task<ActionResult<InspectionBookingDto>> Cancel(Guid id, CancellationToken ct)
+        public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
         {
             var result = await _bookingService.CancelAsync(id, ct);
             if (result.IsSuccess)
-                return Ok(result.Value);
+                return NoContent();
 
             return MapFailure(result);
         }

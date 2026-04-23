@@ -48,6 +48,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IAgentRepository, AgentRepository>();
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
+            services.AddScoped<IValidator<CancelBookingRequest>, CancelBookingRequestValidator>();
             services.AddScoped<IValidator<RefundRequest>, RefundRequestValidator>();
             services.AddScoped<IValidator<OrderPaymentRequest>, OrderPaymentRequestValidator>();
             services.AddScoped<IValidator<CreateDepositRequest>, CreateDepositRequestValidator>();

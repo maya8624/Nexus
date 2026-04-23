@@ -4,13 +4,12 @@ namespace Nexus.Application.Dtos
     {
         public Guid Id { get; init; }
         public Guid UserId { get; init; }
-        public Guid InspectionSlotId { get; init; }
         public Guid PropertyId { get; init; }
-        public Guid ListingId { get; init; }
-        public Guid AgentId { get; init; }
         public string Status { get; init; } = string.Empty;
-        public string? Notes { get; init; }
-        public DateTimeOffset CreatedAtUtc { get; init; }
-        public DateTimeOffset UpdatedAtUtc { get; init; }
+        public string AgentFirstName { get; set; } = string.Empty;
+        public string AgentLastName { get; set; } = string.Empty;
+        public string? AgentPhone { get; set; } = string.Empty;
+        public DateTimeOffset StartAtUtc { get; init; }
+        public DateTimeOffset EndAtUtc { get; init; }
     }
 }

@@ -136,12 +136,12 @@ namespace Nexus.Application.Services
             return Result<InspectionSlotDto>.Success(MapToDto(slot));
         }
 
-        public async Task<Result<IReadOnlyList<InspectionSlotDto>>> GetAvailableSlotsAsync(Guid listingId, CancellationToken ct)
+        public async Task<Result<IReadOnlyList<InspectionSlotDto>>> GetAvailableSlotsAsync(Guid propertyId, CancellationToken ct)
         {
             var now = DateTimeOffset.UtcNow;
             var request = new GetAvailableInspectionSlotsRequest
             {
-                ListingId = listingId,
+                PropertyId = propertyId,
                 FromUtc = now,
                 ToUtc = now.AddDays(InspectionSlotConstants.AvailabilityWindowDays),
                 Limit = InspectionSlotConstants.AvailableSlotsMaxResults

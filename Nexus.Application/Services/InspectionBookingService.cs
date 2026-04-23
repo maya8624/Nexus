@@ -39,7 +39,7 @@ namespace Nexus.Application.Services
             if (userExists == false)
                 return Result<InspectionBookingDto>.NotFound("UserNotFound", "User not found or inactive.");
 
-            var slot = await _slotRepository.GetByIdForUpdateAsync(request.InspectionSlotId, ct);
+            var slot = await _slotRepository.GetByIdAsync(request.InspectionSlotId, ct);
             if (slot is null)
                 return Result<InspectionBookingDto>.NotFound("SlotNotFound", "Inspection slot not found.");
 
@@ -72,6 +72,10 @@ namespace Nexus.Application.Services
             await _bookingRepository.Create(booking, ct);
             await _uow.SaveChanges();
 
+            // Ensure slot and agent are included for mapping to DTO
+            booking.InspectionSlot = slot;
+            booking.Agent = slot.Agent;
+
             return Result<InspectionBookingDto>.Success(MapToDto(booking));
         }
 
@@ -96,37 +100,35 @@ namespace Nexus.Application.Services
             return Result<InspectionBookingDto>.Success(MapToDto(booking));
         }
 
-        public async Task<Result<InspectionBookingDto>> CancelAsync(Guid id, CancellationToken ct)
+        public async Task<Result<bool>> CancelAsync(Guid id, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
             var booking = await _bookingRepository.GetByIdForUpdateAsync(id, userId, ct);
             if (booking is null)
-                return Result<InspectionBookingDto>.NotFound("BookingNotFound", "Booking not found.");
+                return Result<bool>.NotFound("BookingNotFound", "Booking not found.");
 
             if (booking.Status != InspectionBookingStatus.Pending && booking.Status != InspectionBookingStatus.Confirmed)
-                return Result<InspectionBookingDto>.Conflict("InvalidStatus", "Only pending or confirmed bookings can be cancelled.");
+                return Result<bool>.Conflict("InvalidStatus", "Only pending or confirmed bookings can be cancelled.");
 
             booking.Status = InspectionBookingStatus.Cancelled;
             booking.UpdatedAtUtc = DateTimeOffset.UtcNow;
-
             await _uow.SaveChanges();
 
-            return Result<InspectionBookingDto>.Success(MapToDto(booking));
+            return Result<bool>.Success(true);
         }
 
         private static InspectionBookingDto MapToDto(InspectionBooking booking) => new()
         {
             Id = booking.Id,
             UserId = booking.UserId,
-            InspectionSlotId = booking.InspectionSlotId,
             PropertyId = booking.PropertyId,
-            ListingId = booking.ListingId,
-            AgentId = booking.AgentId,
             Status = booking.Status.ToString(),
-            Notes = booking.Notes,
-            CreatedAtUtc = booking.CreatedAtUtc,
-            UpdatedAtUtc = booking.UpdatedAtUtc
+            AgentFirstName = booking.Agent.FirstName,
+            AgentLastName = booking.Agent.LastName,
+            AgentPhone = booking.Agent.PhoneNumber,
+            StartAtUtc = booking.InspectionSlot.StartAtUtc,
+            EndAtUtc = booking.InspectionSlot.EndAtUtc
         };
     }
 }

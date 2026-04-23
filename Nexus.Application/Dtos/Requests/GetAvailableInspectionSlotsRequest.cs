@@ -7,7 +7,8 @@ namespace Nexus.Application.Dtos.Requests
 {
     public class GetAvailableInspectionSlotsRequest
     {
-        public Guid ListingId { get; init; }
+        //public Guid ListingId { get; init; }
+        public Guid PropertyId { get; init; }
         public DateTimeOffset? FromUtc { get; init; }
         public DateTimeOffset? ToUtc { get; init; }
         public int? Limit { get; init; }

@@ -19,6 +19,8 @@ namespace Nexus.Infrastructure.Repositories
         {
             return await _context.InspectionBookings
                 .AsNoTracking()
+                .Include(x => x.InspectionSlot)
+                .Include(x => x.Agent)
                 .Where(x => x.Id == id && x.UserId == userId && x.IsDeleted == false)
                 .FirstOrDefaultAsync(ct);
         }
@@ -34,6 +36,8 @@ namespace Nexus.Infrastructure.Repositories
         {
             return await _context.InspectionBookings
                 .AsNoTracking()
+                .Include(x => x.InspectionSlot)
+                .Include(x => x.Agent)
                 .Where(x => x.UserId == userId && x.IsDeleted == false)
                 .OrderByDescending(x => x.CreatedAtUtc)
                 .ToListAsync(ct);

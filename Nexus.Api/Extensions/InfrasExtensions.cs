@@ -22,12 +22,14 @@ namespace Nexus.Api.Extensions
             services.AddSingleton<IStripeClient>(new StripeClient(config.GetSection(nameof(StripeSettings.SecretKey)).Value));
             services.AddScoped(x => new SessionService(x.GetRequiredService<IStripeClient>()));
 
+            var allowedOrigins = config.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? [];
+
             services.AddCors(options =>
             {
                 options.AddDefaultPolicy(
                     builder =>
                     {
-                        builder.WithOrigins(["http://localhost:5173", "http://localhost:5174","http://127.0.0.1:5500", "https://localhost:7289"])
+                        builder.WithOrigins(allowedOrigins)
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();
