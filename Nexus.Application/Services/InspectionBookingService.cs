@@ -31,7 +31,7 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
-        public async Task<Result<InspectionBookingDto>> CreateAsync(CreateInspectionBookingRequest request, CancellationToken ct)
+        public async Task<Result<InspectionBookingDto>> CreateAsync(InspectionBookingRequest request, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 

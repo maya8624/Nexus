@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Nexus.Api.Filters;
 using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Factories;
@@ -56,10 +57,12 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>();
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
             services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();
-            services.AddScoped<IValidator<CreateInspectionBookingRequest>, CreateInspectionBookingRequestValidator>();
+            services.AddScoped<IValidator<InspectionBookingRequest>, InspectionBookingRequestValidator>();
+            services.AddScoped<IValidator<InternalInspectionBookingRequest>, InternalInspectionBookingRequestValidator>();
             services.AddScoped<IValidator<InspectionSlotRequest>, InspectionSlotRequestValidator>();
             services.AddScoped<IValidator<PropertyQueryRequest>, PropertyQueryRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
+            services.AddScoped<InternalApiKeyFilter>();
         }
     }
 }

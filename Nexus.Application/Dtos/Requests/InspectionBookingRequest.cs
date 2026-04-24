@@ -2,15 +2,15 @@ using FluentValidation;
 
 namespace Nexus.Application.Dtos.Requests
 {
-    public sealed class CreateInspectionBookingRequest
+    public sealed class InspectionBookingRequest
     {
         public Guid InspectionSlotId { get; init; }
         public string? Notes { get; init; }
     }
 
-    public sealed class CreateInspectionBookingRequestValidator : AbstractValidator<CreateInspectionBookingRequest>
+    public sealed class InspectionBookingRequestValidator : AbstractValidator<InspectionBookingRequest>
     {
-        public CreateInspectionBookingRequestValidator()
+        public InspectionBookingRequestValidator()
         {
             RuleFor(x => x.InspectionSlotId).NotEmpty();
             RuleFor(x => x.Notes).MaximumLength(1000);

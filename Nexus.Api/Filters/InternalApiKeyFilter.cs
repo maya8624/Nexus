@@ -17,7 +17,7 @@ namespace Nexus.Api.Filters
 
         public void OnActionExecuting(ActionExecutingContext context)
         {
-            context.HttpContext.Request.Headers.TryGetValue("X-Internal-Api-Key", out var key);
+            context.HttpContext.Request.Headers.TryGetValue("X-Api-Key", out var key);
 
             if (key != _settings.ApiKey)
             {

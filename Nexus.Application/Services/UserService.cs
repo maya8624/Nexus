@@ -44,6 +44,8 @@ namespace Nexus.Application.Services
                 FirstName = firstName,
                 LastName = lastName,
                 CreatedAtUtc = DateTimeOffset.UtcNow,
+                UpdatedAtUtc = DateTimeOffset.UtcNow,
+                IsActive = true
             };
 
             await _userRepo.Create(user, cancellationToken);

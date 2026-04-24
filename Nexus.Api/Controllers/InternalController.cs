@@ -24,8 +24,8 @@ namespace Nexus.Api.Controllers
             _bookingService = bookingService;
         }
 
-        [HttpGet("available-slots")]
-        public async Task<IActionResult> GetAvailableSlots([FromQuery] Guid propertyId, CancellationToken ct)
+        [HttpGet("inspection-bookings/available/{propertyId:guid}")]
+        public async Task<IActionResult> GetAvailableSlots([FromRoute] Guid propertyId, CancellationToken ct)
         {
             var result = await _slotService.GetAvailableSlotsAsync(propertyId, ct);
             if (result.IsSuccess)
@@ -35,7 +35,7 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpPost("inspection-bookings")]
-        public async Task<IActionResult> Book([FromBody] CreateInspectionBookingRequest request, CancellationToken ct)
+        public async Task<IActionResult> Book([FromBody] InspectionBookingRequest request, CancellationToken ct)
         {
             var result = await _bookingService.CreateAsync(request, ct);
             if (result.IsSuccess)

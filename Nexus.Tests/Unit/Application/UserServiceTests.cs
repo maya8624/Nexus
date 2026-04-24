@@ -48,7 +48,7 @@ namespace Nexus.Tests.Unit.Application
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns(hashedPassword);
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
-            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), email)).Returns("token");
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), email, It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
             var result = await _userService.RegisterEmailUser(email, password);
@@ -67,7 +67,7 @@ namespace Nexus.Tests.Unit.Application
                 u.CreatedAtUtc != default
             ), It.IsAny<CancellationToken>()), Times.Once);
             _uowMock.Verify(x => x.SaveChanges(), Times.Once);
-            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), email), Times.Once);
+            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), email, It.IsAny<string?>(), It.IsAny<string?>()), Times.Once);
         }
 
         [Fact]
@@ -97,7 +97,7 @@ namespace Nexus.Tests.Unit.Application
             _userRepoMock.Verify(x => x.GetByEmail(email), Times.Once);
             _passwordHasherMock.Verify(x => x.HashPassword(It.IsAny<string>()), Times.Never);
             _userRepoMock.Verify(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()), Times.Never);
-            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -112,7 +112,7 @@ namespace Nexus.Tests.Unit.Application
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns(hashedPassword);
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
-            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>())).Returns("token");
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
             await _userService.RegisterEmailUser(email, password);
@@ -142,7 +142,7 @@ namespace Nexus.Tests.Unit.Application
                 .Callback<User, CancellationToken>((u, ct) => capturedUser = u)
                 .Returns(Task.CompletedTask);
             _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
-            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>())).Returns("token");
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
             await _userService.RegisterEmailUser(email, password);
@@ -169,7 +169,7 @@ namespace Nexus.Tests.Unit.Application
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns(hashedPassword);
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
-            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>())).Returns("token");
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
             var result = await _userService.RegisterEmailUser(email, password);
@@ -191,7 +191,7 @@ namespace Nexus.Tests.Unit.Application
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns("hashed_password");
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
-            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>())).Returns("token");
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
             var result = await _userService.RegisterEmailUser(email, password);
@@ -212,7 +212,7 @@ namespace Nexus.Tests.Unit.Application
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns("hashed_password");
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
-            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>())).Returns("token");
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
             await _userService.RegisterEmailUser(email, password);
@@ -233,7 +233,7 @@ namespace Nexus.Tests.Unit.Application
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns("hashed_password");
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _uowMock.Setup(x => x.SaveChanges()).Callback(() => callSequence.Add("SaveChanges")).ReturnsAsync(1);
-            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
                 .Callback(() => callSequence.Add("CreateToken"))
                 .Returns("token");
 
@@ -263,7 +263,7 @@ namespace Nexus.Tests.Unit.Application
 
             _userRepoMock.Setup(x => x.GetByEmail(email)).ReturnsAsync(user);
             _passwordHasherMock.Setup(x => x.VerifyPassword(hashedPassword, password)).Returns(true);
-            _tokenServiceMock.Setup(x => x.CreateToken(userId.ToString(), email)).Returns("token");
+            _tokenServiceMock.Setup(x => x.CreateToken(userId.ToString(), email, It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
             var result = await _userService.Login(email, password);
@@ -275,7 +275,7 @@ namespace Nexus.Tests.Unit.Application
 
             _userRepoMock.Verify(x => x.GetByEmail(email), Times.Once);
             _passwordHasherMock.Verify(x => x.VerifyPassword(hashedPassword, password), Times.Once);
-            _tokenServiceMock.Verify(x => x.CreateToken(userId.ToString(), email), Times.Once);
+            _tokenServiceMock.Verify(x => x.CreateToken(userId.ToString(), email, It.IsAny<string?>(), It.IsAny<string?>()), Times.Once);
         }
 
         [Fact]
@@ -297,7 +297,7 @@ namespace Nexus.Tests.Unit.Application
 
             _userRepoMock.Verify(x => x.GetByEmail(email), Times.Once);
             _passwordHasherMock.Verify(x => x.VerifyPassword(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -323,7 +323,7 @@ namespace Nexus.Tests.Unit.Application
 
             _userRepoMock.Verify(x => x.GetByEmail(email), Times.Once);
             _passwordHasherMock.Verify(x => x.VerifyPassword(hashedPassword, wrongPassword), Times.Once);
-            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -339,13 +339,13 @@ namespace Nexus.Tests.Unit.Application
 
             _userRepoMock.Setup(x => x.GetByEmail(email)).ReturnsAsync(user);
             _passwordHasherMock.Setup(x => x.VerifyPassword(hashedPassword, password)).Returns(true);
-            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>())).Returns("token");
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
             await _userService.Login(email, password);
 
             // Assert
-            _tokenServiceMock.Verify(x => x.CreateToken(userId.ToString(), email), Times.Once);
+            _tokenServiceMock.Verify(x => x.CreateToken(userId.ToString(), email, It.IsAny<string?>(), It.IsAny<string?>()), Times.Once);
         }
 
         [Theory]
@@ -362,7 +362,7 @@ namespace Nexus.Tests.Unit.Application
 
             _userRepoMock.Setup(x => x.GetByEmail(email)).ReturnsAsync(user);
             _passwordHasherMock.Setup(x => x.VerifyPassword(hashedPassword, password)).Returns(true);
-            _tokenServiceMock.Setup(x => x.CreateToken(userId.ToString(), email)).Returns("token");
+            _tokenServiceMock.Setup(x => x.CreateToken(userId.ToString(), email, It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
             var result = await _userService.Login(email, password);
@@ -381,7 +381,7 @@ namespace Nexus.Tests.Unit.Application
             await _userService.Login("nonexistent@example.com", "SomePassword123");
 
             // Assert
-            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -401,7 +401,7 @@ namespace Nexus.Tests.Unit.Application
             await _userService.Login(email, password);
 
             // Assert
-            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
@@ -446,7 +446,7 @@ namespace Nexus.Tests.Unit.Application
                 .Callback(() => callSequence.Add("VerifyPassword"))
                 .Returns(true);
             _tokenServiceMock
-                .Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>()))
+                .Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()))
                 .Callback(() => callSequence.Add("CreateToken"))
                 .Returns("token");
 

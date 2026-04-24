@@ -28,8 +28,8 @@ namespace Nexus.Api.Controllers
         }
 
         [AllowAnonymous]
-        [HttpGet("available")]
-        public async Task<IActionResult> GetAvailableSlots([FromQuery] Guid propertyId, CancellationToken ct)
+        [HttpGet("available/{propertyId:guid}")]
+        public async Task<IActionResult> GetAvailableSlots([FromRoute] Guid propertyId, CancellationToken ct)
         {
             var result = await _slotService.GetAvailableSlotsAsync(propertyId, ct);
             if (result.IsSuccess)
