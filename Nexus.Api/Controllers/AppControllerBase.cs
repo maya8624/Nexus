@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Nexus.Application.Common;
-using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Responses;
+using System.Security.Claims;
 
 namespace Nexus.Api.Controllers
 {
@@ -14,6 +14,18 @@ namespace Nexus.Api.Controllers
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public class AppControllerBase : ControllerBase
     {
+        protected Guid UserId
+        {
+            get
+            {
+                var sub = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
+                          ?? HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+                Guid.TryParse(sub, out var id);
+                return id;
+            }
+        }
+
         protected ObjectResult MapFailure<T>(Result<T> result)
         {
             var statusCode = result.Status switch

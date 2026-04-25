@@ -1,12 +1,13 @@
+using Microsoft.AspNetCore.Mvc;
+using Nexus.Api.Filters;
+using Nexus.Application.Dtos;
+using Nexus.Application.Dtos.Requests;
+using Nexus.Application.Interfaces.Business;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Nexus.Api.Filters;
-using Nexus.Application.Dtos.Requests;
-using Nexus.Application.Interfaces.Business;
 
 namespace Nexus.Api.Controllers
 {
@@ -37,17 +38,43 @@ namespace Nexus.Api.Controllers
         [HttpPost("inspection-bookings")]
         public async Task<IActionResult> Book([FromBody] InternalInspectionBookingRequest request, CancellationToken ct)
         {
-            var result = await _bookingService.CreateAsyncForInternal(request, ct);
+            var bookingRequest = new InspectionBookingRequest
+            {
+                InspectionSlotId = request.InspectionSlotId,
+                Notes = request.Notes
+            };
+
+            var result = await _bookingService.CreateAsync(bookingRequest, request.UserId, ct);
             if (result.IsSuccess)
                 return StatusCode(201, result.Value);
 
             return StatusCode(500, result.Errors.FirstOrDefault());
         }
 
-        [HttpPatch("inspection-bookings/{id:guid}/cancel")]
-        public async Task<IActionResult> Cancel(Guid id, [FromBody] CancelBookingRequest request, CancellationToken ct)
+        [HttpGet("inspection-bookings/my/{userId:guid}")]
+        public async Task<IActionResult> GetMyBookings(Guid userId, CancellationToken ct)
         {
-            var result = await _bookingService.CancelAsync(id, ct);
+            var result = await _bookingService.GetMyBookingsAsync(userId, ct);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return StatusCode(500, result.Errors.FirstOrDefault());
+        }
+
+        [HttpGet("inspection-bookings/{id:guid}")]
+        public async Task<IActionResult> GetBookingById(Guid id, [FromBody] AIInspectionBookingRequest request, CancellationToken ct)
+        {
+            var result = await _bookingService.GetByIdAsync(id, request.UserId, ct);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return StatusCode(500, result.Errors.FirstOrDefault());
+        }
+
+        [HttpPatch("inspection-bookings/{id:guid}/cancel")]
+        public async Task<IActionResult> Cancel(Guid id, [FromBody] AIInspectionBookingRequest request, CancellationToken ct)
+        {
+            var result = await _bookingService.CancelAsync(id, request.UserId, ct);
             if (result.IsSuccess)
                 return Ok(result.Value);
 

@@ -18,7 +18,7 @@ namespace Nexus.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<InspectionBookingDto>> Create([FromBody] InspectionBookingRequest request, CancellationToken ct)
         {
-            var result = await _bookingService.CreateAsync(request, ct);
+            var result = await _bookingService.CreateAsync(request, UserId, ct);
             if (result.IsSuccess)
                 return CreatedAtAction(nameof(GetById), new { id = result.Value!.Id }, result.Value);
 
@@ -28,7 +28,7 @@ namespace Nexus.Api.Controllers
         [HttpGet("my")]
         public async Task<ActionResult<IReadOnlyList<InspectionBookingDto>>> GetMyBookings(CancellationToken ct)
         {
-            var result = await _bookingService.GetMyBookingsAsync(ct);
+            var result = await _bookingService.GetMyBookingsAsync(UserId, ct);
             if (result.IsSuccess)
                 return Ok(result.Value);
 
@@ -38,7 +38,7 @@ namespace Nexus.Api.Controllers
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<InspectionBookingDto>> GetById(Guid id, CancellationToken ct)
         {
-            var result = await _bookingService.GetByIdAsync(id, ct);
+            var result = await _bookingService.GetByIdAsync(id, UserId, ct);
             if (result.IsSuccess)
                 return Ok(result.Value);
 
@@ -48,7 +48,7 @@ namespace Nexus.Api.Controllers
         [HttpPatch("{id:guid}/cancel")]
         public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
         {
-            var result = await _bookingService.CancelAsync(id, ct);
+            var result = await _bookingService.CancelAsync(id, UserId, ct);
             if (result.IsSuccess)
                 return NoContent();
 

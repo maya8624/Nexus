@@ -70,6 +70,11 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.HasIndex(x => x.Status);
             builder.HasIndex(x => new { x.InspectionSlotId, x.Status });
             builder.HasIndex(x => new { x.UserId, x.Status });
+
+            // Prevent duplicate active bookings for the same slot by the same user even under concurrent requests
+            builder.HasIndex(x => new { x.InspectionSlotId, x.UserId })
+                .IsUnique()
+                .HasFilter("status != 'Cancelled' AND is_deleted = false");
         }
     }
 }

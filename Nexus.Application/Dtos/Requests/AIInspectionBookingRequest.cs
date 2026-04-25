@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace Nexus.Application.Dtos.Requests
 {
-    public sealed class CancelBookingRequest
+    public sealed class AIInspectionBookingRequest
     {
         public Guid UserId { get; set; }
     }
 
-    public sealed class CancelBookingRequestValidator : AbstractValidator<CancelBookingRequest>
+    public sealed class AIInspectionBookingRequestValidator : AbstractValidator<AIInspectionBookingRequest>
     {
-        public CancelBookingRequestValidator()
+        public AIInspectionBookingRequestValidator()
         {
             RuleFor(x => x.UserId).NotEmpty();
         }

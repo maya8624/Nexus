@@ -37,33 +37,32 @@ namespace Nexus.Tests.Unit.Application
         [Fact]
         public async Task CreateBooking_WithMissingUser_ShouldReturnNotFound()
         {
-            var request = new CreateInspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
+            var request = new InspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
 
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
 
-            var result = await _service.CreateAsync(request, CancellationToken.None);
+            var result = await _service.CreateAsync(request, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("UserNotFound", Assert.Single(result.Errors).Code);
-            _slotRepositoryMock.Verify(x => x.GetByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
             _bookingRepositoryMock.Verify(x => x.Create(It.IsAny<InspectionBooking>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task CreateBooking_WithMissingSlot_ShouldReturnNotFound()
         {
-            var request = new CreateInspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
+            var request = new InspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
 
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
             _slotRepositoryMock
-                .Setup(x => x.GetByIdForUpdateAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((InspectionSlot?)null);
 
-            var result = await _service.CreateAsync(request, CancellationToken.None);
+            var result = await _service.CreateAsync(request, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("SlotNotFound", Assert.Single(result.Errors).Code);
@@ -73,17 +72,17 @@ namespace Nexus.Tests.Unit.Application
         [Fact]
         public async Task CreateBooking_WithClosedSlot_ShouldReturnConflict()
         {
-            var request = new CreateInspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
+            var request = new InspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
             var slot = BuildSlot(status: InspectionSlotStatus.Closed);
 
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
             _slotRepositoryMock
-                .Setup(x => x.GetByIdForUpdateAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(slot);
 
-            var result = await _service.CreateAsync(request, CancellationToken.None);
+            var result = await _service.CreateAsync(request, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.Conflict, result.Status);
             Assert.Equal("SlotNotAvailable", Assert.Single(result.Errors).Code);
@@ -93,20 +92,20 @@ namespace Nexus.Tests.Unit.Application
         [Fact]
         public async Task CreateBooking_WithFullSlot_ShouldReturnConflict()
         {
-            var request = new CreateInspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
+            var request = new InspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
             var slot = BuildSlot(id: request.InspectionSlotId, capacity: 2);
 
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
             _slotRepositoryMock
-                .Setup(x => x.GetByIdForUpdateAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(slot);
             _bookingRepositoryMock
                 .Setup(x => x.GetConfirmedCountForSlotAsync(slot.Id, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(2);
 
-            var result = await _service.CreateAsync(request, CancellationToken.None);
+            var result = await _service.CreateAsync(request, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.Conflict, result.Status);
             Assert.Equal("SlotFull", Assert.Single(result.Errors).Code);
@@ -116,14 +115,14 @@ namespace Nexus.Tests.Unit.Application
         [Fact]
         public async Task CreateBooking_WithExistingActiveBooking_ShouldReturnConflict()
         {
-            var request = new CreateInspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
+            var request = new InspectionBookingRequest { InspectionSlotId = Guid.NewGuid() };
             var slot = BuildSlot(id: request.InspectionSlotId);
 
             _userRepositoryMock
                 .Setup(x => x.IsAny(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
             _slotRepositoryMock
-                .Setup(x => x.GetByIdForUpdateAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(slot);
             _bookingRepositoryMock
                 .Setup(x => x.GetConfirmedCountForSlotAsync(slot.Id, It.IsAny<CancellationToken>()))
@@ -132,7 +131,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.HasActiveBookingForSlotAsync(slot.Id, _userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            var result = await _service.CreateAsync(request, CancellationToken.None);
+            var result = await _service.CreateAsync(request, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.Conflict, result.Status);
             Assert.Equal("DuplicateBooking", Assert.Single(result.Errors).Code);
@@ -142,7 +141,7 @@ namespace Nexus.Tests.Unit.Application
         [Fact]
         public async Task CreateBooking_WithValidInput_ShouldReturnSuccess()
         {
-            var request = new CreateInspectionBookingRequest
+            var request = new InspectionBookingRequest
             {
                 InspectionSlotId = Guid.NewGuid(),
                 Notes = "  Please call on arrival.  "
@@ -153,7 +152,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.IsAny(It.IsAny<System.Linq.Expressions.Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
             _slotRepositoryMock
-                .Setup(x => x.GetByIdForUpdateAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
+                .Setup(x => x.GetByIdAsync(request.InspectionSlotId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(slot);
             _bookingRepositoryMock
                 .Setup(x => x.GetConfirmedCountForSlotAsync(slot.Id, It.IsAny<CancellationToken>()))
@@ -168,14 +167,13 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.SaveChanges())
                 .ReturnsAsync(1);
 
-            var result = await _service.CreateAsync(request, CancellationToken.None);
+            var result = await _service.CreateAsync(request, _userId, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Value);
-            Assert.Equal(slot.Id, result.Value!.InspectionSlotId);
+            Assert.Equal(slot.StartAtUtc, result.Value!.StartAtUtc);
             Assert.Equal(_userId, result.Value.UserId);
             Assert.Equal("Pending", result.Value.Status);
-            Assert.Equal("Please call on arrival.", result.Value.Notes);
 
             _bookingRepositoryMock.Verify(x => x.Create(It.Is<InspectionBooking>(b =>
                 b.UserId == _userId &&
@@ -194,15 +192,15 @@ namespace Nexus.Tests.Unit.Application
         {
             var bookings = new List<InspectionBooking>
             {
-                BuildBooking(id: Guid.NewGuid(), userId: _userId, status: InspectionBookingStatus.Pending, notes: "First"),
-                BuildBooking(id: Guid.NewGuid(), userId: _userId, status: InspectionBookingStatus.Confirmed, notes: "Second")
+                BuildBooking(id: Guid.NewGuid(), userId: _userId, status: InspectionBookingStatus.Pending),
+                BuildBooking(id: Guid.NewGuid(), userId: _userId, status: InspectionBookingStatus.Confirmed)
             };
 
             _bookingRepositoryMock
                 .Setup(x => x.GetByUserIdAsync(_userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(bookings);
 
-            var result = await _service.GetMyBookingsAsync(CancellationToken.None);
+            var result = await _service.GetMyBookingsAsync(_userId, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Value);
@@ -221,7 +219,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetByIdAsync(bookingId, _userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((InspectionBooking?)null);
 
-            var result = await _service.GetByIdAsync(bookingId, CancellationToken.None);
+            var result = await _service.GetByIdAsync(bookingId, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("BookingNotFound", Assert.Single(result.Errors).Code);
@@ -230,19 +228,18 @@ namespace Nexus.Tests.Unit.Application
         [Fact]
         public async Task GetBookingById_WithExistingBooking_ShouldReturnMappedResult()
         {
-            var booking = BuildBooking(id: Guid.NewGuid(), userId: _userId, status: InspectionBookingStatus.Confirmed, notes: "Window side");
+            var booking = BuildBooking(id: Guid.NewGuid(), userId: _userId, status: InspectionBookingStatus.Confirmed);
 
             _bookingRepositoryMock
                 .Setup(x => x.GetByIdAsync(booking.Id, _userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(booking);
 
-            var result = await _service.GetByIdAsync(booking.Id, CancellationToken.None);
+            var result = await _service.GetByIdAsync(booking.Id, _userId, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.NotNull(result.Value);
             Assert.Equal(booking.Id, result.Value!.Id);
             Assert.Equal("Confirmed", result.Value.Status);
-            Assert.Equal("Window side", result.Value.Notes);
         }
 
         [Fact]
@@ -254,7 +251,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetByIdForUpdateAsync(bookingId, _userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((InspectionBooking?)null);
 
-            var result = await _service.CancelAsync(bookingId, CancellationToken.None);
+            var result = await _service.CancelAsync(bookingId, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("BookingNotFound", Assert.Single(result.Errors).Code);
@@ -270,7 +267,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetByIdForUpdateAsync(booking.Id, _userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(booking);
 
-            var result = await _service.CancelAsync(booking.Id, CancellationToken.None);
+            var result = await _service.CancelAsync(booking.Id, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.Conflict, result.Status);
             Assert.Equal("InvalidStatus", Assert.Single(result.Errors).Code);
@@ -291,11 +288,10 @@ namespace Nexus.Tests.Unit.Application
                 .ReturnsAsync(1);
 
             var beforeUpdate = booking.UpdatedAtUtc;
-            var result = await _service.CancelAsync(booking.Id, CancellationToken.None);
+            var result = await _service.CancelAsync(booking.Id, _userId, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
-            Assert.NotNull(result.Value);
-            Assert.Equal("Cancelled", result.Value!.Status);
+            Assert.True(result.Value);
             Assert.Equal(InspectionBookingStatus.Cancelled, booking.Status);
             Assert.True(booking.UpdatedAtUtc >= beforeUpdate);
             _uowMock.Verify(x => x.SaveChanges(), Times.Once);
@@ -309,19 +305,21 @@ namespace Nexus.Tests.Unit.Application
             int capacity = 3,
             InspectionSlotStatus status = InspectionSlotStatus.Open)
         {
+            var resolvedAgentId = agentId ?? Guid.NewGuid();
             return new InspectionSlot
             {
                 Id = id ?? Guid.NewGuid(),
                 PropertyId = propertyId ?? Guid.NewGuid(),
                 ListingId = listingId ?? Guid.NewGuid(),
-                AgentId = agentId ?? Guid.NewGuid(),
+                AgentId = resolvedAgentId,
                 UserId = Guid.NewGuid(),
                 StartAtUtc = DateTimeOffset.UtcNow.AddDays(1),
                 EndAtUtc = DateTimeOffset.UtcNow.AddDays(1).AddHours(1),
                 Capacity = capacity,
                 Status = status,
                 CreatedAtUtc = DateTimeOffset.UtcNow,
-                UpdatedAtUtc = DateTimeOffset.UtcNow
+                UpdatedAtUtc = DateTimeOffset.UtcNow,
+                Agent = new Agent { Id = resolvedAgentId, FirstName = "Test", LastName = "Agent" }
             };
         }
 
@@ -342,7 +340,13 @@ namespace Nexus.Tests.Unit.Application
                 Status = status,
                 Notes = notes,
                 CreatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1),
-                UpdatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1)
+                UpdatedAtUtc = DateTimeOffset.UtcNow.AddHours(-1),
+                Agent = new Agent { FirstName = "Test", LastName = "Agent" },
+                InspectionSlot = new InspectionSlot
+                {
+                    StartAtUtc = DateTimeOffset.UtcNow.AddDays(1),
+                    EndAtUtc = DateTimeOffset.UtcNow.AddDays(1).AddHours(1)
+                }
             };
         }
     }
