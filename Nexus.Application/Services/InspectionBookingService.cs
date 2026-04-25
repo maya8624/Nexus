@@ -31,15 +31,26 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
+        public async Task<Result<InspectionBookingDto>> CreateAsyncForInternal(InternalInspectionBookingRequest request, CancellationToken ct)
+        {
+            var result = await CreateBookingAsync(request.InspectionSlotId, request.UserId, request.Notes, ct);
+            return result;
+        }
+
         public async Task<Result<InspectionBookingDto>> CreateAsync(InspectionBookingRequest request, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
+            var result = await CreateBookingAsync(request.InspectionSlotId, userId, request.Notes, ct);
+            return result;
+        }
+        public async Task<Result<InspectionBookingDto>> CreateBookingAsync(Guid inspectionSlotId, Guid userId, string? notes, CancellationToken ct)
+        {
             var userExists = await _userRepository.IsAny(x => x.Id == userId && x.IsActive, ct);
             if (userExists == false)
                 return Result<InspectionBookingDto>.NotFound("UserNotFound", "User not found or inactive.");
 
-            var slot = await _slotRepository.GetByIdAsync(request.InspectionSlotId, ct);
+            var slot = await _slotRepository.GetByIdAsync(inspectionSlotId, ct);
             if (slot is null)
                 return Result<InspectionBookingDto>.NotFound("SlotNotFound", "Inspection slot not found.");
 
@@ -64,7 +75,7 @@ namespace Nexus.Application.Services
                 ListingId = slot.ListingId,
                 AgentId = slot.AgentId,
                 Status = InspectionBookingStatus.Pending,
-                Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+                Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
                 CreatedAtUtc = now,
                 UpdatedAtUtc = now
             };

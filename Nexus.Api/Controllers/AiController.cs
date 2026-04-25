@@ -24,14 +24,6 @@ namespace Nexus.Api.Controllers
         [HttpPost("chat")]
         public async Task<IActionResult> Chat([FromBody] ChatRequest request, CancellationToken cancellationToken)
         {
-            // TODO: remove mock — restore real implementation below
-            //await Task.CompletedTask;
-            //return Ok(new ChatResponse
-            //{
-            //    Reply = "Great question! Based on current listings, we have a range of properties available across Sydney, Melbourne, and Brisbane that match your criteria. I can provide you with more details on specific properties or help you narrow down your search further. Just let me know what you're looking for!",
-            //    ThreadId = Guid.NewGuid().ToString()
-            //});
-
             var result = await _aiService.GetReply(request, cancellationToken);
             if (result.IsSuccess)
                 return Ok(result.Value);

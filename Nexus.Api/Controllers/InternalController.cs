@@ -35,9 +35,9 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpPost("inspection-bookings")]
-        public async Task<IActionResult> Book([FromBody] InspectionBookingRequest request, CancellationToken ct)
+        public async Task<IActionResult> Book([FromBody] InternalInspectionBookingRequest request, CancellationToken ct)
         {
-            var result = await _bookingService.CreateAsync(request, ct);
+            var result = await _bookingService.CreateAsyncForInternal(request, ct);
             if (result.IsSuccess)
                 return StatusCode(201, result.Value);
 

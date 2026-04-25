@@ -42,17 +42,17 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.HasIndex(x => x.Status);
 
             builder.HasOne(x => x.User)
-                .WithMany()
+                .WithMany(u => u.Deposits)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Property)
-                .WithMany()
+                .WithMany(p => p.Deposits)
                 .HasForeignKey(x => x.PropertyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Listing)
-                .WithMany()
+                .WithMany(l => l.Deposits)
                 .HasForeignKey(x => x.ListingId)
                 .OnDelete(DeleteBehavior.Restrict);
         }

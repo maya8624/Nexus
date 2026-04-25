@@ -6,6 +6,7 @@ namespace Nexus.Application.Interfaces.Business
 {
     public interface IInspectionBookingService
     {
+        Task<Result<InspectionBookingDto>> CreateAsyncForInternal(InternalInspectionBookingRequest request, CancellationToken ct);
         Task<Result<InspectionBookingDto>> CreateAsync(InspectionBookingRequest request, CancellationToken ct);
         Task<Result<IReadOnlyList<InspectionBookingDto>>> GetMyBookingsAsync(CancellationToken ct);
         Task<Result<InspectionBookingDto>> GetByIdAsync(Guid id, CancellationToken ct);
