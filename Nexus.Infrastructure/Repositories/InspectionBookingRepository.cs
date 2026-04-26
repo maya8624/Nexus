@@ -38,7 +38,7 @@ namespace Nexus.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(x => x.InspectionSlot)
                 .Include(x => x.Agent)
-                .Where(x => x.UserId == userId && x.IsDeleted == false)
+                .Where(x => x.UserId == userId && x.IsDeleted == false && x.InspectionSlot.StartAtUtc > DateTimeOffset.UtcNow)
                 .OrderByDescending(x => x.CreatedAtUtc)
                 .ToListAsync(ct);
         }
