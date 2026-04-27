@@ -12,7 +12,6 @@ namespace Nexus.Api.Extensions
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
         {
-
             services.Configure<AiServiceSettings>(config.GetSection(nameof(AiServiceSettings)));
             services.Configure<AuthSettings>(config.GetSection(nameof(AuthSettings)));
             services.Configure<JwtSettings>(config.GetSection(nameof(JwtSettings)));

@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Microsoft.OpenApi;
 using Nexus.Api.Extensions;
 using Nexus.Application.Extensions;
@@ -7,13 +8,23 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (builder.Environment.IsDevelopment() == false)
+{
+    var keyVaultUrl = builder.Configuration["KeyVaultUrl"]
+        ?? throw new InvalidOperationException("KeyVaultUrl is not configured.");
+
+    builder.Configuration.AddAzureKeyVault(
+        new Uri(keyVaultUrl),
+        new DefaultAzureCredential());
+}
+
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddHttpContextAccessor();
-
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddFluentValidationAutoValidation();
+
+
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 

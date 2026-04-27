@@ -7,6 +7,6 @@ namespace Nexus.Application.Settings
     public class AuthSettings
     {
         public string GoogleClientId { get; set; }
-        public string GoogleSerect { get; set; }
+        public string GoogleSecret { get; set; }
     }
 }
