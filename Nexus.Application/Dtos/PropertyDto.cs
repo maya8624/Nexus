@@ -13,6 +13,7 @@ namespace Nexus.Application.Dtos
         public string Price { get; init; } = string.Empty;
         public decimal PriceValue { get; init; }
         public string PropertyType { get; init; } = string.Empty;
+        public string ListingType { get; init; } = string.Empty;
         public int Bedrooms { get; init; }
         public int Bathrooms { get; init; }
         public int Parking { get; init; }

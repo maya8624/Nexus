@@ -2,8 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.ReadModels;
 using Nexus.Domain.Entities;
+using Nexus.Domain.Enums;
 using Nexus.Infrastructure.Persistence;
-using System.Linq.Expressions;
 
 namespace Nexus.Infrastructure.Repositories
 {
@@ -20,13 +20,13 @@ namespace Nexus.Infrastructure.Repositories
             int skip,
             int pageSize,
             int? propertyTypeId,
+            ListingType? listingType,
             CancellationToken ct)
         {
-            var query = BuildBaseQuery(propertyTypeId);
+            var query = BuildBaseQuery(propertyTypeId, listingType);
             var totalCount = await query.CountAsync(ct);
 
-            var items = await query
-                .Select(ToReadModel)
+            var items = await ToReadModel(query)
                 .Skip(skip)
                 .Take(pageSize)
                 .ToListAsync(ct);
@@ -36,49 +36,46 @@ namespace Nexus.Infrastructure.Repositories
 
         public async Task<PropertyReadModel?> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            return await BuildBaseQuery(propertyTypeId: null)
-                .Where(x => x.Id == id)
-                .Select(ToReadModel)
+            return await ToReadModel(BuildBaseQuery(propertyTypeId: null).Where(x => x.Id == id))
                 .FirstOrDefaultAsync(ct);
         }
 
-        private static readonly Expression<Func<Property, PropertyReadModel>> ToReadModel = x => new PropertyReadModel
-        {
-            Id = x.Id,
-            Title = x.Title,
-            AddressLine1 = x.Address != null ? x.Address.AddressLine1 : null,
-            AddressLine2 = x.Address != null ? x.Address.AddressLine2 : null,
-            Suburb = x.Address != null ? x.Address.Suburb : string.Empty,
-            State = x.Address != null ? x.Address.State : string.Empty,
-            Postcode = x.Address != null ? x.Address.Postcode : string.Empty,
-            PriceValue = x.Listings
+        private static IQueryable<PropertyReadModel> ToReadModel(IQueryable<Property> source) =>
+            from x in source
+            let listing = x.Listings
                 .Where(l => l.IsPublished)
                 .OrderByDescending(l => l.ListedAtUtc)
-                .Select(l => l.Price)
-                .FirstOrDefault(),
-            PropertyType = x.PropertyType != null ? x.PropertyType.Name : string.Empty,
-            Bedrooms = x.Bedrooms,
-            Bathrooms = x.Bathrooms,
-            Parking = x.CarSpaces,
-            LandSizeSqm = x.LandSizeSqm,
-            Description = x.Description ?? string.Empty,
-            Images = x.Images
-                .OrderBy(i => i.DisplayOrder)
-                .Select(i => i.ImageUrl)
-                .ToList(),
-            AgentFirstName = x.Agent != null ? x.Agent.FirstName : string.Empty,
-            AgentLastName = x.Agent != null ? x.Agent.LastName : string.Empty,
-            AgentPhone = x.Agent != null ? x.Agent.PhoneNumber ?? string.Empty : string.Empty,
-            AgentPhoto = x.Agent != null ? x.Agent.PhotoUrl ?? string.Empty : string.Empty,
-            AgencyName = x.Agency != null ? x.Agency.Name : string.Empty,
-            ListedAtUtc = x.Listings
-                .Where(l => l.IsPublished)
-                .OrderByDescending(l => l.ListedAtUtc)
-                .Select(l => (DateTimeOffset?)l.ListedAtUtc)
                 .FirstOrDefault()
-        };
+            select new PropertyReadModel
+            {
+                Id = x.Id,
+                Title = x.Title,
+                AddressLine1 = x.Address != null ? x.Address.AddressLine1 : null,
+                AddressLine2 = x.Address != null ? x.Address.AddressLine2 : null,
+                Suburb = x.Address != null ? x.Address.Suburb : string.Empty,
+                State = x.Address != null ? x.Address.State : string.Empty,
+                Postcode = x.Address != null ? x.Address.Postcode : string.Empty,
+                PriceValue = listing != null ? listing.Price : 0,
+                ListingType = listing != null ? (ListingType?)listing.ListingType : null,
+                PropertyType = x.PropertyType != null ? x.PropertyType.Name : string.Empty,
+                Bedrooms = x.Bedrooms,
+                Bathrooms = x.Bathrooms,
+                Parking = x.CarSpaces,
+                LandSizeSqm = x.LandSizeSqm,
+                Description = x.Description ?? string.Empty,
+                Images = x.Images
+                    .OrderBy(i => i.DisplayOrder)
+                    .Select(i => i.ImageUrl)
+                    .ToList(),
+                AgentFirstName = x.Agent != null ? x.Agent.FirstName : string.Empty,
+                AgentLastName = x.Agent != null ? x.Agent.LastName : string.Empty,
+                AgentPhone = x.Agent != null ? x.Agent.PhoneNumber ?? string.Empty : string.Empty,
+                AgentPhoto = x.Agent != null ? x.Agent.PhotoUrl ?? string.Empty : string.Empty,
+                AgencyName = x.Agency != null ? x.Agency.Name : string.Empty,
+                ListedAtUtc = listing != null ? (DateTimeOffset?)listing.ListedAtUtc : null,
+            };
 
-        private IQueryable<Property> BuildBaseQuery(int? propertyTypeId)
+        private IQueryable<Property> BuildBaseQuery(int? propertyTypeId, ListingType? listingType = null)
         {
             var query = _context.Properties
                 .AsNoTracking()
@@ -86,6 +83,9 @@ namespace Nexus.Infrastructure.Repositories
 
             if (propertyTypeId.HasValue)
                 query = query.Where(x => x.PropertyTypeId == propertyTypeId.Value);
+
+            if (listingType.HasValue)
+                query = query.Where(x => x.Listings.Any(l => l.IsPublished && l.ListingType == listingType.Value));
 
             return query;
         }

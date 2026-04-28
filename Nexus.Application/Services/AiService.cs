@@ -67,7 +67,7 @@ namespace Nexus.Application.Services
                     ["X-API-Key"] = _settings.ApiKey
                 },
                 Body = aiServiceRequest,
-                Url = $"{_settings.BaseUrl}/api/chat",
+                Url = $"{_settings.BaseUrl}/api/chat", //TODO: add to appsettings or make it constant
             };
 
             try
@@ -77,9 +77,15 @@ namespace Nexus.Application.Services
 
                 return Result<ChatResponse>.Success(new ChatResponse
                 {
-                    Reply = result.Reply,
+                    Reply = result.reply,
                     ThreadId = result.thread_id,
-                    PropertyId = result.property_id
+                    PropertyId = result.property_id,
+                    Listings = result.listings?.Select(l => new PropertyListing
+                    {
+                        PropertyId = l.property_id,
+                        PropertyUrl = l.property_url,
+                        ListingId = l.listing_Id
+                    }).ToList() ?? []
                 });
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)

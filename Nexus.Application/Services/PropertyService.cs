@@ -5,6 +5,7 @@ using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.ReadModels;
+using ListingTypeEnum = Nexus.Domain.Enums.ListingType;
 using PropertyTypeEnum = Nexus.Domain.Enums.PropertyType;
 
 namespace Nexus.Application.Services
@@ -21,13 +22,18 @@ namespace Nexus.Application.Services
         public async Task<PropertyListResponse> GetPropertiesAsync(PropertyQueryRequest request, CancellationToken ct)
         {
             int? propertyTypeId = null;
-            if (!string.IsNullOrWhiteSpace(request.Type))
-                propertyTypeId = (int)Enum.Parse<PropertyTypeEnum>(request.Type, ignoreCase: true);
+            if (!string.IsNullOrWhiteSpace(request.PropertyType))
+                propertyTypeId = (int)Enum.Parse<PropertyTypeEnum>(request.PropertyType, ignoreCase: true);
+
+            ListingTypeEnum? listingType = null;
+            if (!string.IsNullOrWhiteSpace(request.ListingType))
+                listingType = Enum.Parse<ListingTypeEnum>(request.ListingType, ignoreCase: true);
 
             var (items, totalCount) = await _propertyRepository.GetPagedAsync(
                 request.Skip,
                 request.PageSize,
                 propertyTypeId,
+                listingType,
                 ct);
 
             return new PropertyListResponse

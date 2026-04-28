@@ -58,6 +58,10 @@ namespace Nexus.Application.Services
                     LastName = user.LastName,
                 });
             }
+            catch (InvalidJwtException ex) when (ex.Message.Contains("transient", StringComparison.OrdinalIgnoreCase))
+            {
+                return Result<UserResponse>.Unauthorized("GOOGLE_SERVICE_UNAVAILABLE", "Could not reach Google authentication service. Please try again later.");
+            }
             catch (InvalidJwtException)
             {
                 return Result<UserResponse>.Unauthorized("GOOGLE_TOKEN_INVALID", "Google token is expired or has an invalid signature");

@@ -1,3 +1,5 @@
+using Nexus.Domain.Enums;
+
 namespace Nexus.Application.ReadModels
 {
     public sealed class PropertyReadModel
@@ -10,6 +12,7 @@ namespace Nexus.Application.ReadModels
         public string State { get; init; } = string.Empty;
         public string Postcode { get; init; } = string.Empty;
         public decimal PriceValue { get; init; }
+        public ListingType? ListingType { get; init; }
         public string PropertyType { get; init; } = string.Empty;
         public int Bedrooms { get; init; }
         public int Bathrooms { get; init; }

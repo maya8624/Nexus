@@ -20,7 +20,6 @@ namespace Nexus.Api.Controllers
             _logger = logger;
         }
 
-        [AllowAnonymous]
         [HttpPost("chat")]
         public async Task<IActionResult> Chat([FromBody] ChatRequest request, CancellationToken cancellationToken)
         {
