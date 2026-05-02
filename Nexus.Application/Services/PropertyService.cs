@@ -19,7 +19,7 @@ namespace Nexus.Application.Services
             _propertyRepository = propertyRepository;
         }
 
-        public async Task<PropertyListResponse> GetPropertiesAsync(PropertyQueryRequest request, CancellationToken ct)
+        public async Task<Result<PropertyListResponse>> GetPropertiesAsync(PropertyQueryRequest request, CancellationToken ct)
         {
             int? propertyTypeId = null;
             if (!string.IsNullOrWhiteSpace(request.PropertyType))
@@ -36,14 +36,14 @@ namespace Nexus.Application.Services
                 listingType,
                 ct);
 
-            return new PropertyListResponse
+            return Result<PropertyListResponse>.Success(new PropertyListResponse
             {
                 Items = items.Select(MapToDto).ToArray(),
                 Page = request.Page,
                 PageSize = request.PageSize,
                 TotalCount = totalCount,
                 TotalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)request.PageSize)
-            };
+            });
         }
 
         public async Task<Result<PropertyDto>> GetByIdAsync(Guid id, CancellationToken ct)

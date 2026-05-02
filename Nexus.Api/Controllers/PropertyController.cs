@@ -22,7 +22,10 @@ namespace Nexus.Api.Controllers
         public async Task<ActionResult<PropertyListResponse>> GetProperties([FromQuery] PropertyQueryRequest request, CancellationToken ct)
         {
             var result = await _propertyService.GetPropertiesAsync(request, ct);
-            return Ok(result);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return MapFailure(result);
         }
 
         [AllowAnonymous]

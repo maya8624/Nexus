@@ -8,11 +8,9 @@ using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (builder.Environment.IsDevelopment() == false)
+var keyVaultUrl = builder.Configuration["KeyVaultUrl"];
+if (!string.IsNullOrEmpty(keyVaultUrl))
 {
-    var keyVaultUrl = builder.Configuration["KeyVaultUrl"]
-        ?? throw new InvalidOperationException("KeyVaultUrl is not configured.");
-
     builder.Configuration.AddAzureKeyVault(
         new Uri(keyVaultUrl),
         new DefaultAzureCredential());

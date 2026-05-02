@@ -7,7 +7,7 @@ namespace Nexus.Application.Interfaces.Business
 {
     public interface IPropertyService
     {
-        Task<PropertyListResponse> GetPropertiesAsync(PropertyQueryRequest request, CancellationToken ct);
+        Task<Result<PropertyListResponse>> GetPropertiesAsync(PropertyQueryRequest request, CancellationToken ct);
         Task<Result<PropertyDto>> GetByIdAsync(Guid id, CancellationToken ct);
     }
 }
