@@ -10,7 +10,6 @@ namespace Nexus.Application.Dtos
         public string Suburb { get; init; } = string.Empty;
         public string State { get; init; } = string.Empty;
         public string Postcode { get; init; } = string.Empty;
-        public string Price { get; init; } = string.Empty;
         public decimal PriceValue { get; init; }
         public string PropertyType { get; init; } = string.Empty;
         public string ListingType { get; init; } = string.Empty;

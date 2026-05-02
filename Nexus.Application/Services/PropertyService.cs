@@ -72,7 +72,6 @@ namespace Nexus.Application.Services
                 State = property.State,
                 Postcode = property.Postcode,
                 PriceValue = property.PriceValue,
-                Price = FormatPrice(property.PriceValue),
                 PropertyType = property.PropertyType,
                 Bedrooms = property.Bedrooms,
                 Bathrooms = property.Bathrooms,
@@ -95,8 +94,5 @@ namespace Nexus.Application.Services
                 ListedDate = property.ListedAtUtc?.ToString("yyyy-MM-dd") ?? string.Empty
             };
         }
-
-        private static string FormatPrice(decimal price) =>
-            price > 0 ? price.ToString("C0") : string.Empty;
     }
 }
