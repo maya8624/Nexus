@@ -67,7 +67,7 @@ namespace Nexus.Application.Services
                     ["X-API-Key"] = _settings.ApiKey
                 },
                 Body = aiServiceRequest,
-                Url = $"{_settings.BaseUrl}/{_settings.ChatStream}"
+                Url = $"{_settings.BaseUrl}/{_settings.Chat}"
             };
 
             try
