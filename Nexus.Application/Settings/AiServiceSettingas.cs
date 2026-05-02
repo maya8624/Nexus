@@ -12,8 +12,10 @@ namespace Nexus.Application.Settings
     /// </summary>
     public class AiServiceSettings
     {
-        public required string BaseUrl { get; init; }
         public required string ApiKey { get; init; }
+        public required string BaseUrl { get; init; }
+        public required string Chat { get; init; }
+        public required string ChatStream { get; init; }
         public int TimeoutSeconds { get; init; } = 30;
     }
 }

@@ -33,7 +33,9 @@ namespace Nexus.Tests.Unit.Application
             var settings = Options.Create(new AiServiceSettings
             {
                 BaseUrl = "http://localhost:8000",
-                ApiKey = "test-key"
+                ApiKey = "test-key",
+                Chat = "api/chat",
+                ChatStream = "api/chat/stream"
             });
 
             _service = new AiService(
@@ -68,7 +70,7 @@ namespace Nexus.Tests.Unit.Application
                 .ReturnsAsync(true);
             _httpClientServiceMock
                 .Setup(x => x.ExecuteRequest<AiServiceResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new AiServiceResponse { Reply = "Hello!", thread_id = "session-1" });
+                .ReturnsAsync(new AiServiceResponse { reply = "Hello!", thread_id = "session-1" });
 
             var result = await _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None);
 
