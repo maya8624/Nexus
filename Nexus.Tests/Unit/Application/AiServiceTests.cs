@@ -16,6 +16,7 @@ using Xunit;
 
 namespace Nexus.Tests.Unit.Application
 {
+    [Trait("Category", "Unit")]
     public class AiServiceTests
     {
         private readonly Mock<IHttpClientService> _httpClientServiceMock = new();

@@ -11,6 +11,7 @@ using Nexus.Application.Interfaces.Repository;
 
 namespace Nexus.Tests.Unit.Application
 {
+    [Trait("Category", "Unit")]
     public class PropertyServiceTests
     {
         private readonly Mock<IPropertyRepository> _propertyRepository = new();

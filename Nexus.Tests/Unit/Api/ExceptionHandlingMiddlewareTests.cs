@@ -17,6 +17,7 @@ using Nexus.Network.Constants;
 
 namespace Nexus.Tests.Unit.Api
 {
+    [Trait("Category", "Unit")]
     public class ExceptionHandlingMiddlewareTests
     {
         [Theory]

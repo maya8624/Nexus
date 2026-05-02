@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexus.Tests.Unit.Network
 {
+    [Trait("Category", "Unit")]
     public class HttpStatusFailureMapTests
     {
         [Theory]

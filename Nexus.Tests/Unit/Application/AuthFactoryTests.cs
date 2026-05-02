@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexus.Tests.Unit.Application
 {
+    [Trait("Category", "Unit")]
     public class AuthFactoryTests
     {
         private readonly Mock<IAuthService> _googleServiceMock;

@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Nexus.Tests.Unit.Application
 {
+    [Trait("Category", "Unit")]
     public class InspectionSlotServiceTests
     {
         private readonly Mock<IInspectionSlotRepository> _slotRepository = new();

@@ -18,6 +18,7 @@ using Xunit;
 
 namespace Nexus.Tests.Unit.Application
 {
+    [Trait("Category", "Unit")]
     public class DepositServiceTests
     {
         private const string TenantEmail = "tenant@example.com";

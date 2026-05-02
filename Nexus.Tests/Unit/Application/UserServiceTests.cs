@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexus.Tests.Unit.Application
 {
+    [Trait("Category", "Unit")]
     public class UserServiceTests
     {
         private readonly Mock<IUserRepository> _userRepoMock;

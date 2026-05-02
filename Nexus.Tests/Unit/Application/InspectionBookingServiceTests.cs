@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexus.Tests.Unit.Application
 {
+    [Trait("Category", "Unit")]
     public class InspectionBookingServiceTests
     {
         private readonly Mock<IInspectionBookingRepository> _bookingRepositoryMock = new();
