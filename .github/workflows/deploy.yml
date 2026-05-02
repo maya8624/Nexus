@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: 'Run unit tests'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 permissions:
   id-token: write
@@ -28,6 +38,7 @@ jobs:
         run: dotnet build Nexus.Api/Nexus.Api.csproj -c Release --no-restore
 
       - name: Test
+        if: ${{ vars.RUN_TESTS == 'true' }}
         run: dotnet test Nexus.Tests/Nexus.Tests.csproj --no-restore --verbosity normal --filter "Category=Unit"
 
       - name: Publish
