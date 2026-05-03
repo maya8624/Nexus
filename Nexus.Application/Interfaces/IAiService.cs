@@ -10,5 +10,6 @@ namespace Nexus.Application.Interfaces
     {
         Task<ChatResponse> SendMessage(string message, string threadId, CancellationToken ct);
         Task<Result<ChatResponse>> GetReply(ChatRequest request, CancellationToken ct);
+        IAsyncEnumerable<string> StreamReply(ChatRequest request, CancellationToken ct);
     }
 }

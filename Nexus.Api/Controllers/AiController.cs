@@ -29,5 +29,19 @@ namespace Nexus.Api.Controllers
 
             return MapFailure(result);
         }
+
+        [HttpPost("chat/stream")]
+        public async Task StreamChat([FromBody] ChatRequest request, CancellationToken cancellationToken)
+        {
+            Response.Headers.Append("Content-Type", "text/event-stream");
+            Response.Headers.Append("Cache-Control", "no-cache");
+            Response.Headers.Append("Connection", "keep-alive");
+
+            await foreach (var chunk in _aiService.StreamReply(request, cancellationToken))
+            {
+                await Response.WriteAsync($"data: {chunk}\n\n", cancellationToken);
+                await Response.Body.FlushAsync(cancellationToken);
+            }
+        }
     }
 }

@@ -67,11 +67,11 @@ namespace Nexus.Infrastructure.Repositories
                     .OrderBy(i => i.DisplayOrder)
                     .Select(i => i.ImageUrl)
                     .ToList(),
-                AgentFirstName = x.Agent != null ? x.Agent.FirstName : string.Empty,
-                AgentLastName = x.Agent != null ? x.Agent.LastName : string.Empty,
-                AgentPhone = x.Agent != null ? x.Agent.PhoneNumber ?? string.Empty : string.Empty,
-                AgentPhoto = x.Agent != null ? x.Agent.PhotoUrl ?? string.Empty : string.Empty,
-                AgencyName = x.Agency != null ? x.Agency.Name : string.Empty,
+                AgentFirstName = listing != null && listing.Agent != null ? listing.Agent.FirstName : string.Empty,
+                AgentLastName = listing != null && listing.Agent != null ? listing.Agent.LastName : string.Empty,
+                AgentPhone = listing != null && listing.Agent != null ? listing.Agent.PhoneNumber ?? string.Empty : string.Empty,
+                AgentPhoto = listing != null && listing.Agent != null ? listing.Agent.PhotoUrl ?? string.Empty : string.Empty,
+                AgencyName = listing != null && listing.Agency != null ? listing.Agency.Name : string.Empty,
                 ListedAtUtc = listing != null ? (DateTimeOffset?)listing.ListedAtUtc : null,
             };
 
