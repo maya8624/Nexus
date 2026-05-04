@@ -8,7 +8,7 @@ namespace Nexus.Domain.Entities
 
         public Guid UserId { get; set; }
         
-        public Guid PropertyId { get; set; }
+        public Guid PropertyId { get; set; }    
 
         public Guid ListingId { get; set; }
 

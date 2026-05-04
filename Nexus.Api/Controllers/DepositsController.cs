@@ -21,10 +21,12 @@ namespace Nexus.Api.Controllers
             _stripeSettings = stripeSettings.Value;
         }
 
+        //TODO: get rid of AllowAnonymous after testing
+        [AllowAnonymous]
         [HttpPost("checkout")]
         public async Task<IActionResult> CreateCheckoutSession([FromBody] CreateDepositRequest request, CancellationToken ct)
         {
-            var result = await _depositService.CreateCheckoutSessionAsync(request, ct);
+            var result = await _depositService.CreateCheckoutSessionAsync(request, UserId, ct);
             if (result.IsSuccess)
                 return Ok(result.Value);
 

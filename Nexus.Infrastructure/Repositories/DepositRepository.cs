@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Domain.Entities;
+using Nexus.Domain.Enums;
 using Nexus.Infrastructure.Persistence;
 
 namespace Nexus.Infrastructure.Repositories
@@ -27,6 +28,15 @@ namespace Nexus.Infrastructure.Repositories
             return await _context.Deposits
                 .AsNoTracking()
                 .Where(x => x.Id == id && x.UserId == userId)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        public async Task<Deposit?> GetByListingIdAsync(Guid listingId, Guid userId, CancellationToken ct)
+        {
+            return await _context.Deposits
+                .AsNoTracking()
+                .Where(x => x.ListingId == listingId)
+                .Where(x => x.UserId == userId)
                 .FirstOrDefaultAsync(ct);
         }
 

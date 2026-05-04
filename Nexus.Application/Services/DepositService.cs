@@ -48,10 +48,17 @@ namespace Nexus.Application.Services
             _propertyRepository = propertyRepository;
         }
 
-        public async Task<Result<DepositResponse>> CreateCheckoutSessionAsync(CreateDepositRequest request, CancellationToken ct)
+        public async Task<Result<DepositResponse?>> GetMyDeposit(Guid listingId, Guid userId, CancellationToken ct)
         {
-            Guid.TryParse(_userContext.UserId, out var userId);
+            var pendingDeposit = await _depositRepository.GetByListingIdAsync(listingId, userId, ct);
+            if (pendingDeposit == null)
+                return Result<DepositResponse?>.Success(null);
 
+            return Result<DepositResponse?>.Success(MapDeposit(pendingDeposit));
+        }
+
+        public async Task<Result<DepositResponse>> CreateCheckoutSessionAsync(CreateDepositRequest request, Guid userId, CancellationToken ct)
+        {
             var existingDeposit = await _depositRepository.GetByClientIdempotencyKeyAsync(userId, request.IdempotencyKey, ct);
             if (existingDeposit?.StripeSessionUrl != null)
                 return Result<DepositResponse>.Success(MapDeposit(existingDeposit));
@@ -86,13 +93,23 @@ namespace Nexus.Application.Services
 
             SessionCreateOptions sessionOptions = CreateSessionOptions(property, deposit);
 
-            var session = await _sessionService.CreateAsync(
-                sessionOptions,
-                new RequestOptions { IdempotencyKey = $"checkout-session-deposit-{deposit.Id}" },
-                ct);
+            Session session;
+            try
+            {
+                session = await _sessionService.CreateAsync(
+                    sessionOptions,
+                    new RequestOptions { IdempotencyKey = $"checkout-session-deposit-{deposit.Id}" },
+                    ct);
+            }
+            catch (StripeException ex)
+            {
+                _logger.LogError(ex, "Stripe session creation failed for deposit {DepositId}", deposit.Id);
+                throw;
+            }
 
             deposit.StripeSessionId = session.Id;
             deposit.StripeSessionUrl = session.Url;
+            deposit.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
             _depositRepository.Update(deposit);
             await _uow.SaveChanges();
@@ -106,8 +123,8 @@ namespace Nexus.Application.Services
             {
                 PaymentMethodTypes = ["card"],
                 LineItems =
-                            [
-                                new SessionLineItemOptions
+                [
+                    new SessionLineItemOptions
                     {
                         PriceData = new SessionLineItemPriceDataOptions
                         {
@@ -121,7 +138,7 @@ namespace Nexus.Application.Services
                         },
                         Quantity = 1
                     }
-                            ],
+                ],
                 Mode = "payment",
                 CustomerEmail = _userContext.Email,
                 SuccessUrl = _stripeSettings.SuccessUrl,
@@ -151,6 +168,7 @@ namespace Nexus.Application.Services
             deposit.Status = DepositStatus.Paid;
             deposit.StripePaymentIntentId = session.PaymentIntentId;
             deposit.PaidAtUtc = DateTimeOffset.UtcNow;
+            deposit.UpdatedAtUtc = DateTimeOffset.UtcNow;
 
             _depositRepository.Update(deposit);
             await _uow.SaveChanges();
@@ -169,6 +187,7 @@ namespace Nexus.Application.Services
                 Amount = deposit.Amount,
                 Currency = deposit.Currency.ToString(),
                 StripeSessionId = deposit.StripeSessionId,
+                StripePaymentIntentId = deposit.StripePaymentIntentId,
                 Status = deposit.Status.ToString(),
                 PaidAtUtc = deposit.PaidAtUtc,
                 SessionUrl = deposit.StripeSessionUrl
