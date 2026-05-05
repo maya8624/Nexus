@@ -27,10 +27,9 @@ public class NexusWebApplicationFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = _connectionString,
-                ["JwtSettings:Key"]        = JwtTokenHelper.TestJwtKey,
-                ["JwtSettings:Issuer"]     = JwtTokenHelper.TestIssuer,
-                ["JwtSettings:Audience"]   = JwtTokenHelper.TestAudience,
-                ["JwtSettings:CookieName"] = "__Host-Nexus-Auth",
+                ["JwtSettings:Key"]      = JwtTokenHelper.TestJwtKey,
+                ["JwtSettings:Issuer"]   = JwtTokenHelper.TestIssuer,
+                ["JwtSettings:Audience"] = JwtTokenHelper.TestAudience,
             });
         });
 

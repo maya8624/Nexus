@@ -31,8 +31,7 @@ namespace Nexus.Api.Extensions
                     {
                         builder.WithOrigins(allowedOrigins)
                         .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
+                        .AllowAnyMethod();
 
                     });
             });

@@ -48,7 +48,7 @@ namespace Nexus.Application.Services
 
                 var user = await _userService.CreateAuthUser(externalUser, provider, cancellationToken);
 
-                _tokenService.CreateToken(user.Id.ToString(), user.Email, user.FirstName, user.LastName);
+                var jwt = _tokenService.CreateToken(user.Id.ToString(), user.Email, user.FirstName, user.LastName);
 
                 return Result<UserResponse>.Success(new UserResponse
                 {
@@ -56,6 +56,7 @@ namespace Nexus.Application.Services
                     Email = user.Email,
                     FirstName = user.FirstName,
                     LastName = user.LastName,
+                    Token = jwt,
                 });
             }
             catch (InvalidJwtException ex) when (ex.Message.Contains("transient", StringComparison.OrdinalIgnoreCase))

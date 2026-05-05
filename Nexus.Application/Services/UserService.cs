@@ -50,7 +50,7 @@ namespace Nexus.Application.Services
 
             await _userRepo.Create(user, cancellationToken);
             await _uow.SaveChanges();
-            _tokenService.CreateToken(user.Id.ToString(), user.Email, user.FirstName, user.LastName);
+            var token = _tokenService.CreateToken(user.Id.ToString(), user.Email, user.FirstName, user.LastName);
 
             return Result<UserResponse>.Success(new UserResponse
             {
@@ -58,6 +58,7 @@ namespace Nexus.Application.Services
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
+                Token = token,
             });
         }
 
@@ -97,7 +98,7 @@ namespace Nexus.Application.Services
             if (user == null || !_passwordHasher.VerifyPassword(user.PasswordHash, password))
                 return Result<UserResponse>.Unauthorized("INVALID_CREDENTIALS", "Invalid email or password");
 
-            _tokenService.CreateToken(user.Id.ToString(), email, user.FirstName, user.LastName);
+            var token = _tokenService.CreateToken(user.Id.ToString(), email, user.FirstName, user.LastName);
 
             return Result<UserResponse>.Success(new UserResponse
             {
@@ -105,6 +106,7 @@ namespace Nexus.Application.Services
                 Email = user.Email,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
+                Token = token,
             });
         }
 

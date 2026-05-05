@@ -44,7 +44,7 @@ namespace Nexus.Application.Services
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddHours(2),
+                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
                 SigningCredentials = creds,
                 Issuer = _jwtSettings.Issuer,
                 Audience = _jwtSettings.Audience
@@ -55,15 +55,9 @@ namespace Nexus.Application.Services
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);
             var token = tokenHandler.WriteToken(securityToken);
 
-            CreateJwtCookie(token);
             //TODO: Set Refresh Token
 
             return token;
-        }
-
-        public void DeleteTokenCookie()
-        {
-            _httpContextAccessor.HttpContext?.Response.Cookies.Delete(_jwtSettings.CookieName);
         }
 
         public UserResponse? GetCurrentUser()
@@ -80,23 +74,5 @@ namespace Nexus.Application.Services
             };
         }
 
-        private void CreateJwtCookie(string token)
-        {
-            // SameSite=None is required when frontend (http) and backend (https) run on different schemes
-            // in local dev — modern browsers treat http://localhost and https://localhost as cross-site.
-            // SameSite=None requires Secure=true, so both flags are tied together.
-            var isHttps = _httpContextAccessor.HttpContext?.Request.IsHttps ?? false;
-
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = isHttps,
-                SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
-                Path = "/",
-                Expires = DateTimeOffset.UtcNow.AddHours(2)
-            };
-
-            _httpContextAccessor.HttpContext?.Response.Cookies.Append(_jwtSettings.CookieName, token, cookieOptions);
-        }
     }
 }

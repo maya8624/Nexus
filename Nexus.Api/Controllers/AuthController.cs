@@ -55,14 +55,6 @@ namespace Nexus.Api.Controllers
             return Ok(result.Value);
         }
 
-        [HttpPost("logout")]
-        public IActionResult Logout()
-        {
-            // This tells the browser to delete the cookie by setting its expiration to the past
-            _tokenService.DeleteTokenCookie();
-            return Ok();
-        }
-
         [HttpGet("me")]
         public ActionResult<UserResponse> GetMe()
         {
@@ -72,14 +64,5 @@ namespace Nexus.Api.Controllers
 
             return Ok(user);
         }
-
-        //[HttpPost("register")]
-        //public async Task<IActionResult> Register(RegisterDto dto)
-        //{
-        //    // 1. Create User in DB
-        //    // 2. Generate JWT
-        //    // 3. Append HttpOnly Cookie to Response
-        //    // 4. Return User object (id, name, email, role)
-        //}
     }
 }

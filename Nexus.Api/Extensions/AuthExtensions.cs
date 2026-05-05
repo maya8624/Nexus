@@ -33,27 +33,8 @@ namespace Nexus.Api.Extensions
                     ClockSkew = TimeSpan.Zero // Removes the 5-minute "grace period" for tighter security
                 };
 
-                // Find the token in the code
                 options.Events = new JwtBearerEvents
                 {
-                    OnMessageReceived = context =>
-                    {
-                        var token = context.Request.Cookies[config["JwtSettings:CookieName"]!];
-                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
-
-                        if (string.IsNullOrEmpty(token) == false)
-                        {
-                            context.Token = token;
-                            logger.LogInformation("JWT cookie found");
-                        }
-                        else
-                        {
-                            logger.LogWarning("JWT cookie missing. Cookies received: {Cookies}",
-                                string.Join(", ", context.Request.Cookies.Keys));
-                        }
-
-                        return Task.CompletedTask;
-                    },
                     OnAuthenticationFailed = context =>
                     {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<JwtBearerEvents>>();
