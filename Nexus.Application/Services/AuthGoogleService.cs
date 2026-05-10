@@ -30,7 +30,6 @@ namespace Nexus.Application.Services
                 var settings = new GoogleJsonWebSignature.ValidationSettings()
                 {
                     Audience = [_settings.GoogleClientId]
-
                 };
 
                 var payload = await GoogleJsonWebSignature.ValidateAsync(token, settings);
