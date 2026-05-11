@@ -10,5 +10,6 @@ namespace Nexus.Application.Interfaces.Business
         Task<User> CreateAuthUser(ExternalUserResponse externalUser, string provider, CancellationToken cancellationToken = default);
         Task<Result<UserResponse>> RegisterEmailUser(string email, string password, string? firstName = null, string? lastName = null, CancellationToken cancellationToken = default);
         Task<Result<UserResponse>> Login(string email, string password, CancellationToken cancellationToken = default);
+        Task<Result<UserResponse>> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default);
     }
 }

@@ -33,6 +33,7 @@ namespace Nexus.Infrastructure.Persistence
         public DbSet<ToolExecution> ToolExecutions => Set<ToolExecution>();
         public DbSet<User> Users => Set<User>();
         public DbSet<UserLogin> UserLogins => Set<UserLogin>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

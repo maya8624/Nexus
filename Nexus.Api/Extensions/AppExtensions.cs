@@ -34,6 +34,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IListingRepository, ListingRepository>();
             services.AddScoped<IAuthServiceFactory, AuthServiceFactory>();
             services.AddScoped<IAuthService, AuthGoogleService>();
@@ -55,6 +56,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<CreateDepositRequest>, CreateDepositRequestValidator>();
             services.AddScoped<IValidator<EmailLoginRequest>, EmailLoginRequestValidator>();
             services.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>();
+            services.AddScoped<IValidator<RefreshTokenRequest>, RefreshTokenRequestValidator>();
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
             services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();
             services.AddScoped<IValidator<InspectionBookingRequest>, InspectionBookingRequestValidator>();

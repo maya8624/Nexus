@@ -27,9 +27,11 @@ public class NexusWebApplicationFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = _connectionString,
-                ["JwtSettings:Key"]      = JwtTokenHelper.TestJwtKey,
-                ["JwtSettings:Issuer"]   = JwtTokenHelper.TestIssuer,
-                ["JwtSettings:Audience"] = JwtTokenHelper.TestAudience,
+                ["JwtSettings:Key"]                  = JwtTokenHelper.TestJwtKey,
+                ["JwtSettings:Issuer"]               = JwtTokenHelper.TestIssuer,
+                ["JwtSettings:Audience"]             = JwtTokenHelper.TestAudience,
+                ["JwtSettings:ExpiryMinutes"]        = "60",
+                ["JwtSettings:RefreshTokenExpiryDays"] = "7",
             });
         });
 

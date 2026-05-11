@@ -68,13 +68,13 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 | **Deposits** | Stripe checkout sessions with webhook confirmation; idempotency keys; multi-currency |
 | **PayPal** | Sandbox order creation, capture, and refunds |
 | **AI Chat** | Per-user chat sessions with streaming (Server-Sent Events); tool execution tracking |
-| **Auth** | Email/password registration + login; Google external login; JWT (60-min expiry in dev) |
+| **Auth** | Email/password registration + login; Google external login; JWT (60-min expiry) + rotating refresh tokens (7-day expiry) |
 
 ## API Overview
 
 | Controller | Responsibilities |
 |---|---|
-| `AuthController` | Register, login, external login (Google), `/me` |
+| `AuthController` | Register, login, external login (Google), token refresh, `/me` |
 | `PropertyController` | List/filter properties, get by ID |
 | `DepositsController` | Stripe checkout, Stripe webhook |
 | `InspectionSlotController` | Create and manage inspection time slots |
@@ -86,7 +86,11 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 
 ## Authentication
 
-Protected endpoints require a JWT in the `Authorization: Bearer <token>` header. Tokens are issued on login and expire after 60 minutes (configurable). The `IUserContext` abstraction resolves the current user inside services — user IDs are **not** passed as method parameters.
+Protected endpoints require a JWT in the `Authorization: Bearer <token>` header. Tokens are issued on login/register and expire after 60 minutes (configurable).
+
+**Refresh tokens** are also issued on login/register and expire after 7 days. Call `POST /api/auth/refresh` with the refresh token to receive a new access token and a new refresh token (single-use rotation — the old token is revoked immediately). If the refresh token is expired or already used, re-authenticate via login.
+
+The `IUserContext` abstraction resolves the current user inside services — user IDs are **not** passed as method parameters.
 
 ## Payments
 
@@ -103,7 +107,7 @@ Protected endpoints require a JWT in the `Authorization: Bearer <token>` header.
 | Key section | Purpose |
 |---|---|
 | `ConnectionStrings:DefaultConnection` | PostgreSQL connection string |
-| `JwtSettings` | Issuer, audience, signing key, expiry |
+| `JwtSettings` | Issuer, audience, signing key, access token expiry (`ExpiryMinutes`), refresh token expiry (`RefreshTokenExpiryDays`) |
 | `GoogleAuth` | OAuth client ID and secret |
 | `StripeSettings` | Secret key and webhook signing secret |
 | `PayPalSettings` | Client ID/secret, OAuth and order endpoints |

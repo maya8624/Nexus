@@ -55,6 +55,17 @@ namespace Nexus.Api.Controllers
             return Ok(result.Value);
         }
 
+        [AllowAnonymous]
+        [HttpPost("refresh")]
+        public async Task<ActionResult<UserResponse>> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _userService.RefreshAsync(request.RefreshToken, cancellationToken);
+            if (!result.IsSuccess)
+                return MapFailure(result);
+
+            return Ok(result.Value);
+        }
+
         [HttpGet("me")]
         public ActionResult<UserResponse> GetMe()
         {

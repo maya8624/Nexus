@@ -21,8 +21,6 @@ namespace Nexus.Api.Controllers
             _stripeSettings = stripeSettings.Value;
         }
 
-        //TODO: get rid of AllowAnonymous after testing
-        [AllowAnonymous]
         [HttpPost("checkout")]
         public async Task<IActionResult> CreateCheckoutSession([FromBody] CreateDepositRequest request, CancellationToken ct)
         {
@@ -43,8 +41,7 @@ namespace Nexus.Api.Controllers
 
             try
             {
-                var stripeEvent = EventUtility.ConstructEvent(
-                    payload, stripeSignature, _stripeSettings.WebhookSecret);
+                var stripeEvent = EventUtility.ConstructEvent(payload, stripeSignature, _stripeSettings.WebhookSecret);
 
                 if (stripeEvent.Type == EventTypes.CheckoutSessionCompleted)
                 {

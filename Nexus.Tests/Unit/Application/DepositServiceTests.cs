@@ -71,7 +71,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetByClientIdempotencyKeyAsync(_userId, request.IdempotencyKey, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existing);
 
-            var result = await _service.CreateCheckoutSessionAsync(request, CancellationToken.None);
+            var result = await _service.CreateCheckoutSessionAsync(request, _userId, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.Equal(existing.Id, result.Value!.Id);
@@ -92,7 +92,7 @@ namespace Nexus.Tests.Unit.Application
             SetupRequestLookup(request, orphaned, property, listing);
             var stripeCall = SetupStripeCreate("cs_resumed", "https://checkout.stripe.com/resumed");
 
-            var result = await _service.CreateCheckoutSessionAsync(request, CancellationToken.None);
+            var result = await _service.CreateCheckoutSessionAsync(request, _userId, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.Equal("https://checkout.stripe.com/resumed", result.Value!.SessionUrl);
@@ -118,7 +118,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetByIdAsync(request.PropertyId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((PropertyReadModel?)null);
 
-            var result = await _service.CreateCheckoutSessionAsync(request, CancellationToken.None);
+            var result = await _service.CreateCheckoutSessionAsync(request, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("PropertyNotFound", Assert.Single(result.Errors).Code);
@@ -141,7 +141,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetByTypeAsync(ListingType.Rent, request.ListingId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Listing?)null);
 
-            var result = await _service.CreateCheckoutSessionAsync(request, CancellationToken.None);
+            var result = await _service.CreateCheckoutSessionAsync(request, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("ListingNotFound", Assert.Single(result.Errors).Code);
@@ -164,7 +164,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetByTypeAsync(ListingType.Rent, request.ListingId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(unpublishedListing);
 
-            var result = await _service.CreateCheckoutSessionAsync(request, CancellationToken.None);
+            var result = await _service.CreateCheckoutSessionAsync(request, _userId, CancellationToken.None);
 
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("ListingNotFound", Assert.Single(result.Errors).Code);
@@ -187,7 +187,7 @@ namespace Nexus.Tests.Unit.Application
 
             var stripeCall = SetupStripeCreate("cs_new", "https://checkout.stripe.com/new");
 
-            var result = await _service.CreateCheckoutSessionAsync(request, CancellationToken.None);
+            var result = await _service.CreateCheckoutSessionAsync(request, _userId, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.Equal("https://checkout.stripe.com/new", result.Value!.SessionUrl);
@@ -228,7 +228,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.CreateAsync(It.IsAny<SessionCreateOptions>(), It.IsAny<RequestOptions>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new StripeException("stripe unavailable"));
 
-            await Assert.ThrowsAsync<StripeException>(() => _service.CreateCheckoutSessionAsync(request, CancellationToken.None));
+            await Assert.ThrowsAsync<StripeException>(() => _service.CreateCheckoutSessionAsync(request, _userId, CancellationToken.None));
 
             Assert.NotNull(createdDeposit);
             Assert.Equal(string.Empty, createdDeposit!.StripeSessionId);
@@ -253,7 +253,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.CreateAsync(It.IsAny<SessionCreateOptions>(), It.IsAny<RequestOptions>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new StripeException("stripe unavailable"));
 
-            await Assert.ThrowsAsync<StripeException>(() => _service.CreateCheckoutSessionAsync(request, CancellationToken.None));
+            await Assert.ThrowsAsync<StripeException>(() => _service.CreateCheckoutSessionAsync(request, _userId, CancellationToken.None));
 
             Assert.Equal(string.Empty, existingDeposit.StripeSessionId);
             Assert.Null(existingDeposit.StripeSessionUrl);

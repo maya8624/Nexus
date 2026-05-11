@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Moq;
 using Nexus.Application.Common;
 using Nexus.Application.Dtos;
@@ -6,6 +7,7 @@ using Nexus.Application.Interfaces;
 using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Services;
+using Nexus.Application.Settings;
 using Nexus.Domain.Entities;
 using Xunit;
 
@@ -15,6 +17,7 @@ namespace Nexus.Tests.Unit.Application
     public class UserServiceTests
     {
         private readonly Mock<IUserRepository> _userRepoMock;
+        private readonly Mock<IRefreshTokenRepository> _refreshTokenRepoMock;
         private readonly Mock<IUnitOfWork> _uowMock;
         private readonly Mock<IPasswordHasherService> _passwordHasherMock;
         private readonly Mock<ITokenService> _tokenServiceMock;
@@ -23,15 +26,25 @@ namespace Nexus.Tests.Unit.Application
         public UserServiceTests()
         {
             _userRepoMock = new Mock<IUserRepository>();
+            _refreshTokenRepoMock = new Mock<IRefreshTokenRepository>();
             _uowMock = new Mock<IUnitOfWork>();
             _passwordHasherMock = new Mock<IPasswordHasherService>();
             _tokenServiceMock = new Mock<ITokenService>();
 
+            _tokenServiceMock.Setup(x => x.GenerateRefreshToken()).Returns("raw_refresh_token");
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.Create(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
+
+            var jwtOptions = Options.Create(new JwtSettings { RefreshTokenExpiryDays = 7 });
+
             _userService = new UserService(
                 _userRepoMock.Object,
+                _refreshTokenRepoMock.Object,
                 _uowMock.Object,
                 _passwordHasherMock.Object,
-                _tokenServiceMock.Object
+                _tokenServiceMock.Object,
+                jwtOptions
             );
         }
 
@@ -48,7 +61,6 @@ namespace Nexus.Tests.Unit.Application
             _userRepoMock.Setup(x => x.GetByEmail(email)).ReturnsAsync((User?)null);
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns(hashedPassword);
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), email, It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
@@ -112,7 +124,6 @@ namespace Nexus.Tests.Unit.Application
             _userRepoMock.Setup(x => x.GetByEmail(email)).ReturnsAsync((User?)null);
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns(hashedPassword);
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
@@ -142,7 +153,6 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>()))
                 .Callback<User, CancellationToken>((u, ct) => capturedUser = u)
                 .Returns(Task.CompletedTask);
-            _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
@@ -169,7 +179,6 @@ namespace Nexus.Tests.Unit.Application
             _userRepoMock.Setup(x => x.GetByEmail(email)).ReturnsAsync((User?)null);
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns(hashedPassword);
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
@@ -191,7 +200,6 @@ namespace Nexus.Tests.Unit.Application
             _userRepoMock.Setup(x => x.GetByEmail(email)).ReturnsAsync((User?)null);
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns("hashed_password");
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
@@ -212,7 +220,6 @@ namespace Nexus.Tests.Unit.Application
             _userRepoMock.Setup(x => x.GetByEmail(email)).ReturnsAsync((User?)null);
             _passwordHasherMock.Setup(x => x.HashPassword(password)).Returns("hashed_password");
             _userRepoMock.Setup(x => x.Create(It.IsAny<User>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("token");
 
             // Act
@@ -223,7 +230,7 @@ namespace Nexus.Tests.Unit.Application
         }
 
         [Fact]
-        public async Task RegisterEmailUser_WithValidInput_ShouldIssueTokenAfterSaving()
+        public async Task RegisterEmailUser_WithValidInput_ShouldSaveBeforeIssuingToken()
         {
             // Arrange
             var email = "test@example.com";
@@ -458,6 +465,227 @@ namespace Nexus.Tests.Unit.Application
             Assert.Equal(2, callSequence.Count);
             Assert.Equal("VerifyPassword", callSequence[0]);
             Assert.Equal("CreateToken", callSequence[1]);
+        }
+
+        #endregion
+
+        #region RefreshAsync Tests
+
+        private static RefreshToken ValidStoredToken(Guid userId, User user) => new()
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            TokenHash = "hashedtoken",
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(6),
+            CreatedAt = DateTimeOffset.UtcNow.AddDays(-1),
+            IsRevoked = false,
+            User = user,
+        };
+
+        private static User SampleUser(Guid? id = null) => new()
+        {
+            Id = id ?? Guid.NewGuid(),
+            Email = "user@example.com",
+            FirstName = "Jane",
+            LastName = "Doe",
+            PasswordHash = "hash",
+            CreatedAtUtc = DateTimeOffset.UtcNow,
+        };
+
+        [Fact]
+        public async Task RefreshAsync_WithValidToken_ShouldReturnSuccess()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+
+            _tokenServiceMock.Setup(x => x.HashToken("incoming_token")).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+            _tokenServiceMock.Setup(x => x.CreateToken(user.Id.ToString(), user.Email, user.FirstName, user.LastName)).Returns("new_access_token");
+
+            // Act
+            var result = await _userService.RefreshAsync("incoming_token");
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("new_access_token", result.Value!.Token);
+            Assert.Equal(user.Email, result.Value.Email);
+            Assert.Equal(user.Id.ToString(), result.Value.UserId);
+        }
+
+        [Fact]
+        public async Task RefreshAsync_WithValidToken_ShouldReturnNewRefreshToken()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+
+            _tokenServiceMock.Setup(x => x.HashToken("incoming_token")).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+            _tokenServiceMock.Setup(x => x.GenerateRefreshToken()).Returns("brand_new_raw_token");
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("access");
+
+            // Act
+            var result = await _userService.RefreshAsync("incoming_token");
+
+            // Assert
+            Assert.Equal("brand_new_raw_token", result.Value!.RefreshToken);
+        }
+
+        [Fact]
+        public async Task RefreshAsync_WithValidToken_ShouldRevokeOldToken()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+
+            _tokenServiceMock.Setup(x => x.HashToken("incoming_token")).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("access");
+
+            // Act
+            await _userService.RefreshAsync("incoming_token");
+
+            // Assert
+            Assert.True(stored.IsRevoked);
+        }
+
+        [Fact]
+        public async Task RefreshAsync_WithValidToken_ShouldPersistNewRefreshToken()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+
+            _tokenServiceMock.Setup(x => x.HashToken("incoming_token")).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("access");
+
+            // Act
+            await _userService.RefreshAsync("incoming_token");
+
+            // Assert
+            _refreshTokenRepoMock.Verify(x => x.Create(It.Is<RefreshToken>(t => t.UserId == user.Id && !t.IsRevoked), It.IsAny<CancellationToken>()), Times.Once);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task RefreshAsync_WithNonExistentToken_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync((RefreshToken?)null);
+
+            // Act
+            var result = await _userService.RefreshAsync("ghost_token");
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ResultStatus.Unauthorized, result.Status);
+            Assert.Equal("INVALID_REFRESH_TOKEN", result.Errors[0].Code);
+        }
+
+        [Fact]
+        public async Task RefreshAsync_WithRevokedToken_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+            stored.IsRevoked = true;
+
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+
+            // Act
+            var result = await _userService.RefreshAsync("revoked_token");
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ResultStatus.Unauthorized, result.Status);
+            Assert.Equal("INVALID_REFRESH_TOKEN", result.Errors[0].Code);
+        }
+
+        [Fact]
+        public async Task RefreshAsync_WithExpiredToken_ShouldReturnUnauthorized()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+            stored.ExpiresAt = DateTimeOffset.UtcNow.AddSeconds(-1);
+
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+
+            // Act
+            var result = await _userService.RefreshAsync("expired_token");
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ResultStatus.Unauthorized, result.Status);
+            Assert.Equal("INVALID_REFRESH_TOKEN", result.Errors[0].Code);
+        }
+
+        [Fact]
+        public async Task RefreshAsync_WithInvalidToken_ShouldNotCreateNewToken()
+        {
+            // Arrange
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync((RefreshToken?)null);
+
+            // Act
+            await _userService.RefreshAsync("bad_token");
+
+            // Assert
+            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+            _refreshTokenRepoMock.Verify(x => x.Create(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Never);
+        }
+
+        [Fact]
+        public async Task RefreshAsync_WithValidToken_ShouldUseUserDataFromStoredToken()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = SampleUser(userId);
+            var stored = ValidStoredToken(userId, user);
+
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("access");
+
+            // Act
+            await _userService.RefreshAsync("token");
+
+            // Assert — token is created with the stored user's identity, not from a separate DB lookup
+            _tokenServiceMock.Verify(x => x.CreateToken(userId.ToString(), user.Email, user.FirstName, user.LastName), Times.Once);
+        }
+
+        [Fact]
+        public async Task RefreshAsync_WithValidToken_NewRefreshTokenShouldBelongToSameUser()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var user = SampleUser(userId);
+            var stored = ValidStoredToken(userId, user);
+
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+            _tokenServiceMock.Setup(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>())).Returns("access");
+
+            RefreshToken? persisted = null;
+            _refreshTokenRepoMock
+                .Setup(x => x.Create(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()))
+                .Callback<RefreshToken, CancellationToken>((t, _) => persisted = t)
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await _userService.RefreshAsync("token");
+
+            // Assert
+            Assert.NotNull(persisted);
+            Assert.Equal(userId, persisted.UserId);
+            Assert.False(persisted.IsRevoked);
+            Assert.True(persisted.ExpiresAt > DateTimeOffset.UtcNow);
         }
 
         #endregion

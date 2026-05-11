@@ -20,6 +20,7 @@ namespace Nexus.Tests.Unit.Application
     public class AiServiceTests
     {
         private readonly Mock<IHttpClientService> _httpClientServiceMock = new();
+        private readonly Mock<IHttpClientFactory> _httpClientFactoryMock = new();
         private readonly Mock<IUserRepository> _userRepositoryMock = new();
         private readonly Mock<IUserContext> _userContextMock = new();
         private readonly Mock<ILogger<AiService>> _loggerMock = new();
@@ -40,6 +41,7 @@ namespace Nexus.Tests.Unit.Application
 
             _service = new AiService(
                 _httpClientServiceMock.Object,
+                _httpClientFactoryMock.Object,
                 settings,
                 _loggerMock.Object,
                 _userContextMock.Object,

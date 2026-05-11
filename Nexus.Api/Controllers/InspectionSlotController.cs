@@ -16,7 +16,6 @@ namespace Nexus.Api.Controllers
             _slotService = slotService;
         }
 
-        [AllowAnonymous]
         [HttpPost()]
         public async Task<IActionResult> Create([FromBody] InspectionSlotRequest request, CancellationToken ct)
         {
@@ -27,7 +26,6 @@ namespace Nexus.Api.Controllers
             return MapFailure(result);
         }
 
-        [AllowAnonymous]
         [HttpGet("available/{propertyId:guid}")]
         public async Task<IActionResult> GetAvailableSlots([FromRoute] Guid propertyId, CancellationToken ct)
         {
@@ -38,7 +36,6 @@ namespace Nexus.Api.Controllers
             return MapFailure(result);
         }
 
-        [AllowAnonymous]
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
         {

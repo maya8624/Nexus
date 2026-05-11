@@ -1,8 +1,5 @@
-﻿using Nexus.Application.Dtos;
+using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Responses;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Nexus.Application.Interfaces
 {
@@ -10,5 +7,7 @@ namespace Nexus.Application.Interfaces
     {
         string CreateToken(string userId, string email, string? firstName = null, string? lastName = null);
         UserResponse? GetCurrentUser();
+        string GenerateRefreshToken();
+        string HashToken(string token);
     }
 }
