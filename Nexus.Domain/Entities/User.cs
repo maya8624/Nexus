@@ -37,6 +37,8 @@ namespace Nexus.Domain.Entities
         public ICollection<Deposit> Deposits { get; set; } = new List<Deposit>();
 
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+        public TenantPreferences? TenantPreferences { get; set; }
     }
 
 

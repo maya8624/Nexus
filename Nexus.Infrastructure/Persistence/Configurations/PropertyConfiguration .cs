@@ -35,6 +35,8 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.CarSpaces)
                 .IsRequired();
 
+            builder.Property(x => x.PetFriendly);
+
             builder.Property(x => x.LandSizeSqm)
                 .HasPrecision(10, 2);
 

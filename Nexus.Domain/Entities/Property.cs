@@ -24,6 +24,8 @@ namespace Nexus.Domain.Entities
 
         public int CarSpaces { get; set; }
 
+        public bool? PetFriendly { get; set; }
+
         public decimal? LandSizeSqm { get; set; }
 
         public decimal? BuildingSizeSqm { get; set; }
