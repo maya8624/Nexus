@@ -43,5 +43,15 @@ namespace Nexus.Api.Controllers
                 await Response.Body.FlushAsync(cancellationToken);
             }
         }
+
+        [HttpPost("preferences")]
+        public async Task<IActionResult> Preferences(TenantPreferenceRequest request, CancellationToken ct)
+        {
+            var result = await _aiService.GetPreferenceProperties(request, UserId, ct);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return MapFailure(result);
+        }
     }
 }

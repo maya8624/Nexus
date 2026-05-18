@@ -63,17 +63,7 @@ namespace Nexus.Application.Services
                 is_new_conversation = isNewConversation
             };
 
-            var options = new RequestBuilderOptions
-            {
-                Method = HttpMethod.Post,
-                AuthScheme = AuthScheme.None,
-                Headers = new Dictionary<string, string>
-                {
-                    ["X-API-Key"] = _settings.ApiKey
-                },
-                Body = aiServiceRequest,
-                Url = $"{_settings.BaseUrl}/{_settings.Chat}"
-            };
+            var options = BuildAiRequestOptions(aiServiceRequest, _settings.Chat);
 
             try
             {
@@ -99,6 +89,38 @@ namespace Nexus.Application.Services
                 throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
             }
         }
+
+        public async Task<Result<PreferenceSearchResponse>> GetPreferenceProperties(TenantPreferenceRequest request, Guid userId, CancellationToken ct)
+        {
+            var userExists = await _userRepository.IsAny(x => x.Id == userId && x.IsActive, ct);
+            if (!userExists)
+                return Result<PreferenceSearchResponse>.NotFound("UserNotFound", "User not found or inactive.");
+
+            var aiRequest = new TenantPreferenceAiRequest
+            {
+                suburbs = request.Suburbs,
+                maxRent = request.MaxRent,
+                minBeds = request.MinBeds,
+                maxBeds = request.MaxBeds,
+                petFriendly = request.PetFriendly,
+                availableWithinDays = request.AvailableWithinDays
+            };
+
+            var options = BuildAiRequestOptions(aiRequest, _settings.Preferences);
+
+            try
+            {
+                var httpRequest = HttpRequestFactory.CreateHttpRequestMessage(options);
+                var result = await _httpClientService.ExecuteRequest<PreferenceSearchResponse>(httpRequest, ct);
+                return Result<PreferenceSearchResponse>.Success(result);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                _logger.LogError(ex, "AI preference search failed for user {UserId}", userId);
+                throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
+            }
+        }
+
 
         //TODO: refactor
         public async IAsyncEnumerable<string> StreamReply(
@@ -158,6 +180,21 @@ namespace Nexus.Application.Services
                 if (!string.IsNullOrEmpty(chunk))
                     yield return chunk;
             }
+        }
+
+        private RequestBuilderOptions BuildAiRequestOptions(object body, string endpoint)
+        {
+            return new RequestBuilderOptions
+            {
+                Method = HttpMethod.Post,
+                AuthScheme = AuthScheme.None,
+                Headers = new Dictionary<string, string>
+                {
+                    ["X-API-Key"] = _settings.ApiKey
+                },
+                Body = body,
+                Url = $"{_settings.BaseUrl}/{endpoint}"
+            };
         }
 
         public Task<ChatResponse> SendMessage(string message, string threadId, CancellationToken cancellationToken = default)

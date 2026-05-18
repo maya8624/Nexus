@@ -3,6 +3,8 @@ using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Dtos.Responses;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Nexus.Application.Interfaces
 {
@@ -10,6 +12,7 @@ namespace Nexus.Application.Interfaces
     {
         Task<ChatResponse> SendMessage(string message, string threadId, CancellationToken ct);
         Task<Result<ChatResponse>> GetReply(ChatRequest request, CancellationToken ct);
+        Task<Result<PreferenceSearchResponse>> GetPreferenceProperties(TenantPreferenceRequest request, Guid userId, CancellationToken ct);
         IAsyncEnumerable<string> StreamReply(ChatRequest request, CancellationToken ct);
     }
 }

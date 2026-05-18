@@ -16,6 +16,7 @@ namespace Nexus.Application.Settings
         public required string BaseUrl { get; init; }
         public required string Chat { get; init; }
         public required string ChatStream { get; init; }
+        public required string Preferences { get; init; }
         public int TimeoutSeconds { get; init; } = 30;
     }
 }
