@@ -63,6 +63,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<InternalInspectionBookingRequest>, InternalInspectionBookingRequestValidator>();
             services.AddScoped<IValidator<InspectionSlotRequest>, InspectionSlotRequestValidator>();
             services.AddScoped<IValidator<PropertyQueryRequest>, PropertyQueryRequestValidator>();
+            services.AddScoped<IValidator<TenantPreferenceRequest>, TenantPreferenceRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
             services.AddScoped<InternalApiKeyFilter>();
         }

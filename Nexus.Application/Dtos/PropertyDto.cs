@@ -15,8 +15,9 @@ namespace Nexus.Application.Dtos
         public string ListingType { get; init; } = string.Empty;
         public int Bedrooms { get; init; }
         public int Bathrooms { get; init; }
-        public int Parking { get; init; }
+        public int CarSpaces { get; init; }
         public int LandSize { get; init; }
+        public decimal? BuildingSizeSqm { get; init; }
         public string Description { get; init; } = string.Empty;
         public string[] Features { get; init; } = Array.Empty<string>();
         public string[] Images { get; init; } = Array.Empty<string>();

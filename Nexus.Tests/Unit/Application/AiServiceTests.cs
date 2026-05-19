@@ -197,7 +197,7 @@ namespace Nexus.Tests.Unit.Application
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("UserNotFound", Assert.Single(result.Errors).Code);
             _httpClientServiceMock.Verify(
-                x => x.ExecuteRequest<PreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()),
+                x => x.ExecuteRequest<AiTenantPreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -206,11 +206,11 @@ namespace Nexus.Tests.Unit.Application
         {
             SetupUserExists(true);
             _httpClientServiceMock
-                .Setup(x => x.ExecuteRequest<PreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new PreferenceSearchResponse
+                .Setup(x => x.ExecuteRequest<AiTenantPreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AiTenantPreferenceSearchResponse
                 {
                     Message = "Found 2 listings",
-                    Listings = [new() { { "id", "prop-1" } }],
+                    Listings = [new AiListingResult { ListingId = "prop-1" }],
                     DisplayCount = 1,
                     TotalCount = 2,
                     HasMore = true
@@ -226,11 +226,55 @@ namespace Nexus.Tests.Unit.Application
         }
 
         [Fact]
+        public async Task GetPreferenceProperties_WithValidInput_ShouldMapListingsToListingItem()
+        {
+            SetupUserExists(true);
+            _httpClientServiceMock
+                .Setup(x => x.ExecuteRequest<AiTenantPreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AiTenantPreferenceSearchResponse
+                {
+                    Message = "Found 1 listing",
+                    Listings =
+                    [
+                        new AiListingResult
+                        {
+                            ListingId = "listing-1",
+                            ImageUrl = "https://example.com/img.jpg",
+                            AddressLine1 = "123 Main St",
+                            Suburb = "Sydney",
+                            Bedrooms = 3,
+                            Bathrooms = 2,
+                            Price = 2500m,
+                            BuildingSizeSqm = 120m,
+                            PropertyType = "Apartment"
+                        }
+                    ],
+                    DisplayCount = 1,
+                    TotalCount = 1,
+                    HasMore = false
+                });
+
+            var result = await _service.GetPreferenceProperties(BuildPreferenceRequest(), _userId, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            var listing = Assert.Single(result.Value!.Listings);
+            Assert.Equal("listing-1", listing.ListingId);
+            Assert.Equal("https://example.com/img.jpg", listing.ImageUrl);
+            Assert.Equal("123 Main St", listing.AddressLine1);
+            Assert.Equal("Sydney", listing.Suburb);
+            Assert.Equal(3, listing.Bedrooms);
+            Assert.Equal(2, listing.Bathrooms);
+            Assert.Equal(2500m, listing.Price);
+            Assert.Equal(120m, listing.BuildingSizeSqm);
+            Assert.Equal("Apartment", listing.PropertyType);
+        }
+
+        [Fact]
         public async Task GetPreferenceProperties_WhenHttpRequestExceptionThrown_ShouldThrowAiServiceException()
         {
             SetupUserExists(true);
             _httpClientServiceMock
-                .Setup(x => x.ExecuteRequest<PreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.ExecuteRequest<AiTenantPreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new HttpRequestException("Network error."));
 
             await Assert.ThrowsAsync<AiServiceException>(() =>
@@ -242,7 +286,7 @@ namespace Nexus.Tests.Unit.Application
         {
             SetupUserExists(true);
             _httpClientServiceMock
-                .Setup(x => x.ExecuteRequest<PreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.ExecuteRequest<AiTenantPreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new TaskCanceledException("Request timed out."));
 
             await Assert.ThrowsAsync<AiServiceException>(() =>
@@ -254,7 +298,7 @@ namespace Nexus.Tests.Unit.Application
         {
             SetupUserExists(true);
             _httpClientServiceMock
-                .Setup(x => x.ExecuteRequest<PreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.ExecuteRequest<AiTenantPreferenceSearchResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new HttpRequestException("Network error."));
 
             await Assert.ThrowsAsync<AiServiceException>(() =>

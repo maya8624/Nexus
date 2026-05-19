@@ -93,7 +93,7 @@ namespace Nexus.Application.Services
         public async Task<Result<PreferenceSearchResponse>> GetPreferenceProperties(TenantPreferenceRequest request, Guid userId, CancellationToken ct)
         {
             var userExists = await _userRepository.IsAny(x => x.Id == userId && x.IsActive, ct);
-            if (!userExists)
+            if (userExists == false)
                 return Result<PreferenceSearchResponse>.NotFound("UserNotFound", "User not found or inactive.");
 
             var aiRequest = new TenantPreferenceAiRequest
@@ -111,8 +111,30 @@ namespace Nexus.Application.Services
             try
             {
                 var httpRequest = HttpRequestFactory.CreateHttpRequestMessage(options);
-                var result = await _httpClientService.ExecuteRequest<PreferenceSearchResponse>(httpRequest, ct);
-                return Result<PreferenceSearchResponse>.Success(result);
+                var raw = await _httpClientService.ExecuteRequest<AiTenantPreferenceSearchResponse>(httpRequest, ct);
+
+                var response = new PreferenceSearchResponse
+                {
+                    Message = raw.Message,
+                    DisplayCount = raw.DisplayCount,
+                    TotalCount = raw.TotalCount,
+                    HasMore = raw.HasMore,
+                    Listings = raw.Listings.Select(l => new ListingItem
+                    {
+                        PropertyId = l.PropertyId,
+                        ListingId = l.ListingId,
+                        ImageUrl = l.ImageUrl,
+                        AddressLine1 = l.AddressLine1,
+                        Suburb = l.Suburb,
+                        Bedrooms = l.Bedrooms,
+                        Bathrooms = l.Bathrooms,
+                        Price = l.Price,
+                        BuildingSizeSqm = l.BuildingSizeSqm,
+                        PropertyType = l.PropertyType
+                    }).ToList()
+                };
+
+                return Result<PreferenceSearchResponse>.Success(response);
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
             {

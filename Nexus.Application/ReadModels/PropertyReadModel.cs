@@ -16,8 +16,9 @@ namespace Nexus.Application.ReadModels
         public string PropertyType { get; init; } = string.Empty;
         public int Bedrooms { get; init; }
         public int Bathrooms { get; init; }
-        public int Parking { get; init; }
+        public int CarSpaces { get; init; }
         public decimal? LandSizeSqm { get; init; }
+        public decimal? BuildingSizeSqm { get; init; }
         public string Description { get; init; } = string.Empty;
         public IReadOnlyList<string> Images { get; init; } = Array.Empty<string>();
         public string AgentFirstName { get; init; } = string.Empty;

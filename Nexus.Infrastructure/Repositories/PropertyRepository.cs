@@ -60,8 +60,9 @@ namespace Nexus.Infrastructure.Repositories
                 PropertyType = x.PropertyType != null ? x.PropertyType.Name : string.Empty,
                 Bedrooms = x.Bedrooms,
                 Bathrooms = x.Bathrooms,
-                Parking = x.CarSpaces,
+                CarSpaces = x.CarSpaces,
                 LandSizeSqm = x.LandSizeSqm,
+                BuildingSizeSqm = x.BuildingSizeSqm,
                 Description = x.Description ?? string.Empty,
                 Images = x.Images
                     .OrderBy(i => i.DisplayOrder)
