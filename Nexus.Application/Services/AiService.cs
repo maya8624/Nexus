@@ -144,6 +144,44 @@ namespace Nexus.Application.Services
         }
 
 
+        public async Task<Result<SuburbSummaryResponse>> GetSuburbSummary(SuburbSummaryRequest request, Guid userId, CancellationToken ct)
+        {
+            var userExists = await _userRepository.IsAny(x => x.Id == userId && x.IsActive, ct);
+            if (userExists == false)
+                return Result<SuburbSummaryResponse>.NotFound("UserNotFound", "User not found or inactive.");
+
+            var aiRequest = new { suburbs = request.Suburbs };
+            var options = BuildAiRequestOptions(aiRequest, _settings.SuburbSummary);
+
+            try
+            {
+                var httpRequest = HttpRequestFactory.CreateHttpRequestMessage(options);
+                var raw = await _httpClientService.ExecuteRequest<AiSuburbSummaryResponse>(httpRequest, ct);
+
+                return Result<SuburbSummaryResponse>.Success(new SuburbSummaryResponse
+                {
+                    Suburbs = raw.Suburbs.Select(s => new SuburbProfile
+                    {
+                        Name = s.Name,
+                        Description = s.Description,
+                        Rents = new SuburbRents
+                        {
+                            OneBedroom = s.Rents.OneBedroom,
+                            TwoBedroom = s.Rents.TwoBedroom,
+                            ThreeBedroom = s.Rents.ThreeBedroom
+                        },
+                        VacancyRate = s.VacancyRate,
+                        Trend = s.Trend
+                    }).ToList()
+                });
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                _logger.LogError(ex, "AI suburb summary failed for suburbs {Suburbs}", string.Join(", ", request.Suburbs));
+                throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
+            }
+        }
+
         //TODO: refactor
         public async IAsyncEnumerable<string> StreamReply(
             ChatRequest request,

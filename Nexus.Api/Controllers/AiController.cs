@@ -53,5 +53,15 @@ namespace Nexus.Api.Controllers
 
             return MapFailure(result);
         }
+
+        [HttpPost("suburb-summary")]
+        public async Task<IActionResult> SuburbSummary([FromBody] SuburbSummaryRequest request, CancellationToken ct)
+        {
+            var result = await _aiService.GetSuburbSummary(request, UserId, ct);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return MapFailure(result);
+        }
     }
 }
