@@ -47,6 +47,8 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IInspectionSlotRepository, InspectionSlotRepository>();
             services.AddScoped<IDepositService, DepositService>();
             services.AddScoped<IDepositRepository, DepositRepository>();
+            services.AddScoped<IDocumentSuggestionService, DocumentSuggestionService>();
+            services.AddScoped<IDocumentSuggestionRepository, DocumentSuggestionRepository>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IAgentRepository, AgentRepository>();
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();

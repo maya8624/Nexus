@@ -39,6 +39,8 @@ namespace Nexus.Domain.Entities
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
         public TenantPreferences? TenantPreferences { get; set; }
+
+        public ICollection<DocumentSuggestion> DocumentSuggestions { get; set; } = new List<DocumentSuggestion>();
     }
 
 

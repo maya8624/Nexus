@@ -39,7 +39,8 @@ namespace Nexus.Tests.Unit.Application
                 ApiKey = "test-key",
                 Chat = "api/chat",
                 ChatStream = "api/chat/stream",
-                Preferences = "api/preferences"
+                Preferences = "api/preferences",
+                SuburbSummary = "api/suburb-summary"
             });
 
             _service = new AiService(

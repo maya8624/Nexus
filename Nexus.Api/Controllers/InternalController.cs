@@ -4,7 +4,6 @@ using Nexus.Api.Filters;
 using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Interfaces.Business;
-using Nexus.Application.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,12 +19,18 @@ namespace Nexus.Api.Controllers
         private readonly IInspectionSlotService _slotService;
         private readonly IInspectionBookingService _bookingService;
         private readonly IDepositService _depositService;
+        private readonly IDocumentSuggestionService _documentSuggestionService;
 
-        public InternalController(IInspectionSlotService slotService, IInspectionBookingService bookingService, IDepositService depositService)
+        public InternalController(
+            IInspectionSlotService slotService,
+            IInspectionBookingService bookingService,
+            IDepositService depositService,
+            IDocumentSuggestionService documentSuggestionService)
         {
             _slotService = slotService;
             _bookingService = bookingService;
             _depositService = depositService;
+            _documentSuggestionService = documentSuggestionService;
         }
 
         [HttpGet("inspection-bookings/available/{propertyId:guid}")]
@@ -88,6 +93,26 @@ namespace Nexus.Api.Controllers
         public async Task<IActionResult> GetMyDeposit(Guid listingId, Guid userId, CancellationToken ct)
         {
             var result = await _depositService.GetMyDeposit(listingId, userId, ct);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return StatusCode(500, result.Errors.FirstOrDefault());
+        }
+
+        [HttpPost("document-suggestions")]
+        public async Task<IActionResult> SaveDocumentSuggestion([FromBody] SaveDocumentSuggestionRequest request, CancellationToken ct)
+        {
+            var result = await _documentSuggestionService.SaveAsync(request, ct);
+            if (result.IsSuccess)
+                return StatusCode(201, result.Value);
+
+            return StatusCode(500, result.Errors.FirstOrDefault());
+        }
+
+        [HttpGet("document-suggestions/{docId:guid}/user/{userId:guid}")]
+        public async Task<IActionResult> GetDocumentSuggestion(Guid docId, Guid userId, CancellationToken ct)
+        {
+            var result = await _documentSuggestionService.GetByDocIdAsync(docId, userId, ct);
             if (result.IsSuccess)
                 return Ok(result.Value);
 
