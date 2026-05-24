@@ -41,7 +41,7 @@ namespace Nexus.Application.Services
             _userRepository = userRepository;
         }
 
-        public async Task<Result<ChatResponse>> GetReply(ChatRequest request, CancellationToken ct)
+        public async Task<Result<ChatResponse>> GetReply(CopilotRequest request, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
@@ -54,7 +54,7 @@ namespace Nexus.Application.Services
                 ? Guid.NewGuid().ToString()
                 : request.ThreadId;
 
-            var aiServiceRequest = new AiServiceRequest
+            var aiServiceRequest = new AiCopilotRequest
             {
                 message = request.Message,
                 thread_id = threadId,
@@ -184,7 +184,7 @@ namespace Nexus.Application.Services
 
         //TODO: refactor
         public async IAsyncEnumerable<string> StreamReply(
-            ChatRequest request,
+            CopilotRequest request,
             [EnumeratorCancellation] CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
@@ -196,13 +196,23 @@ namespace Nexus.Application.Services
             var isNewConversation = string.IsNullOrWhiteSpace(request.ThreadId);
             var threadId = isNewConversation ? Guid.NewGuid().ToString() : request.ThreadId;
 
-            var aiServiceRequest = new AiServiceRequest
+            var aiServiceRequest = new AiCopilotRequest
             {
                 message = request.Message,
                 thread_id = threadId!,
                 property_id = request.PropertyId,
                 user_id = userId,
-                is_new_conversation = isNewConversation
+                is_new_conversation = isNewConversation,
+                metadata = new AiCopilotMetadata
+                { 
+                    suburbs = request?.Metadata?.Suburbs,
+                    intent = request?.Metadata?.Intent,
+                    budgetMax = request?.Metadata?.BudgetMax,
+                    petFriendly = request?.Metadata?.PetFriendly,
+                    bedroomsMax = request?.Metadata?.BedroomsMax,
+                    bedroomsMin = request?.Metadata?.BedroomsMin,
+                    availableWithinDays = request?.Metadata?.AvailableWithinDays,
+                }
             };
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/{_settings.ChatStream}")

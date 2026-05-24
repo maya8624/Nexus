@@ -37,7 +37,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
         // Arrange
         var aiServiceMock = new Mock<IAiService>();
         aiServiceMock
-            .Setup(x => x.GetReply(It.IsAny<ChatRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetReply(It.IsAny<CopilotRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ChatResponse>.Success(new ChatResponse
             {
                 Reply = "Here are some properties for you.",
@@ -45,7 +45,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
             }));
 
         var client = CreateClientWith(aiServiceMock);
-        var request = new ChatRequest { Message = "Show me listings", ThreadId = "session-abc" };
+        var request = new CopilotRequest { Message = "Show me listings", ThreadId = "session-abc" };
 
         // Act
         var response = await client.PostAsJsonAsync(Endpoint, request);
@@ -65,11 +65,11 @@ public class AiControllerIntegrationTests : IntegrationTestBase
         // Arrange
         var aiServiceMock = new Mock<IAiService>();
         aiServiceMock
-            .Setup(x => x.GetReply(It.IsAny<ChatRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetReply(It.IsAny<CopilotRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<ChatResponse>.NotFound("UserNotFound", "User not found or inactive."));
 
         var client = CreateClientWith(aiServiceMock);
-        var request = new ChatRequest { Message = "Hello", ThreadId = "session-abc" };
+        var request = new CopilotRequest { Message = "Hello", ThreadId = "session-abc" };
 
         // Act
         var response = await client.PostAsJsonAsync(Endpoint, request);
@@ -86,7 +86,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var client = CreateClientWith(new Mock<IAiService>());
-        var request = new ChatRequest { Message = "", ThreadId = "session-abc" };
+        var request = new CopilotRequest { Message = "", ThreadId = "session-abc" };
 
         // Act
         var response = await client.PostAsJsonAsync(Endpoint, request);
@@ -100,7 +100,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var client = CreateClientWith(new Mock<IAiService>());
-        var request = new ChatRequest { Message = new string('x', 1001), ThreadId = "session-abc" };
+        var request = new CopilotRequest { Message = new string('x', 1001), ThreadId = "session-abc" };
 
         // Act
         var response = await client.PostAsJsonAsync(Endpoint, request);
@@ -115,11 +115,11 @@ public class AiControllerIntegrationTests : IntegrationTestBase
         // Arrange
         var aiServiceMock = new Mock<IAiService>();
         aiServiceMock
-            .Setup(x => x.GetReply(It.IsAny<ChatRequest>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetReply(It.IsAny<CopilotRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new AiServiceException("The AI service is currently unavailable. Please try again later."));
 
         var client = CreateClientWith(aiServiceMock);
-        var request = new ChatRequest { Message = "Hello", ThreadId = "session-abc" };
+        var request = new CopilotRequest { Message = "Hello", ThreadId = "session-abc" };
 
         // Act
         var response = await client.PostAsJsonAsync(Endpoint, request);

@@ -70,7 +70,7 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpGet("inspection-bookings/{id:guid}")]
-        public async Task<IActionResult> GetBookingById(Guid id, [FromBody] AIInspectionBookingRequest request, CancellationToken ct)
+        public async Task<IActionResult> GetBookingById(Guid id, [FromBody] AiInspectionBookingRequest request, CancellationToken ct)
         {
             var result = await _bookingService.GetByIdAsync(id, request.UserId, ct);
             if (result.IsSuccess)
@@ -80,7 +80,7 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpPatch("inspection-bookings/{id:guid}/cancel")]
-        public async Task<IActionResult> Cancel(Guid id, [FromBody] AIInspectionBookingRequest request, CancellationToken ct)
+        public async Task<IActionResult> Cancel(Guid id, [FromBody] AiInspectionBookingRequest request, CancellationToken ct)
         {
             var result = await _bookingService.CancelAsync(id, request.UserId, ct);
             if (result.IsSuccess)

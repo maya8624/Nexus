@@ -52,7 +52,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IAgentRepository, AgentRepository>();
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
-            services.AddScoped<IValidator<AIInspectionBookingRequest>, AIInspectionBookingRequestValidator>();
+            services.AddScoped<IValidator<AiInspectionBookingRequest>, AiInspectionBookingRequestValidator>();
             services.AddScoped<IValidator<RefundRequest>, RefundRequestValidator>();
             services.AddScoped<IValidator<OrderPaymentRequest>, OrderPaymentRequestValidator>();
             services.AddScoped<IValidator<CreateDepositRequest>, CreateDepositRequestValidator>();
@@ -60,7 +60,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>();
             services.AddScoped<IValidator<RefreshTokenRequest>, RefreshTokenRequestValidator>();
             services.AddScoped<IValidator<ExternalLoginRequest>, ExternalLoginRequestValidator>();
-            services.AddScoped<IValidator<ChatRequest>, ChatRequestValidator>();
+            services.AddScoped<IValidator<CopilotRequest>, CopilotRequestValidator>();
             services.AddScoped<IValidator<InspectionBookingRequest>, InspectionBookingRequestValidator>();
             services.AddScoped<IValidator<InternalInspectionBookingRequest>, InternalInspectionBookingRequestValidator>();
             services.AddScoped<IValidator<InspectionSlotRequest>, InspectionSlotRequestValidator>();

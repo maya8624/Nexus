@@ -20,8 +20,8 @@ namespace Nexus.Api.Controllers
             _logger = logger;
         }
 
-        [HttpPost("chat")]
-        public async Task<IActionResult> Chat([FromBody] ChatRequest request, CancellationToken cancellationToken)
+        [HttpPost("copilot")]
+        public async Task<IActionResult> Chat([FromBody] CopilotRequest request, CancellationToken cancellationToken)
         {
             var result = await _aiService.GetReply(request, cancellationToken);
             if (result.IsSuccess)
@@ -30,8 +30,8 @@ namespace Nexus.Api.Controllers
             return MapFailure(result);
         }
 
-        [HttpPost("chat/stream")]
-        public async Task StreamChat([FromBody] ChatRequest request, CancellationToken cancellationToken)
+        [HttpPost("copilot/stream")]
+        public async Task StreamChat([FromBody] CopilotRequest request, CancellationToken cancellationToken)
         {
             Response.Headers.Append("Content-Type", "text/event-stream");
             Response.Headers.Append("Cache-Control", "no-cache");

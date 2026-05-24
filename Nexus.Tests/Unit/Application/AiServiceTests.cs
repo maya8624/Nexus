@@ -77,7 +77,7 @@ namespace Nexus.Tests.Unit.Application
         {
             SetupUserExists(false);
 
-            var result = await _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None);
+            var result = await _service.GetReply(new CopilotRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None);
 
             Assert.Equal(ResultStatus.NotFound, result.Status);
             Assert.Equal("UserNotFound", Assert.Single(result.Errors).Code);
@@ -94,7 +94,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.ExecuteRequest<AiServiceResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AiServiceResponse { reply = "Hello!", thread_id = "session-1" });
 
-            var result = await _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None);
+            var result = await _service.GetReply(new CopilotRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.Equal("Hello!", result.Value!.Reply);
@@ -109,7 +109,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.ExecuteRequest<AiServiceResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new AiServiceResponse { reply = "Hi!", thread_id = "generated-id" });
 
-            var result = await _service.GetReply(new ChatRequest { Message = "Hello" }, CancellationToken.None);
+            var result = await _service.GetReply(new CopilotRequest { Message = "Hello" }, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
         }
@@ -130,7 +130,7 @@ namespace Nexus.Tests.Unit.Application
                     ]
                 });
 
-            var result = await _service.GetReply(new ChatRequest { Message = "Show me listings", ThreadId = "session-1" }, CancellationToken.None);
+            var result = await _service.GetReply(new CopilotRequest { Message = "Show me listings", ThreadId = "session-1" }, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             var listing = Assert.Single(result.Value!.Listings);
@@ -148,7 +148,7 @@ namespace Nexus.Tests.Unit.Application
                 .ThrowsAsync(new HttpRequestException("Network error."));
 
             await Assert.ThrowsAsync<AiServiceException>(() =>
-                _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None));
+                _service.GetReply(new CopilotRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None));
         }
 
         [Fact]
@@ -160,7 +160,7 @@ namespace Nexus.Tests.Unit.Application
                 .ThrowsAsync(new TaskCanceledException("Request timed out."));
 
             await Assert.ThrowsAsync<AiServiceException>(() =>
-                _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None));
+                _service.GetReply(new CopilotRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None));
         }
 
         [Fact]
@@ -172,7 +172,7 @@ namespace Nexus.Tests.Unit.Application
                 .ThrowsAsync(new HttpRequestException("Network error."));
 
             await Assert.ThrowsAsync<AiServiceException>(() =>
-                _service.GetReply(new ChatRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None));
+                _service.GetReply(new CopilotRequest { Message = "Hello", ThreadId = "session-1" }, CancellationToken.None));
 
             _loggerMock.Verify(
                 x => x.Log(
@@ -326,7 +326,7 @@ namespace Nexus.Tests.Unit.Application
 
             await Assert.ThrowsAsync<AiServiceException>(async () =>
             {
-                await foreach (var _ in _service.StreamReply(new ChatRequest { Message = "Hello" }, CancellationToken.None)) { }
+                await foreach (var _ in _service.StreamReply(new CopilotRequest { Message = "Hello" }, CancellationToken.None)) { }
             });
         }
 
@@ -343,7 +343,7 @@ namespace Nexus.Tests.Unit.Application
                 .Returns(CreateHttpClientWithResponse(response));
 
             var chunks = new List<string>();
-            await foreach (var chunk in _service.StreamReply(new ChatRequest { Message = "Hello" }, CancellationToken.None))
+            await foreach (var chunk in _service.StreamReply(new CopilotRequest { Message = "Hello" }, CancellationToken.None))
                 chunks.Add(chunk);
 
             Assert.Equal(["Hello", "World"], chunks);
@@ -362,7 +362,7 @@ namespace Nexus.Tests.Unit.Application
                 .Returns(CreateHttpClientWithResponse(response));
 
             var chunks = new List<string>();
-            await foreach (var chunk in _service.StreamReply(new ChatRequest { Message = "Hello" }, CancellationToken.None))
+            await foreach (var chunk in _service.StreamReply(new CopilotRequest { Message = "Hello" }, CancellationToken.None))
                 chunks.Add(chunk);
 
             Assert.Equal(["Hello"], chunks);
@@ -377,7 +377,7 @@ namespace Nexus.Tests.Unit.Application
 
             await Assert.ThrowsAsync<AiServiceException>(async () =>
             {
-                await foreach (var _ in _service.StreamReply(new ChatRequest { Message = "Hello" }, CancellationToken.None)) { }
+                await foreach (var _ in _service.StreamReply(new CopilotRequest { Message = "Hello" }, CancellationToken.None)) { }
             });
         }
 
@@ -391,7 +391,7 @@ namespace Nexus.Tests.Unit.Application
 
             await Assert.ThrowsAsync<AiServiceException>(async () =>
             {
-                await foreach (var _ in _service.StreamReply(new ChatRequest { Message = "Hello" }, CancellationToken.None)) { }
+                await foreach (var _ in _service.StreamReply(new CopilotRequest { Message = "Hello" }, CancellationToken.None)) { }
             });
         }
 
