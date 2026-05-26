@@ -17,9 +17,17 @@ namespace Nexus.Domain.Entities
 
         public Guid? ListingId { get; set; }
 
-        public Guid? AgentId { get; set; }
+        public Guid? TenantId { get; set; }
 
-        public string Message { get; set; } = default!;
+        public Guid AgentId { get; set; }
+
+        public string? DraftReply { get; set; }
+
+        public string? SentReply { get; set; }
+
+        public string Body { get; set; } = default!;
+
+        public string? Intent { get; set; }
 
         public EnquiryStatus Status { get; set; }
 
@@ -27,7 +35,7 @@ namespace Nexus.Domain.Entities
 
         public DateTimeOffset UpdatedAtUtc { get; set; }
 
-        public DateTimeOffset? RespondedAtUtc { get; set; }
+        public DateTimeOffset? RepliedAtUtc { get; set; }
 
         public User User { get; set; } = default!;
 
@@ -35,6 +43,8 @@ namespace Nexus.Domain.Entities
 
         public Listing? Listing { get; set; }
 
-        public Agent? Agent { get; set; }
+        public Agent Agent { get; set; } = default!;
+
+        public Tenant? Tenant { get; set; }
     }
 }

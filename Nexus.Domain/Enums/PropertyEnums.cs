@@ -28,8 +28,8 @@ namespace Nexus.Domain.Enums
     public enum EnquiryStatus
     {
         New = 1,
-        Read = 2,
-        Responded = 3,
+        Drafted = 2,
+        Replied = 3,
         Closed = 4
     }
 
@@ -63,5 +63,28 @@ namespace Nexus.Domain.Enums
         Paid = 2,
         Refunded = 3,
         Failed = 4
+    }
+
+    public enum TenantStatus
+    {
+        Active = 1,
+        Vacating = 2,
+        Former = 3,
+        Prospective = 4,
+    }
+
+    public enum LeaseType
+    {
+        FixedTerm = 1,
+        Periodic = 2,
+    }
+
+    public enum LeaseStatus
+    {
+        Active = 1,
+        Expiring = 2,
+        Periodic = 3,
+        Vacating = 4,
+        Ended = 5,
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Nexus.Domain.Entities;
@@ -22,12 +23,17 @@ using var db = new AppDbContext(options);
 var rng = new Random(42);
 var now = DateTimeOffset.UtcNow;
 
+const string seedPassword = "Password123!";
+var seedPasswordHash = new PasswordHasher<User>().HashPassword(null!, seedPassword);
+
 // ---------------------------------------------------------------------------
 // Wipe (FK-safe order)
 // ---------------------------------------------------------------------------
 Console.WriteLine("Wiping existing data...");
 await db.Database.ExecuteSqlRawAsync(@"
     TRUNCATE TABLE
+        leases,
+        tenants,
         inspection_bookings,
         enquiries,
         inspection_slots,
@@ -348,7 +354,7 @@ var photosByCategory = new Dictionary<string, (string Url, string Caption)[]>
         ("https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80", "Attractive street-facing facade"),
         ("https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&q=80", "Modern home exterior with landscaped garden"),
         ("https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80", "Stylish contemporary facade"),
-        ("https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80", "Welcoming home entrance"),
+        ("https://images.unsplash.com/photo-TbuFfMkRhFg?w=800&q=80", "Modern house with garage"),
         ("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80", "Impressive double-storey home"),
     ],
     ["living-room"] =
@@ -845,6 +851,7 @@ db.Users.Add(new User
     IsActive     = false,
     CreatedAtUtc = now,
     UpdatedAtUtc = now,
+    PasswordHash = seedPasswordHash,
 });
 
 var tenantData = new[]
@@ -872,6 +879,7 @@ for (int i = 0; i < tenantData.Length; i++)
         FirstName    = first,
         LastName     = last,
         IsActive     = true,
+        PasswordHash = seedPasswordHash,
         CreatedAtUtc = now.AddDays(-rng.Next(30, 365)),
         UpdatedAtUtc = now,
     });
@@ -921,11 +929,137 @@ await db.SaveChangesAsync();
 Console.WriteLine($"  {slots.Count} inspection slots saved.");
 
 // ---------------------------------------------------------------------------
+// Tenants + Leases
+// ---------------------------------------------------------------------------
+Console.WriteLine("Seeding tenants and leases...");
+
+// Reuse the 10 tenant users already created above.
+// Pick a distinct property per tenant from the first 10 of propertyIds.
+var tenantRecordIds = Enumerable.Range(0, tenantData.Length).Select(_ => Guid.NewGuid()).ToArray();
+var currentLeaseIdByIndex = new Dictionary<int, Guid>();
+
+var weeklyRents = new[] { 450m, 520m, 580m, 620m, 680m, 750m, 820m, 900m, 1050m, 1200m };
+var statuses    = new[]
+{
+    TenantStatus.Active, TenantStatus.Active,   TenantStatus.Active, TenantStatus.Active,
+    TenantStatus.Active, TenantStatus.Active,   TenantStatus.Active,
+    TenantStatus.Vacating, TenantStatus.Vacating,
+    TenantStatus.Former,
+};
+
+// Step 1 — insert Tenants with LeaseId = null (resolved after leases are saved)
+var tenantRecords = new List<Tenant>();
+for (int i = 0; i < tenantData.Length; i++)
+{
+    var (email, first, last) = tenantData[i];
+    var leaseStart = DateOnly.FromDateTime(now.AddDays(-rng.Next(60, 540)).DateTime);
+    var weeklyRent = weeklyRents[i];
+
+    tenantRecords.Add(new Tenant
+    {
+        Id             = tenantRecordIds[i],
+        UserId         = tenantIds[i],
+        PropertyId     = propertyIds[i],
+        LeaseId        = null,
+        FirstName      = first,
+        LastName       = last,
+        Email          = email,
+        Phone          = $"04{rng.Next(10, 99):D2} {rng.Next(100, 999):D3} {rng.Next(100, 999):D3}",
+        LeaseStartDate = leaseStart,
+        LeaseEndDate   = leaseStart.AddMonths(12),
+        WeeklyRent     = weeklyRent,
+        BondAmount     = weeklyRent * 4,
+        Status         = statuses[i],
+        CreatedAtUtc   = now.AddDays(-rng.Next(60, 540)),
+        UpdatedAtUtc   = now,
+    });
+}
+
+db.Tenants.AddRange(tenantRecords);
+await db.SaveChangesAsync();
+
+// Step 2 — insert Leases (TenantId is now resolvable)
+var leaseRecords = new List<Lease>();
+for (int i = 0; i < tenantRecords.Count; i++)
+{
+    var tenant  = tenantRecords[i];
+    var agentId = agentIds[rng.Next(agentIds.Length)];
+
+    // First 5 tenants get a past ended lease (lease history)
+    if (i < 5)
+    {
+        leaseRecords.Add(new Lease
+        {
+            Id           = Guid.NewGuid(),
+            TenantId     = tenant.Id,
+            PropertyId   = tenant.PropertyId,
+            AgentId      = agentId,
+            StartDate    = tenant.LeaseStartDate.AddMonths(-12),
+            EndDate      = tenant.LeaseStartDate.AddDays(-1),
+            WeeklyRent   = tenant.WeeklyRent - 50m,
+            BondAmount   = (tenant.WeeklyRent - 50m) * 4,
+            Type         = LeaseType.FixedTerm,
+            Status       = LeaseStatus.Ended,
+            WaterIncluded = rng.Next(2) == 0,
+            CreatedAtUtc = now.AddDays(-rng.Next(365, 730)),
+            UpdatedAtUtc = now,
+        });
+    }
+
+    // Current lease — status tracks tenant status
+    var currentLeaseId = Guid.NewGuid();
+    currentLeaseIdByIndex[i] = currentLeaseId;
+
+    var leaseStatus = tenant.Status switch
+    {
+        TenantStatus.Active   => LeaseStatus.Active,
+        TenantStatus.Vacating => LeaseStatus.Vacating,
+        _                     => LeaseStatus.Ended,
+    };
+
+    leaseRecords.Add(new Lease
+    {
+        Id                         = currentLeaseId,
+        TenantId                   = tenant.Id,
+        PropertyId                 = tenant.PropertyId,
+        AgentId                    = agentId,
+        StartDate                  = tenant.LeaseStartDate,
+        EndDate                    = tenant.LeaseEndDate,
+        WeeklyRent                 = tenant.WeeklyRent,
+        BondAmount                 = tenant.BondAmount,
+        Type                       = LeaseType.FixedTerm,
+        Status                     = leaseStatus,
+        WaterIncluded              = rng.Next(2) == 0,
+        WaterAllowanceLitresPerDay = rng.Next(2) == 0 ? (decimal)rng.Next(150, 350) : null,
+        VacatingDate               = tenant.Status == TenantStatus.Vacating ? tenant.LeaseEndDate : null,
+        VacatingReason             = tenant.Status == TenantStatus.Vacating ? "End of fixed term — not renewing" : null,
+        CreatedAtUtc               = now.AddDays(-rng.Next(60, 540)),
+        UpdatedAtUtc               = now,
+    });
+}
+
+db.Leases.AddRange(leaseRecords);
+await db.SaveChangesAsync();
+
+// Step 3 — point each Tenant.LeaseId at their current active lease
+for (int i = 0; i < tenantRecords.Count; i++)
+    tenantRecords[i].LeaseId = currentLeaseIdByIndex[i];
+
+await db.SaveChangesAsync();
+
+var leaseCount = leaseRecords.Count;
+Console.WriteLine($"  {tenantRecords.Count} tenants, {leaseCount} leases ({leaseCount - tenantRecords.Count} historical) saved.");
+
+// ---------------------------------------------------------------------------
 // Enquiries (50 records)
 // ---------------------------------------------------------------------------
 Console.WriteLine("Seeding enquiries...");
 
-var enquiryMessages = new[]
+var userIdToTenantRecordId = tenantIds
+    .Zip(tenantRecordIds, (userId, tenantRecordId) => (userId, tenantRecordId))
+    .ToDictionary(x => x.userId, x => x.tenantRecordId);
+
+var enquiryBodies = new[]
 {
     "Hi, I'm very interested in this property. Could you please let me know if it's still available and arrange an inspection?",
     "I would like to find out more about this property. What are the strata fees, and is parking included?",
@@ -939,29 +1073,30 @@ var enquiryMessages = new[]
     "Hi, I'd love to arrange a private inspection at your earliest convenience. This property ticks all our boxes.",
 };
 
-var enquiryStatuses = new[] { EnquiryStatus.New, EnquiryStatus.Read, EnquiryStatus.Responded };
+var enquiryStatuses = new[] { EnquiryStatus.New, EnquiryStatus.Drafted, EnquiryStatus.Replied, EnquiryStatus.Closed };
 var enquiries = new List<Enquiry>();
 var enquiryListings = listings.OrderBy(_ => rng.Next()).Take(50).ToList();
 
 for (int i = 0; i < 50; i++)
 {
-    var listing    = enquiryListings[i];
-    var tenantId   = tenantIds[rng.Next(tenantIds.Length)];
-    var createdAt  = now.AddDays(-rng.Next(1, 60));
-    var status     = enquiryStatuses[rng.Next(enquiryStatuses.Length)];
+    var listing   = enquiryListings[i];
+    var userId    = tenantIds[rng.Next(tenantIds.Length)];
+    var createdAt = now.AddDays(-rng.Next(1, 60));
+    var status    = enquiryStatuses[rng.Next(enquiryStatuses.Length)];
 
     enquiries.Add(new Enquiry
     {
-        Id              = Guid.NewGuid(),
-        UserId          = tenantId,
-        PropertyId      = listing.PropertyId,
-        ListingId       = listing.Id,
-        AgentId         = listing.AgentId,
-        Message         = enquiryMessages[rng.Next(enquiryMessages.Length)],
-        Status          = status,
-        CreatedAtUtc    = createdAt,
-        UpdatedAtUtc    = createdAt,
-        RespondedAtUtc  = status == EnquiryStatus.Responded ? createdAt.AddHours(rng.Next(1, 48)) : null,
+        Id           = Guid.NewGuid(),
+        UserId       = userId,
+        TenantId     = userIdToTenantRecordId[userId],
+        PropertyId   = listing.PropertyId,
+        ListingId    = listing.Id,
+        AgentId      = listing.AgentId ?? agentIds[0],
+        Body         = enquiryBodies[rng.Next(enquiryBodies.Length)],
+        Status       = status,
+        CreatedAtUtc = createdAt,
+        UpdatedAtUtc = createdAt,
+        RepliedAtUtc = status == EnquiryStatus.Replied ? createdAt.AddHours(rng.Next(1, 48)) : null,
     });
 }
 
@@ -982,3 +1117,5 @@ Console.WriteLine($"  Listings         : {listings.Count}  (rent: {listings.Coun
 Console.WriteLine($"  Inspection slots : {slots.Count}");
 Console.WriteLine($"  Enquiries        : {enquiries.Count}");
 Console.WriteLine($"  Inspection bookings: 0 (intentionally empty)");
+Console.WriteLine($"  Tenants          : {tenantRecords.Count} (7 active, 2 vacating, 1 former)");
+Console.WriteLine($"  Leases           : {leaseRecords.Count} ({tenantRecords.Count} current + {leaseRecords.Count - tenantRecords.Count} historical)");

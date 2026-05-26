@@ -15,9 +15,18 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Id)
                 .ValueGeneratedNever();
 
-            builder.Property(x => x.Message)
-                .HasMaxLength(2000)
+            builder.Property(x => x.Body)
+                .HasMaxLength(1000)
                 .IsRequired();
+
+            builder.Property(x => x.DraftReply)
+                .HasMaxLength(1000);
+
+            builder.Property(x => x.SentReply)
+                .HasMaxLength(1000);
+
+            builder.Property(x => x.Intent)
+                .HasMaxLength(50);
 
             builder.Property(x => x.Status)
                 .HasConversion<string>()
@@ -30,7 +39,7 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.UpdatedAtUtc)
                 .IsRequired();
 
-            builder.Property(x => x.RespondedAtUtc);
+            builder.Property(x => x.RepliedAtUtc);
 
 
             builder.HasOne(x => x.User)
@@ -53,10 +62,16 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .HasForeignKey(x => x.AgentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(x => x.Tenant)
+                .WithMany(x => x.Enquiries)
+                .HasForeignKey(x => x.TenantId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             builder.HasIndex(x => x.UserId);
             builder.HasIndex(x => x.PropertyId);
             builder.HasIndex(x => x.ListingId);
             builder.HasIndex(x => x.AgentId);
+            builder.HasIndex(x => x.TenantId);
             builder.HasIndex(x => x.Status);
             builder.HasIndex(x => x.CreatedAtUtc);
         }

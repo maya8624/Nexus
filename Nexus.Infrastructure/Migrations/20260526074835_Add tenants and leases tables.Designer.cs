@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Nexus.Infrastructure.Persistence;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Nexus.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260526074835_Add tenants and leases tables")]
+    partial class Addtenantsandleasestables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1798,10 +1801,9 @@ namespace Nexus.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_enquiries_properties_property_id");
 
-                    b.HasOne("Nexus.Domain.Entities.Tenant", "Tenant")
+                    b.HasOne("Nexus.Domain.Entities.Tenant", null)
                         .WithMany("Enquiries")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_enquiries_tenants_tenant_id");
 
                     b.HasOne("Nexus.Domain.Entities.User", "User")
@@ -1816,8 +1818,6 @@ namespace Nexus.Infrastructure.Migrations
                     b.Navigation("Listing");
 
                     b.Navigation("Property");
-
-                    b.Navigation("Tenant");
 
                     b.Navigation("User");
                 });

@@ -14,7 +14,6 @@ namespace Nexus.Application.Services
         private readonly IInspectionBookingRepository _bookingRepository;
         private readonly IInspectionSlotRepository _slotRepository;
         private readonly IUserRepository _userRepository;
-        private readonly IUserContext _userContext;
         private readonly IUnitOfWork _uow;
 
         public InspectionBookingService(
@@ -27,7 +26,6 @@ namespace Nexus.Application.Services
             _bookingRepository = bookingRepository;
             _slotRepository = slotRepository;
             _userRepository = userRepository;
-            _userContext = userContext;
             _uow = uow;
         }
 

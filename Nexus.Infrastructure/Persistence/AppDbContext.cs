@@ -35,6 +35,8 @@ namespace Nexus.Infrastructure.Persistence
         public DbSet<UserLogin> UserLogins => Set<UserLogin>();
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
         public DbSet<DocumentSuggestion> DocumentSuggestions => Set<DocumentSuggestion>();
+        public DbSet<Tenant> Tenants => Set<Tenant>();
+        public DbSet<Lease> Leases => Set<Lease>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

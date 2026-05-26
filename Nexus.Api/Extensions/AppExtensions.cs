@@ -49,6 +49,8 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IDepositRepository, DepositRepository>();
             services.AddScoped<IDocumentSuggestionService, DocumentSuggestionService>();
             services.AddScoped<IDocumentSuggestionRepository, DocumentSuggestionRepository>();
+            services.AddScoped<IEnquiryService, EnquiryService>();
+            services.AddScoped<IEnquiryRepository, EnquiryRepository>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IAgentRepository, AgentRepository>();
             services.AddScoped<IValidator<CreateOrderRequest>, CreateOrderRequestValidator>();
@@ -66,6 +68,8 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<InspectionSlotRequest>, InspectionSlotRequestValidator>();
             services.AddScoped<IValidator<PropertyQueryRequest>, PropertyQueryRequestValidator>();
             services.AddScoped<IValidator<TenantPreferenceRequest>, TenantPreferenceRequestValidator>();
+            services.AddScoped<IValidator<CreateEnquiryRequest>, CreateEnquiryRequestValidator>();
+            services.AddScoped<IValidator<UpdateEnquiryRequest>, UpdateEnquiryRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
             services.AddScoped<InternalApiKeyFilter>();
         }
