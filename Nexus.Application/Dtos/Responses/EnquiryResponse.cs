@@ -1,5 +1,11 @@
 namespace Nexus.Application.Dtos
 {
+    public sealed class EnquirySendResponse
+    {
+        public string SentReply { get; init; } = string.Empty;
+        public DateTimeOffset RepliedAtUtc { get; init; }
+    }
+
     public sealed class EnquiryResponse
     {
         public Guid Id { get; init; }
@@ -10,6 +16,8 @@ namespace Nexus.Application.Dtos
         public string? DraftReply { get; init; }
         public string? SentReply { get; init; }
         public string Status { get; init; } = string.Empty;
+        public string SenderName { get; init; } = string.Empty;
+        public string SenderEmail { get; init; } = string.Empty;
         public DateTimeOffset CreatedAtUtc { get; init; }
         public DateTimeOffset? RepliedAtUtc { get; init; }
     }

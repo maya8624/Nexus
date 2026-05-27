@@ -63,5 +63,15 @@ namespace Nexus.Api.Controllers
 
             return MapFailure(result);
         }
+
+        [HttpPost("enquiry-draft")]
+        public async Task<IActionResult> EnquiryDraft([FromBody] EnquiryDraftRequest request, CancellationToken ct)
+        {
+            var result = await _aiService.GetEnquiryDraft(request, ct);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return MapFailure(result);
+        }
     }
 }

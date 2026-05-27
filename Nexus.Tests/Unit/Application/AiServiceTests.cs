@@ -5,11 +5,13 @@ using Nexus.Application.Common;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Exceptions;
+using Nexus.Tests.Unit.Helpers;
 using Nexus.Application.Interfaces;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Services;
 using Nexus.Application.Settings;
 using Nexus.Domain.Entities;
+using Nexus.Domain.Enums;
 using Nexus.Network.Interfaces;
 using System.Linq.Expressions;
 using System.Net;
@@ -24,6 +26,8 @@ namespace Nexus.Tests.Unit.Application
         private readonly Mock<IHttpClientService> _httpClientServiceMock = new();
         private readonly Mock<IHttpClientFactory> _httpClientFactoryMock = new();
         private readonly Mock<IUserRepository> _userRepositoryMock = new();
+        private readonly Mock<IEnquiryRepository> _enquiryRepositoryMock = new();
+        private readonly Mock<IUnitOfWork> _uowMock = new();
         private readonly Mock<IUserContext> _userContextMock = new();
         private readonly Mock<ILogger<AiService>> _loggerMock = new();
         private readonly AiService _service;
@@ -32,6 +36,7 @@ namespace Nexus.Tests.Unit.Application
         public AiServiceTests()
         {
             _userContextMock.Setup(x => x.UserId).Returns(_userId.ToString());
+            _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
 
             var settings = Options.Create(new AiServiceSettings
             {
@@ -40,7 +45,8 @@ namespace Nexus.Tests.Unit.Application
                 Chat = "api/chat",
                 ChatStream = "api/chat/stream",
                 Preferences = "api/preferences",
-                SuburbSummary = "api/suburb-summary"
+                SuburbSummary = "api/suburb-summary",
+                EnquiryDraft = "api/enquiry/draft"
             });
 
             _service = new AiService(
@@ -49,7 +55,9 @@ namespace Nexus.Tests.Unit.Application
                 settings,
                 _loggerMock.Object,
                 _userContextMock.Object,
-                _userRepositoryMock.Object);
+                _userRepositoryMock.Object,
+                _enquiryRepositoryMock.Object,
+                _uowMock.Object);
         }
 
         private void SetupUserExists(bool exists) =>
@@ -313,6 +321,146 @@ namespace Nexus.Tests.Unit.Application
                     It.IsAny<Exception>(),
                     It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
                 Times.Once);
+        }
+
+        #endregion
+
+        #region GetEnquiryDraft
+
+        private static Enquiry BuildEnquiry(Guid id) => new()
+        {
+            Id         = id,
+            UserId     = Guid.NewGuid(),
+            PropertyId = Guid.NewGuid(),
+            AgentId    = Guid.NewGuid(),
+            TenantId   = Guid.NewGuid(),
+            Body       = "My sliding door is broken.",
+            Intent     = "maintenance",
+            Status     = Nexus.Domain.Enums.EnquiryStatus.New,
+            CreatedAtUtc = DateTimeOffset.UtcNow,
+            UpdatedAtUtc = DateTimeOffset.UtcNow,
+        };
+
+        [Fact]
+        public async Task GetEnquiryDraft_WithMissingEnquiry_ShouldReturnNotFound()
+        {
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Enquiry?)null);
+
+            var result = await _service.GetEnquiryDraft(new EnquiryDraftRequest { Id = Guid.NewGuid() }, CancellationToken.None);
+
+            Assert.Equal(ResultStatus.NotFound, result.Status);
+            Assert.Equal("EnquiryNotFound", Assert.Single(result.Errors).Code);
+            _httpClientServiceMock.Verify(
+                x => x.ExecuteRequest<AiEnquiryDraftResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Theory]
+        [InlineData(EnquiryStatus.Replied)]
+        [InlineData(EnquiryStatus.Closed)]
+        public async Task GetEnquiryDraft_WithNonDraftableStatus_ShouldReturnConflict(EnquiryStatus status)
+        {
+            var enquiryId = Guid.NewGuid();
+            var enquiry   = BuildEnquiry(enquiryId);
+            enquiry.Status = status;
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(enquiry);
+
+            var result = await _service.GetEnquiryDraft(new EnquiryDraftRequest { Id = enquiryId }, CancellationToken.None);
+
+            Assert.Equal(ResultStatus.Conflict, result.Status);
+            Assert.Equal("InvalidStatus", Assert.Single(result.Errors).Code);
+            _httpClientServiceMock.Verify(
+                x => x.ExecuteRequest<AiEnquiryDraftResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GetEnquiryDraft_WithValidEnquiry_ShouldReturnDraft()
+        {
+            var enquiryId = Guid.NewGuid();
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BuildEnquiry(enquiryId));
+            _httpClientServiceMock
+                .Setup(x => x.ExecuteRequest<AiEnquiryDraftResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AiEnquiryDraftResponse { draft = "Thank you for contacting us.", sources = ["lease-clause-7"] });
+
+            var result = await _service.GetEnquiryDraft(new EnquiryDraftRequest { Id = enquiryId }, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal("Thank you for contacting us.", result.Value!.Draft);
+            Assert.Equal("lease-clause-7", Assert.Single(result.Value.Sources));
+        }
+
+        [Fact]
+        public async Task GetEnquiryDraft_WithValidEnquiry_ShouldMapEnquiryFieldsToPythonRequest()
+        {
+            var enquiryId = Guid.NewGuid();
+            var enquiry   = BuildEnquiry(enquiryId);
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(enquiry);
+            _httpClientServiceMock
+                .Setup(x => x.ExecuteRequest<AiEnquiryDraftResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new AiEnquiryDraftResponse { draft = "Draft reply." });
+
+            var result = await _service.GetEnquiryDraft(new EnquiryDraftRequest { Id = enquiryId }, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            _httpClientServiceMock.Verify(
+                x => x.ExecuteRequest<AiEnquiryDraftResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GetEnquiryDraft_WhenHttpRequestExceptionThrown_ShouldThrowAiServiceException()
+        {
+            var enquiryId = Guid.NewGuid();
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BuildEnquiry(enquiryId));
+            _httpClientServiceMock
+                .Setup(x => x.ExecuteRequest<AiEnquiryDraftResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new HttpRequestException("Network error."));
+
+            await Assert.ThrowsAsync<AiServiceException>(() =>
+                _service.GetEnquiryDraft(new EnquiryDraftRequest { Id = enquiryId }, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetEnquiryDraft_WhenTaskCanceledExceptionThrown_ShouldThrowAiServiceException()
+        {
+            var enquiryId = Guid.NewGuid();
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BuildEnquiry(enquiryId));
+            _httpClientServiceMock
+                .Setup(x => x.ExecuteRequest<AiEnquiryDraftResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new TaskCanceledException("Timed out."));
+
+            await Assert.ThrowsAsync<AiServiceException>(() =>
+                _service.GetEnquiryDraft(new EnquiryDraftRequest { Id = enquiryId }, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task GetEnquiryDraft_WhenHttpRequestExceptionThrown_ShouldLogError()
+        {
+            var enquiryId = Guid.NewGuid();
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiryId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(BuildEnquiry(enquiryId));
+            _httpClientServiceMock
+                .Setup(x => x.ExecuteRequest<AiEnquiryDraftResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new HttpRequestException("Network error."));
+
+            await Assert.ThrowsAsync<AiServiceException>(() =>
+                _service.GetEnquiryDraft(new EnquiryDraftRequest { Id = enquiryId }, CancellationToken.None));
+
+            _loggerMock.VerifyLog(LogLevel.Error, enquiryId.ToString());
         }
 
         #endregion

@@ -18,7 +18,16 @@ namespace Nexus.Infrastructure.Repositories
         {
             return await _context.Enquiries
                 .AsNoTracking()
+                .Include(x => x.User)
                 .Where(x => x.Id == id && x.UserId == userId)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        public async Task<Enquiry?> GetByIdAsync(Guid id, CancellationToken ct)
+        {
+            return await _context.Enquiries
+                .AsNoTracking()
+                .Where(x => x.Id == id)
                 .FirstOrDefaultAsync(ct);
         }
 
@@ -29,11 +38,29 @@ namespace Nexus.Infrastructure.Repositories
                 .FirstOrDefaultAsync(ct);
         }
 
+        public async Task<Enquiry?> GetByIdForUpdateAsync(Guid id, CancellationToken ct)
+        {
+            return await _context.Enquiries
+                .Where(x => x.Id == id)
+                .FirstOrDefaultAsync(ct);
+        }
+
         public async Task<IReadOnlyList<Enquiry>> GetByUserIdAsync(Guid userId, CancellationToken ct)
         {
             return await _context.Enquiries
                 .AsNoTracking()
+                .Include(x => x.User)
                 .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.CreatedAtUtc)
+                .ToListAsync(ct);
+        }
+
+        public async Task<IReadOnlyList<Enquiry>> GetByAgentIdAsync(Guid agentId, CancellationToken ct)
+        {
+            return await _context.Enquiries
+                .AsNoTracking()
+                .Include(x => x.User)
+                .Where(x => x.AgentId == agentId)
                 .OrderByDescending(x => x.CreatedAtUtc)
                 .ToListAsync(ct);
         }

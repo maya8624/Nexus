@@ -16,13 +16,11 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.Amount).HasPrecision(18, 2).IsRequired();
 
             builder.Property(x => x.Currency)
-                .HasConversion<string>()
-                .HasMaxLength(10)
+                .HasConversion<int>()
                 .IsRequired();
 
             builder.Property(x => x.Status)
-                .HasConversion<string>()
-                .HasMaxLength(20)
+                .HasConversion<int>()
                 .IsRequired();
 
             builder.Property(x => x.StripeSessionId).HasMaxLength(200).IsRequired();

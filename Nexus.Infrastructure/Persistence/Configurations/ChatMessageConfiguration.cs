@@ -21,8 +21,7 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .ValueGeneratedNever();
 
             builder.Property(x => x.Role)
-                .HasConversion<string>()
-                .HasMaxLength(20)
+                .HasConversion<int>()
                 .IsRequired();
 
             builder.Property(x => x.Content)

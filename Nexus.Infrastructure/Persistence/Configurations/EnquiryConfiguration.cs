@@ -20,17 +20,16 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .IsRequired();
 
             builder.Property(x => x.DraftReply)
-                .HasMaxLength(1000);
+                .HasMaxLength(2000);
 
             builder.Property(x => x.SentReply)
-                .HasMaxLength(1000);
+                .HasMaxLength(2000);
 
             builder.Property(x => x.Intent)
                 .HasMaxLength(50);
 
             builder.Property(x => x.Status)
-                .HasConversion<string>()
-                .HasMaxLength(20)
+                .HasConversion<int>()
                 .IsRequired();
 
             builder.Property(x => x.CreatedAtUtc)

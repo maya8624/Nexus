@@ -45,6 +45,28 @@ namespace Nexus.Api.Controllers
             return MapFailure(result);
         }
 
+        [HttpGet("agent")]
+        public async Task<ActionResult<IReadOnlyList<EnquiryResponse>>> GetByAgent(CancellationToken ct)
+        {
+            // hardcoded agent id for testing purpose
+            var agentId = Guid.Parse("41ad42d4-4625-4f71-a981-6520174a1a4b");
+            var result = await _enquiryService.GetByAgentIdAsync(agentId, ct);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return MapFailure(result);
+        }
+
+        [HttpPost("{id:guid}/send")]
+        public async Task<ActionResult<EnquirySendResponse>> Send(Guid id, CancellationToken ct)
+        {
+            var result = await _enquiryService.SendReplyAsync(id, ct);
+            if (result.IsSuccess)
+                return Ok(result.Value);
+
+            return MapFailure(result);
+        }
+
         // [HttpPatch("{id:guid}")]
         // public async Task<ActionResult<EnquiryResponse>> Update(Guid id, [FromBody] UpdateEnquiryRequest request, CancellationToken ct)
         // {

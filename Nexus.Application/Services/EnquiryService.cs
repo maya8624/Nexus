@@ -82,6 +82,40 @@ namespace Nexus.Application.Services
             return Result<EnquiryResponse>.Success(MapToDto(enquiry));
         }
 
+        public async Task<Result<IReadOnlyList<EnquiryResponse>>> GetByAgentIdAsync(Guid agentId, CancellationToken ct)
+        {
+            var enquiries = await _enquiryRepository.GetByAgentIdAsync(agentId, ct);
+            return Result<IReadOnlyList<EnquiryResponse>>.Success(enquiries.Select(MapToDto).ToList());
+        }
+
+        public async Task<Result<EnquirySendResponse>> SendReplyAsync(Guid id, CancellationToken ct)
+        {
+            var enquiry = await _enquiryRepository.GetByIdForUpdateAsync(id, ct);
+            if (enquiry is null)
+                return Result<EnquirySendResponse>.NotFound("EnquiryNotFound", "Enquiry not found.");
+
+            if (string.IsNullOrWhiteSpace(enquiry.DraftReply))
+                return Result<EnquirySendResponse>.Conflict("NoDraft", "No draft reply exists to send.");
+
+            if (enquiry.Status is EnquiryStatus.Replied or EnquiryStatus.Closed)
+                return Result<EnquirySendResponse>.Conflict("InvalidStatus", "Enquiry has already been replied to or closed.");
+
+            var now = DateTimeOffset.UtcNow;
+            enquiry.SentReply = enquiry.DraftReply;
+            enquiry.Status = EnquiryStatus.Replied;
+            enquiry.RepliedAtUtc = now;
+            enquiry.UpdatedAtUtc = now;
+            await _uow.SaveChanges();
+
+            //TODO: implement sending an email
+
+            return Result<EnquirySendResponse>.Success(new EnquirySendResponse
+            {
+                SentReply    = enquiry.SentReply,
+                RepliedAtUtc = now
+            });
+        }
+
         private static EnquiryResponse MapToDto(Enquiry enquiry) => new()
         {
             Id = enquiry.Id,
@@ -89,8 +123,11 @@ namespace Nexus.Application.Services
             ListingId = enquiry.ListingId,
             AgentId = enquiry.AgentId,
             Body = enquiry.Body,
+            DraftReply = enquiry.DraftReply,
             SentReply = enquiry.SentReply,
             Status = enquiry.Status.ToString(),
+            SenderName = $"{enquiry.User?.FirstName} {enquiry.User?.LastName}".Trim(),
+            SenderEmail = enquiry.User?.Email ?? string.Empty,
             CreatedAtUtc = enquiry.CreatedAtUtc,
             RepliedAtUtc = enquiry.RepliedAtUtc
         };

@@ -21,13 +21,11 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .ValueGeneratedNever();
 
             builder.Property(x => x.ListingType)
-                .HasConversion<string>()
-                .HasMaxLength(20)
+                .HasConversion<int>()
                 .IsRequired();
 
             builder.Property(x => x.Status)
-                .HasConversion<string>()
-                .HasMaxLength(30)
+                .HasConversion<int>()
                 .IsRequired();
 
             builder.Property(x => x.Price)

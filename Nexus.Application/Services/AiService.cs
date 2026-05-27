@@ -6,6 +6,7 @@ using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
 using Nexus.Application.Interfaces.Repository;
+using Nexus.Domain.Enums;
 using Nexus.Application.Settings;
 using Nexus.Network;
 using Nexus.Network.Enums;
@@ -23,6 +24,8 @@ namespace Nexus.Application.Services
         private readonly AiServiceSettings _settings;
         private readonly IUserContext _userContext;
         private readonly IUserRepository _userRepository;
+        private readonly IEnquiryRepository _enquiryRepository;
+        private readonly IUnitOfWork _uow;
 
         public AiService(
             IHttpClientService httpClientService,
@@ -30,7 +33,9 @@ namespace Nexus.Application.Services
             IOptions<AiServiceSettings> settings,
             ILogger<AiService> logger,
             IUserContext userContext,
-            IUserRepository userRepository
+            IUserRepository userRepository,
+            IEnquiryRepository enquiryRepository,
+            IUnitOfWork uow
         )
         {
             _httpClientService = httpClientService;
@@ -39,6 +44,8 @@ namespace Nexus.Application.Services
             _logger = logger;
             _userContext = userContext;
             _userRepository = userRepository;
+            _enquiryRepository = enquiryRepository;
+            _uow = uow;
         }
 
         public async Task<Result<ChatResponse>> GetReply(CopilotRequest request, CancellationToken ct)
@@ -178,6 +185,50 @@ namespace Nexus.Application.Services
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
             {
                 _logger.LogError(ex, "AI suburb summary failed for suburbs {Suburbs}", string.Join(", ", request.Suburbs));
+                throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
+            }
+        }
+
+        public async Task<Result<EnquiryDraftResponse>> GetEnquiryDraft(EnquiryDraftRequest request, CancellationToken ct)
+        {
+            var enquiry = await _enquiryRepository.GetByIdForUpdateAsync(request.Id, ct);
+            if (enquiry is null)
+                return Result<EnquiryDraftResponse>.NotFound("EnquiryNotFound", "Enquiry not found.");
+
+            if (enquiry.Status is EnquiryStatus.Replied or EnquiryStatus.Closed)
+                return Result<EnquiryDraftResponse>.Conflict("InvalidStatus", "A draft cannot be generated for a replied or closed enquiry.");
+
+            var aiRequest = new AiEnquiryDraftRequest
+            {
+                id          = enquiry.Id.ToString(),
+                body        = enquiry.Body,
+                tenant_id   = enquiry.TenantId?.ToString(),
+                property_id = enquiry.PropertyId.ToString(),
+                intent      = enquiry.Intent
+            };
+
+            var options = BuildAiRequestOptions(aiRequest, _settings.EnquiryDraft);
+
+            try
+            {
+                var httpRequest = HttpRequestFactory.CreateHttpRequestMessage(options);
+                var raw = await _httpClientService.ExecuteRequest<AiEnquiryDraftResponse>(httpRequest, ct);
+
+                enquiry.Status = EnquiryStatus.Drafted;
+                enquiry.DraftReply = raw.draft;
+                enquiry.UpdatedAtUtc = DateTimeOffset.UtcNow;
+                await _uow.SaveChanges();
+
+                return Result<EnquiryDraftResponse>.Success(new EnquiryDraftResponse
+                {
+                    Draft   = raw.draft,
+                    Status  = EnquiryStatus.Drafted.ToString(),
+                    Sources = raw.sources
+                });
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                _logger.LogError(ex, "AI enquiry draft failed for enquiry {EnquiryId}", request.Id);
                 throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
             }
         }

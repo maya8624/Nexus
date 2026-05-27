@@ -14,6 +14,7 @@ namespace Nexus.Application.Interfaces
         Task<Result<ChatResponse>> GetReply(CopilotRequest request, CancellationToken ct);
         Task<Result<PreferenceSearchResponse>> GetPreferenceProperties(TenantPreferenceRequest request, Guid userId, CancellationToken ct);
         Task<Result<SuburbSummaryResponse>> GetSuburbSummary(SuburbSummaryRequest request, Guid userId, CancellationToken ct);
+        Task<Result<EnquiryDraftResponse>> GetEnquiryDraft(EnquiryDraftRequest request, CancellationToken ct);
         IAsyncEnumerable<string> StreamReply(CopilotRequest request, CancellationToken ct);
     }
 }

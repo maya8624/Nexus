@@ -21,13 +21,11 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.WaterAllowanceLitresPerDay).HasPrecision(10, 2);
 
             builder.Property(x => x.Type)
-                .HasConversion<string>()
-                .HasMaxLength(20)
+                .HasConversion<int>()
                 .IsRequired();
 
             builder.Property(x => x.Status)
-                .HasConversion<string>()
-                .HasMaxLength(20)
+                .HasConversion<int>()
                 .IsRequired();
 
             builder.Property(x => x.VacatingDate);

@@ -10,5 +10,7 @@ namespace Nexus.Application.Interfaces.Business
         Task<Result<IReadOnlyList<EnquiryResponse>>> GetMyEnquiriesAsync(Guid userId, CancellationToken ct);
         Task<Result<EnquiryResponse>> GetByIdAsync(Guid id, Guid userId, CancellationToken ct);
         Task<Result<EnquiryResponse>> UpdateAsync(Guid id, UpdateEnquiryRequest request, Guid userId, CancellationToken ct);
+        Task<Result<IReadOnlyList<EnquiryResponse>>> GetByAgentIdAsync(Guid agentId, CancellationToken ct);
+        Task<Result<EnquirySendResponse>> SendReplyAsync(Guid id, CancellationToken ct);
     }
 }

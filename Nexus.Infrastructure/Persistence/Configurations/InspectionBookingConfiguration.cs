@@ -21,8 +21,7 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .ValueGeneratedNever();
 
             builder.Property(x => x.Status)
-                .HasConversion<string>()
-                .HasMaxLength(20)
+                .HasConversion<int>()
                 .IsRequired();
 
             builder.Property(x => x.Notes)
@@ -74,7 +73,7 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             // Prevent duplicate active bookings for the same slot by the same user even under concurrent requests
             builder.HasIndex(x => new { x.InspectionSlotId, x.UserId })
                 .IsUnique()
-                .HasFilter("status != 'Cancelled' AND is_deleted = false");
+                .HasFilter("status != 3 AND is_deleted = false");
         }
     }
 }
