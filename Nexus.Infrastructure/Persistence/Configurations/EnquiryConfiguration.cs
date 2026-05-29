@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Nexus.Domain.Entities;
+using Nexus.Domain.ValueObjects;
+using System.Collections.Generic;
+using System.Text.Json;
 
 namespace Nexus.Infrastructure.Persistence.Configurations
 {
@@ -24,6 +27,14 @@ namespace Nexus.Infrastructure.Persistence.Configurations
 
             builder.Property(x => x.SentReply)
                 .HasMaxLength(2000);
+
+            builder.Property(x => x.DraftSources)
+                .HasColumnType("jsonb")
+                .HasConversion(
+                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+                    v => JsonSerializer.Deserialize<List<SourceChunk>>(v, (JsonSerializerOptions?)null) ?? new List<SourceChunk>()
+                )
+                .IsRequired();
 
             builder.Property(x => x.Intent)
                 .HasMaxLength(50);

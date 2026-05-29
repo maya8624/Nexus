@@ -21,7 +21,7 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpPost("copilot")]
-        public async Task<IActionResult> Chat([FromBody] CopilotRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Copilot([FromBody] CopilotRequest request, CancellationToken cancellationToken)
         {
             var result = await _aiService.GetReply(request, cancellationToken);
             if (result.IsSuccess)
@@ -31,7 +31,7 @@ namespace Nexus.Api.Controllers
         }
 
         [HttpPost("copilot/stream")]
-        public async Task StreamChat([FromBody] CopilotRequest request, CancellationToken cancellationToken)
+        public async Task StreamCopilot([FromBody] CopilotRequest request, CancellationToken cancellationToken)
         {
             Response.Headers.Append("Content-Type", "text/event-stream");
             Response.Headers.Append("Cache-Control", "no-cache");

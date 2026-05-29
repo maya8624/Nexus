@@ -8,6 +8,7 @@ using Nexus.Application.Interfaces;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Domain.Enums;
 using Nexus.Application.Settings;
+using Nexus.Domain.ValueObjects;
 using Nexus.Network;
 using Nexus.Network.Enums;
 using Nexus.Network.Interfaces;
@@ -48,13 +49,13 @@ namespace Nexus.Application.Services
             _uow = uow;
         }
 
-        public async Task<Result<ChatResponse>> GetReply(CopilotRequest request, CancellationToken ct)
+        public async Task<Result<CopilotResponse>> GetReply(CopilotRequest request, CancellationToken ct)
         {
             Guid.TryParse(_userContext.UserId, out var userId);
 
             var userExists = await _userRepository.IsAny(x => x.Id == userId && x.IsActive, ct);
             if (userExists == false)
-                return Result<ChatResponse>.NotFound("UserNotFound", "User not found or inactive.");
+                return Result<CopilotResponse>.NotFound("UserNotFound", "User not found or inactive.");
 
             var isNewConversation = string.IsNullOrWhiteSpace(request.ThreadId);
             var threadId = isNewConversation
@@ -77,11 +78,18 @@ namespace Nexus.Application.Services
                 var httpRequest = HttpRequestFactory.CreateHttpRequestMessage(options);
                 var result = await _httpClientService.ExecuteRequest<AiServiceResponse>(httpRequest, ct);
 
-                return Result<ChatResponse>.Success(new ChatResponse
+                return Result<CopilotResponse>.Success(new CopilotResponse
                 {
                     Reply = result.reply,
                     ThreadId = result.thread_id,
                     PropertyId = result.property_id,
+                    Sources = result.sources.Select(s => new SourceChunk
+                    {
+                        FileName = s.file_name,
+                        Page = s.page,
+                        Score = s.score,
+                        Text = s.text
+                    }).ToList(),
                     Listings = result.listings?.Select(l => new PropertyListing
                     {
                         PropertyId = l.property_id,
@@ -200,11 +208,11 @@ namespace Nexus.Application.Services
 
             var aiRequest = new AiEnquiryDraftRequest
             {
-                id          = enquiry.Id.ToString(),
-                body        = enquiry.Body,
-                tenant_id   = enquiry.TenantId?.ToString(),
+                id = enquiry.Id.ToString(),
+                body = enquiry.Body,
+                tenant_id = enquiry.TenantId?.ToString(),
                 property_id = enquiry.PropertyId.ToString(),
-                intent      = enquiry.Intent
+                intent = enquiry.Intent
             };
 
             var options = BuildAiRequestOptions(aiRequest, _settings.EnquiryDraft);
@@ -214,16 +222,25 @@ namespace Nexus.Application.Services
                 var httpRequest = HttpRequestFactory.CreateHttpRequestMessage(options);
                 var raw = await _httpClientService.ExecuteRequest<AiEnquiryDraftResponse>(httpRequest, ct);
 
+                var sources = raw.sources.Select(s => new SourceChunk
+                {
+                    FileName = s.file_name,
+                    Page = s.page,
+                    Score = s.score,
+                    Text = s.text
+                }).ToList();
+
                 enquiry.Status = EnquiryStatus.Drafted;
                 enquiry.DraftReply = raw.draft;
+                enquiry.DraftSources = sources;
                 enquiry.UpdatedAtUtc = DateTimeOffset.UtcNow;
                 await _uow.SaveChanges();
 
                 return Result<EnquiryDraftResponse>.Success(new EnquiryDraftResponse
                 {
-                    Draft   = raw.draft,
-                    Status  = EnquiryStatus.Drafted.ToString(),
-                    Sources = raw.sources
+                    Draft = raw.draft,
+                    Status = EnquiryStatus.Drafted.ToString(),
+                    Sources = sources
                 });
             }
             catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
@@ -255,7 +272,7 @@ namespace Nexus.Application.Services
                 user_id = userId,
                 is_new_conversation = isNewConversation,
                 metadata = new AiCopilotMetadata
-                { 
+                {
                     suburbs = request?.Metadata?.Suburbs,
                     intent = request?.Metadata?.Intent,
                     budgetMax = request?.Metadata?.BudgetMax,
@@ -318,7 +335,7 @@ namespace Nexus.Application.Services
             };
         }
 
-        public Task<ChatResponse> SendMessage(string message, string threadId, CancellationToken cancellationToken = default)
+        public Task<CopilotResponse> SendMessage(string message, string threadId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

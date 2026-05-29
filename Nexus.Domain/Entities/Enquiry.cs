@@ -1,4 +1,5 @@
 ﻿using Nexus.Domain.Enums;
+using Nexus.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,8 @@ namespace Nexus.Domain.Entities
         public string? DraftReply { get; set; }
 
         public string? SentReply { get; set; }
+
+        public List<SourceChunk> DraftSources { get; set; } = [];
 
         public string Body { get; set; } = default!;
 

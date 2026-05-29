@@ -15,7 +15,7 @@ namespace Nexus.Tests.Integration.Api;
 
 public class AiControllerIntegrationTests : IntegrationTestBase
 {
-    private const string Endpoint = "/api/ai/chat";
+    private const string Endpoint = "/api/ai/copilot";
 
     private HttpClient CreateClientWith(Mock<IAiService> mock)
     {
@@ -32,13 +32,13 @@ public class AiControllerIntegrationTests : IntegrationTestBase
     #region POST /api/ai/chat
 
     [Fact]
-    public async Task Chat_WithValidRequest_Returns200AndChatResponse()
+    public async Task Chat_WithValidRequest_Returns200AndCopilotResponse()
     {
         // Arrange
         var aiServiceMock = new Mock<IAiService>();
         aiServiceMock
             .Setup(x => x.GetReply(It.IsAny<CopilotRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<ChatResponse>.Success(new ChatResponse
+            .ReturnsAsync(Result<CopilotResponse>.Success(new CopilotResponse
             {
                 Reply = "Here are some properties for you.",
                 ThreadId = "session-abc"
@@ -53,7 +53,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<ChatResponse>(JsonOptions);
+        var body = await response.Content.ReadFromJsonAsync<CopilotResponse>(JsonOptions);
         body.Should().NotBeNull();
         body!.Reply.Should().Be("Here are some properties for you.");
         body.ThreadId.Should().Be("session-abc");
@@ -66,7 +66,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
         var aiServiceMock = new Mock<IAiService>();
         aiServiceMock
             .Setup(x => x.GetReply(It.IsAny<CopilotRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<ChatResponse>.NotFound("UserNotFound", "User not found or inactive."));
+            .ReturnsAsync(Result<CopilotResponse>.NotFound("UserNotFound", "User not found or inactive."));
 
         var client = CreateClientWith(aiServiceMock);
         var request = new CopilotRequest { Message = "Hello", ThreadId = "session-abc" };

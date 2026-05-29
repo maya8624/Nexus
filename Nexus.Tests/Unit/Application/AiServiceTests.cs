@@ -387,13 +387,20 @@ namespace Nexus.Tests.Unit.Application
                 .ReturnsAsync(BuildEnquiry(enquiryId));
             _httpClientServiceMock
                 .Setup(x => x.ExecuteRequest<AiEnquiryDraftResponse>(It.IsAny<HttpRequestMessage>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new AiEnquiryDraftResponse { draft = "Thank you for contacting us.", sources = ["lease-clause-7"] });
+                .ReturnsAsync(new AiEnquiryDraftResponse
+                {
+                    draft = "Thank you for contacting us.",
+                    sources = [new AiSourceChunk { file_name = "lease-clause-7", score = 0.94f, text = "Water charges are included." }]
+                });
 
             var result = await _service.GetEnquiryDraft(new EnquiryDraftRequest { Id = enquiryId }, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
             Assert.Equal("Thank you for contacting us.", result.Value!.Draft);
-            Assert.Equal("lease-clause-7", Assert.Single(result.Value.Sources));
+            var source = Assert.Single(result.Value.Sources);
+            Assert.Equal("lease-clause-7", source.FileName);
+            Assert.Equal(0.94f, source.Score);
+            Assert.Equal("Water charges are included.", source.Text);
         }
 
         [Fact]

@@ -1,10 +1,12 @@
+using Nexus.Domain.ValueObjects;
+
 namespace Nexus.Application.Dtos.Responses
 {
     public sealed class EnquiryDraftResponse
     {
         public string Draft { get; init; } = string.Empty;
         public string Status { get; init; } = string.Empty;
-        public List<string> Sources { get; init; } = [];
+        public List<SourceChunk> Sources { get; init; } = [];
     }
 
     public sealed class AiEnquiryDraftRequest
@@ -19,6 +21,6 @@ namespace Nexus.Application.Dtos.Responses
     public sealed class AiEnquiryDraftResponse
     {
         public required string draft { get; init; }
-        public List<string> sources { get; init; } = [];
+        public List<AiSourceChunk> sources { get; init; } = [];
     }
 }

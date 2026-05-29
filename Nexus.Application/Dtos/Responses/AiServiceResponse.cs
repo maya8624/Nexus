@@ -16,6 +16,7 @@ namespace Nexus.Application.Dtos.Responses
         public required string thread_id { get; init; }
         public string? property_id { get; init; }
         public List<PropertyListingResult> listings { get; set; } = [];
+        public List<AiSourceChunk> sources { get; set; } = [];
     }
 
     public class PropertyListingResult
@@ -23,6 +24,13 @@ namespace Nexus.Application.Dtos.Responses
         public string property_id { get; set; }
         public string property_url { get; set; }
         public string listing_Id { get; set; }
+    }
 
+    public class AiSourceChunk
+    {
+        public string file_name { get; init; } = string.Empty;
+        public int? page { get; init; }
+        public float score { get; init; }
+        public string text { get; init; } = string.Empty;
     }
 }
