@@ -32,7 +32,9 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                    v => JsonSerializer.Deserialize<List<SourceChunk>>(v, (JsonSerializerOptions?)null) ?? new List<SourceChunk>()
+                    v => string.IsNullOrEmpty(v) || v == "{}"
+                    ? new List<SourceChunk>()
+                    : JsonSerializer.Deserialize<List<SourceChunk>>(v, (JsonSerializerOptions?)null) ?? new List<SourceChunk>()
                 )
                 .IsRequired();
 

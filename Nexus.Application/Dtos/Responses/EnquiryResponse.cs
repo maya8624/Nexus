@@ -1,3 +1,5 @@
+using Nexus.Domain.ValueObjects;
+
 namespace Nexus.Application.Dtos
 {
     public sealed class EnquirySendResponse
@@ -14,6 +16,7 @@ namespace Nexus.Application.Dtos
         public Guid AgentId { get; init; }
         public string Body { get; init; } = string.Empty;
         public string? DraftReply { get; init; }
+        public List<SourceChunk> DraftSources { get; init; } = [];
         public string? SentReply { get; init; }
         public string Status { get; init; } = string.Empty;
         public string SenderName { get; init; } = string.Empty;

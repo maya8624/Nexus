@@ -68,7 +68,17 @@ namespace Nexus.Application.Services
                 thread_id = threadId,
                 property_id = request.PropertyId,
                 user_id = userId,
-                is_new_conversation = isNewConversation
+                is_new_conversation = isNewConversation,
+                metadata = new AiCopilotMetadata
+                {
+                    suburbs = request.Metadata?.Suburbs,
+                    intent = request.Metadata?.Intent,
+                    budgetMax = request.Metadata?.BudgetMax,
+                    petFriendly = request.Metadata?.PetFriendly,
+                    bedroomsMin = request.Metadata?.BedroomsMin,
+                    bedroomsMax = request.Metadata?.BedroomsMax,
+                    availableWithinDays = request.Metadata?.AvailableWithinDays,
+                }
             };
 
             var options = BuildAiRequestOptions(aiServiceRequest, _settings.Chat);

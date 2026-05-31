@@ -85,7 +85,8 @@ namespace Nexus.Application.Services
         public async Task<Result<IReadOnlyList<EnquiryResponse>>> GetByAgentIdAsync(Guid agentId, CancellationToken ct)
         {
             var enquiries = await _enquiryRepository.GetByAgentIdAsync(agentId, ct);
-            return Result<IReadOnlyList<EnquiryResponse>>.Success(enquiries.Select(MapToDto).ToList());
+            var response = enquiries.Select(MapToDto).ToList();
+            return Result<IReadOnlyList<EnquiryResponse>>.Success(response);
         }
 
         public async Task<Result<EnquirySendResponse>> SendReplyAsync(Guid id, CancellationToken ct)
@@ -124,6 +125,7 @@ namespace Nexus.Application.Services
             AgentId = enquiry.AgentId,
             Body = enquiry.Body,
             DraftReply = enquiry.DraftReply,
+            DraftSources = enquiry.DraftSources,
             SentReply = enquiry.SentReply,
             Status = enquiry.Status.ToString(),
             SenderName = $"{enquiry.User?.FirstName} {enquiry.User?.LastName}".Trim(),

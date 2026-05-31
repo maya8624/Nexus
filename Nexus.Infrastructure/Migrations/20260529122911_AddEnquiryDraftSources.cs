@@ -15,7 +15,7 @@ namespace Nexus.Infrastructure.Migrations
                 table: "enquiries",
                 type: "jsonb",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: "[]");
         }
 
         /// <inheritdoc />
