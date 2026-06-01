@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Nexus.Domain.Entities;
 using Nexus.Domain.ValueObjects;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 namespace Nexus.Infrastructure.Persistence.Configurations
@@ -28,7 +30,7 @@ namespace Nexus.Infrastructure.Persistence.Configurations
             builder.Property(x => x.SentReply)
                 .HasMaxLength(2000);
 
-            builder.Property(x => x.DraftSources)
+            var draftSourcesProperty = builder.Property(x => x.DraftSources)
                 .HasColumnType("jsonb")
                 .HasConversion(
                     v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
@@ -37,6 +39,12 @@ namespace Nexus.Infrastructure.Persistence.Configurations
                     : JsonSerializer.Deserialize<List<SourceChunk>>(v, (JsonSerializerOptions?)null) ?? new List<SourceChunk>()
                 )
                 .IsRequired();
+
+            draftSourcesProperty.Metadata.SetValueComparer(new ValueComparer<List<SourceChunk>>(
+                (a, b) => JsonSerializer.Serialize(a, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(b, (JsonSerializerOptions?)null),
+                (v) => v == null ? 0 : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null).GetHashCode(),
+                (v) => v == null ? new List<SourceChunk>() : JsonSerializer.Deserialize<List<SourceChunk>>(JsonSerializer.Serialize(v, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null)!
+            ));
 
             builder.Property(x => x.Intent)
                 .HasMaxLength(50);
