@@ -69,6 +69,23 @@ namespace Nexus.Application.Services
             await SendAsync(toEmail, toName, subject, body, ct);
         }
 
+        public async Task SendEnquiryReplyAsync(string toEmail, string toName, string replyBody, CancellationToken ct)
+        {
+            var subject = "Reply to your enquiry";
+            var body = $"""
+                Hi {toName},
+
+                You have received a reply to your enquiry:
+
+                {replyBody}
+
+                Regards,
+                Nexus
+                """;
+
+            await SendAsync(toEmail, toName, subject, body, ct);
+        }
+
         private async Task SendAsync(string toEmail, string toName, string subject, string body, CancellationToken ct)
         {
             var message = new MimeMessage();

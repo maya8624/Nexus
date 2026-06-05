@@ -18,7 +18,6 @@ namespace Nexus.Api.Extensions
             services.Configure<PayPalSettings>(config.GetSection(nameof(PayPalSettings)));
             services.Configure<StripeSettings>(config.GetSection(nameof(StripeSettings)));
             services.Configure<SmtpSettings>(config.GetSection(nameof(SmtpSettings)));
-
             services.AddSingleton<IStripeClient>(new StripeClient(config.GetSection(nameof(StripeSettings.SecretKey)).Value));
             services.AddScoped(x => new SessionService(x.GetRequiredService<IStripeClient>()));
 

@@ -1,3 +1,4 @@
+using Hangfire;
 using Nexus.Application.Common;
 using Nexus.Application.Dtos;
 using Nexus.Application.Dtos.Requests;
@@ -13,15 +14,18 @@ namespace Nexus.Application.Services
     {
         private readonly IEnquiryRepository _enquiryRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IBackgroundJobClient _jobClient;
         private readonly IUnitOfWork _uow;
 
         public EnquiryService(
             IEnquiryRepository enquiryRepository,
             IUserRepository userRepository,
+            IBackgroundJobClient jobClient,
             IUnitOfWork uow)
         {
             _enquiryRepository = enquiryRepository;
             _userRepository = userRepository;
+            _jobClient = jobClient;
             _uow = uow;
         }
 
@@ -108,7 +112,11 @@ namespace Nexus.Application.Services
             enquiry.UpdatedAtUtc = now;
             await _uow.SaveChanges();
 
-            //TODO: implement sending an email
+            _jobClient.Enqueue<IEmailService>(s => s.SendEnquiryReplyAsync(
+                enquiry.User.Email,
+                enquiry.User.FirstName ?? enquiry.User.Email,
+                enquiry.SentReply!,
+                CancellationToken.None));
 
             return Result<EnquirySendResponse>.Success(new EnquirySendResponse
             {

@@ -41,6 +41,7 @@ namespace Nexus.Infrastructure.Repositories
         public async Task<Enquiry?> GetByIdForUpdateAsync(Guid id, CancellationToken ct)
         {
             return await _context.Enquiries
+                .Include(x => x.User)
                 .Where(x => x.Id == id)
                 .FirstOrDefaultAsync(ct);
         }

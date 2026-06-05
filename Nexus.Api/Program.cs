@@ -1,6 +1,9 @@
 using Azure.Identity;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.OpenApi;
 using Nexus.Api.Extensions;
+using Nexus.Api.Filters;
 using Nexus.Application.Extensions;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Swashbuckle.AspNetCore.Filters;
@@ -21,7 +24,23 @@ builder.Services.AddApplicationServices();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(c => 
+        c.UseNpgsqlConnection(
+            builder.Configuration.GetConnectionString("DefaultConnection")
+        ),
+         new PostgreSqlStorageOptions
+        {
+            SchemaName               = "hangfire",   
+            PrepareSchemaIfNecessary = true,         // auto-creates hangfire schema on first run
+        }
+    )
+);
 
+builder.Services.AddHangfireServer();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -43,7 +62,6 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -62,7 +80,13 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = [new HangfireAuthFilter()]
+});
+
 app.MapControllers();
+
 
 app.Run();
 

@@ -1,7 +1,11 @@
+using Hangfire;
+using Hangfire.Common;
+using Hangfire.States;
 using Moq;
 using Nexus.Application.Common;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Interfaces;
+using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Services;
 using Nexus.Domain.Entities;
@@ -16,6 +20,7 @@ namespace Nexus.Tests.Unit.Application
     {
         private readonly Mock<IEnquiryRepository> _enquiryRepositoryMock = new();
         private readonly Mock<IUserRepository> _userRepositoryMock = new();
+        private readonly Mock<IBackgroundJobClient> _jobClientMock = new();
         private readonly Mock<IUnitOfWork> _uowMock = new();
         private readonly EnquiryService _service;
         private readonly Guid _userId = Guid.NewGuid();
@@ -23,9 +28,11 @@ namespace Nexus.Tests.Unit.Application
         public EnquiryServiceTests()
         {
             _uowMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
+            _jobClientMock.Setup(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>())).Returns("job-id");
             _service = new EnquiryService(
                 _enquiryRepositoryMock.Object,
                 _userRepositoryMock.Object,
+                _jobClientMock.Object,
                 _uowMock.Object);
         }
 
@@ -34,17 +41,18 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.IsAny(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(exists);
 
-        private static Enquiry BuildEnquiry(Guid? userId = null, EnquiryStatus status = EnquiryStatus.New)
+        private static Enquiry BuildEnquiry(Guid? userId = null, EnquiryStatus status = EnquiryStatus.New, string? draftReply = null)
         {
             var id = userId ?? Guid.NewGuid();
             return new()
             {
-                Id         = Guid.NewGuid(),
-                UserId     = id,
-                PropertyId = Guid.NewGuid(),
-                AgentId    = Guid.NewGuid(),
-                Body       = "Is the property still available?",
-                Status     = status,
+                Id           = Guid.NewGuid(),
+                UserId       = id,
+                PropertyId   = Guid.NewGuid(),
+                AgentId      = Guid.NewGuid(),
+                Body         = "Is the property still available?",
+                DraftReply   = draftReply,
+                Status       = status,
                 CreatedAtUtc = DateTimeOffset.UtcNow,
                 UpdatedAtUtc = DateTimeOffset.UtcNow,
                 User = new User
@@ -272,6 +280,128 @@ namespace Nexus.Tests.Unit.Application
 
             Assert.True(result.IsSuccess);
             Assert.Empty(result.Value!);
+        }
+
+        #endregion
+
+        #region SendReplyAsync
+
+        [Fact]
+        public async Task SendReplyAsync_WhenNotFound_ShouldReturnNotFound()
+        {
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Enquiry?)null);
+
+            var result = await _service.SendReplyAsync(Guid.NewGuid(), CancellationToken.None);
+
+            Assert.Equal(ResultStatus.NotFound, result.Status);
+            Assert.Equal("EnquiryNotFound", Assert.Single(result.Errors).Code);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Never);
+            _jobClientMock.Verify(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SendReplyAsync_WhenDraftReplyIsEmpty_ShouldReturnConflict()
+        {
+            var enquiry = BuildEnquiry(draftReply: null);
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiry.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(enquiry);
+
+            var result = await _service.SendReplyAsync(enquiry.Id, CancellationToken.None);
+
+            Assert.Equal(ResultStatus.Conflict, result.Status);
+            Assert.Equal("NoDraft", Assert.Single(result.Errors).Code);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Never);
+            _jobClientMock.Verify(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(EnquiryStatus.Replied)]
+        [InlineData(EnquiryStatus.Closed)]
+        public async Task SendReplyAsync_WhenStatusIsTerminal_ShouldReturnConflict(EnquiryStatus status)
+        {
+            var enquiry = BuildEnquiry(status: status, draftReply: "Here is the reply.");
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiry.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(enquiry);
+
+            var result = await _service.SendReplyAsync(enquiry.Id, CancellationToken.None);
+
+            Assert.Equal(ResultStatus.Conflict, result.Status);
+            Assert.Equal("InvalidStatus", Assert.Single(result.Errors).Code);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Never);
+            _jobClientMock.Verify(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SendReplyAsync_WithValidEnquiry_ShouldSetStatusToRepliedAndSave()
+        {
+            var enquiry = BuildEnquiry(draftReply: "Here is the reply.");
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiry.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(enquiry);
+
+            var result = await _service.SendReplyAsync(enquiry.Id, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(EnquiryStatus.Replied, enquiry.Status);
+            Assert.Equal("Here is the reply.", enquiry.SentReply);
+            Assert.NotNull(enquiry.RepliedAtUtc);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task SendReplyAsync_WithValidEnquiry_ShouldReturnSentReplyAndTimestamp()
+        {
+            var enquiry = BuildEnquiry(draftReply: "Here is the reply.");
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiry.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(enquiry);
+
+            var result = await _service.SendReplyAsync(enquiry.Id, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal("Here is the reply.", result.Value!.SentReply);
+            Assert.NotNull(result.Value.RepliedAtUtc);
+        }
+
+        [Fact]
+        public async Task SendReplyAsync_WithValidEnquiry_ShouldEnqueueEmailJob()
+        {
+            var enquiry = BuildEnquiry(draftReply: "Here is the reply.");
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiry.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(enquiry);
+
+            await _service.SendReplyAsync(enquiry.Id, CancellationToken.None);
+
+            _jobClientMock.Verify(x => x.Create(
+                It.Is<Job>(j =>
+                    j.Type == typeof(IEmailService) &&
+                    j.Method.Name == nameof(IEmailService.SendEnquiryReplyAsync)),
+                It.IsAny<IState>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task SendReplyAsync_WithValidEnquiry_ShouldEnqueueWithCorrectEmailAddress()
+        {
+            var enquiry = BuildEnquiry(draftReply: "Here is the reply.");
+            _enquiryRepositoryMock
+                .Setup(x => x.GetByIdForUpdateAsync(enquiry.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(enquiry);
+
+            await _service.SendReplyAsync(enquiry.Id, CancellationToken.None);
+
+            _jobClientMock.Verify(x => x.Create(
+                It.Is<Job>(j =>
+                    j.Args[0] as string == "sarah@example.com" &&
+                    j.Args[1] as string == "Sarah" &&
+                    j.Args[2] as string == "Here is the reply."),
+                It.IsAny<IState>()),
+                Times.Once);
         }
 
         #endregion
