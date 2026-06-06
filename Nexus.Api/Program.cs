@@ -5,6 +5,7 @@ using Microsoft.OpenApi;
 using Nexus.Api.Extensions;
 using Nexus.Api.Filters;
 using Nexus.Application.Extensions;
+using Serilog;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text.Json.Serialization;
@@ -18,6 +19,13 @@ if (!string.IsNullOrEmpty(keyVaultUrl))
         new Uri(keyVaultUrl),
         new DefaultAzureCredential());
 }
+
+builder.Host.UseSerilog((ctx, config) => config
+    .ReadFrom.Configuration(ctx.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("logs/nexus-.log", rollingInterval: RollingInterval.Day)
+);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplicationServices();
@@ -88,6 +96,17 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 app.MapControllers();
 
 
-app.Run();
+try
+{
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application failed to start.");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 public partial class Program { }

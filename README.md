@@ -10,6 +10,8 @@ A real estate property management and transaction platform built with .NET 8 and
 - **Payments:** Stripe (deposits), PayPal
 - **Validation:** FluentValidation
 - **Email:** MailKit (SMTP)
+- **Background Jobs:** Hangfire (PostgreSQL-backed, with dashboard at `/hangfire`)
+- **Logging:** Serilog (console + daily rolling file under `logs/`)
 - **AI Chat:** External sidecar service (SSE streaming)
 - **Secrets:** Azure Key Vault
 - **Docs:** Swagger / Swashbuckle
@@ -68,6 +70,7 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 | **Deposits** | Stripe checkout sessions with webhook confirmation; idempotency keys; multi-currency |
 | **PayPal** | Sandbox order creation, capture, and refunds |
 | **AI Chat** | Per-user chat sessions with streaming (Server-Sent Events); tool execution tracking |
+| **Enquiries** | Tenants submit enquiries to agents; agents draft and send replies; outgoing reply emails are dispatched via a Hangfire background job |
 | **Auth** | Email/password registration + login; Google external login; JWT (60-min expiry) + rotating refresh tokens (7-day expiry) |
 
 ## API Overview
@@ -79,6 +82,7 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 | `DepositsController` | Stripe checkout, Stripe webhook |
 | `InspectionSlotController` | Create and manage inspection time slots |
 | `InspectionBookingController` | Book and manage inspection appointments |
+| `EnquiryController` | Submit, update, and send replies to property enquiries |
 | `AiController` | Chat, streaming chat |
 | `PayPalController` | PayPal payment flow |
 | `OrderController` | Legacy order management |
@@ -115,6 +119,7 @@ The `IUserContext` abstraction resolves the current user inside services — use
 | `SmtpSettings` | Outlook SMTP host, port, credentials |
 | `CorsSettings:AllowedOrigins` | Frontend origins (e.g. `http://localhost:5173`) |
 | `KeyVaultUrl` | Azure Key Vault URI (production only) |
+| `Serilog` | Log level overrides per environment (see `appsettings.json`) |
 
 ## Deployment
 
@@ -129,4 +134,6 @@ No secrets should ever be committed to source control. The `appsettings.json` in
 - Frontend dev servers run on `http://localhost:5173` and `http://localhost:5174`.
 - The AI sidecar (`rec_brain`) runs on `http://localhost:8000` and requires an `X-API-Key` header.
 - Email notifications for inspection booking confirmations/cancellations are not yet implemented.
-- SMTP is installed (MailKit) but requires configuration before use.
+- SMTP is configured via `SmtpSettings` (MailKit). Enquiry reply emails are sent as Hangfire background jobs.
+- The Hangfire dashboard is available at `/hangfire` and requires a valid JWT Bearer token.
+- Logs are written to console and `logs/nexus-YYYYMMDD.log` (daily rollover). Log levels are controlled per environment via the `Serilog` config section.
