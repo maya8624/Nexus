@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Cors.Infrastructure;
+﻿using Azure.Storage.Blobs;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Nexus.Application.Settings;
+using Nexus.Application.Interfaces;
 using Nexus.Infrastructure.Persistence;
 using Nexus.Network;
 using Stripe;
@@ -18,6 +21,9 @@ namespace Nexus.Api.Extensions
             services.Configure<PayPalSettings>(config.GetSection(nameof(PayPalSettings)));
             services.Configure<StripeSettings>(config.GetSection(nameof(StripeSettings)));
             services.Configure<SmtpSettings>(config.GetSection(nameof(SmtpSettings)));
+            services.Configure<BlobStorageSettings>(config.GetSection(nameof(BlobStorageSettings)));
+            services.AddSingleton(sp =>
+                new BlobServiceClient(sp.GetRequiredService<IOptions<BlobStorageSettings>>().Value.ConnectionString));
             services.AddSingleton<IStripeClient>(new StripeClient(config.GetSection(nameof(StripeSettings.SecretKey)).Value));
             services.AddScoped(x => new SessionService(x.GetRequiredService<IStripeClient>()));
 

@@ -5,6 +5,7 @@ using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Factories;
 using Nexus.Application.Interfaces;
 using Nexus.Application.Interfaces.Business;
+using Nexus.Application.Services;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Services;
 using Nexus.Application.Services.Identity;
@@ -70,6 +71,8 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<TenantPreferenceRequest>, TenantPreferenceRequestValidator>();
             services.AddScoped<IValidator<CreateEnquiryRequest>, CreateEnquiryRequestValidator>();
             services.AddScoped<IValidator<UpdateEnquiryRequest>, UpdateEnquiryRequestValidator>();
+            services.AddScoped<IBlobStorageService, BlobStorageService>();
+            services.AddScoped<IValidator<GetUploadUrlRequest>, GetUploadUrlRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
             services.AddScoped<InternalApiKeyFilter>();
         }
