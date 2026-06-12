@@ -26,6 +26,8 @@ namespace Nexus.Tests.Unit.Application
             {
                 ConnectionString = "UseDevelopmentStorage=true",
                 ContainerName = ContainerName,
+                ExtractionContainerName = "test-extraction-container",
+                IngestionContainerName = "test-ingestion-container",
                 SasExpiryMinutes = SasExpiryMinutes
             });
 
@@ -48,7 +50,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetBlobClient(It.IsAny<string>()))
                 .Returns(_blobClientMock.Object);
 
-            var result = await _service.GenerateSasUploadUrlAsync("document.pdf", "application/pdf", userId, CancellationToken.None);
+            var result = await _service.GenerateSasUploadUrlAsync("document.pdf", "application/pdf", ContainerName, userId, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
         }
@@ -64,7 +66,7 @@ namespace Nexus.Tests.Unit.Application
                 .Callback<string>(name => capturedBlobName = name)
                 .Returns(_blobClientMock.Object);
 
-            await _service.GenerateSasUploadUrlAsync("document.pdf", "application/pdf", userId, CancellationToken.None);
+            await _service.GenerateSasUploadUrlAsync("document.pdf", "application/pdf", ContainerName, userId, CancellationToken.None);
 
             Assert.NotNull(capturedBlobName);
             Assert.StartsWith($"{userId}/", capturedBlobName);
@@ -82,7 +84,7 @@ namespace Nexus.Tests.Unit.Application
                 .Callback<string>(name => capturedBlobName = name)
                 .Returns(_blobClientMock.Object);
 
-            var result = await _service.GenerateSasUploadUrlAsync("photo.jpg", "image/jpeg", userId, CancellationToken.None);
+            var result = await _service.GenerateSasUploadUrlAsync("photo.jpg", "image/jpeg", ContainerName, userId, CancellationToken.None);
 
             Assert.Equal(capturedBlobName, result.Value!.BlobName);
         }
@@ -101,7 +103,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetBlobClient(It.IsAny<string>()))
                 .Returns(_blobClientMock.Object);
 
-            var result = await _service.GenerateSasUploadUrlAsync("photo.png", "image/png", userId, CancellationToken.None);
+            var result = await _service.GenerateSasUploadUrlAsync("photo.png", "image/png", ContainerName, userId, CancellationToken.None);
 
             Assert.Equal(expectedUri.ToString(), result.Value!.SasUrl);
         }
@@ -121,7 +123,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetBlobClient(It.IsAny<string>()))
                 .Returns(_blobClientMock.Object);
 
-            await _service.GenerateSasUploadUrlAsync("document.pdf", "application/pdf", userId, CancellationToken.None);
+            await _service.GenerateSasUploadUrlAsync("document.pdf", "application/pdf", ContainerName, userId, CancellationToken.None);
 
             Assert.NotNull(capturedBuilder);
             Assert.Equal(ContainerName, capturedBuilder!.BlobContainerName);
@@ -141,8 +143,8 @@ namespace Nexus.Tests.Unit.Application
                 .Callback<string>(name => capturedNames.Add(name))
                 .Returns(_blobClientMock.Object);
 
-            await _service.GenerateSasUploadUrlAsync("a.pdf", "application/pdf", userId, CancellationToken.None);
-            await _service.GenerateSasUploadUrlAsync("b.pdf", "application/pdf", userId, CancellationToken.None);
+            await _service.GenerateSasUploadUrlAsync("a.pdf", "application/pdf", ContainerName, userId, CancellationToken.None);
+            await _service.GenerateSasUploadUrlAsync("b.pdf", "application/pdf", ContainerName, userId, CancellationToken.None);
 
             Assert.NotEqual(capturedNames[0], capturedNames[1]);
         }

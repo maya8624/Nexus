@@ -41,6 +41,8 @@ namespace Nexus.Domain.Entities
         public TenantPreferences? TenantPreferences { get; set; }
 
         public ICollection<DocumentSuggestion> DocumentSuggestions { get; set; } = new List<DocumentSuggestion>();
+
+        public ICollection<FileUpload> FileUploads { get; set; } = new List<FileUpload>();
     }
 
 

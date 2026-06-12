@@ -19,18 +19,18 @@ namespace Nexus.Application.Services
             _blobServiceClient = blobServiceClient;
         }
 
-        public Task<Result<SasUploadResponse>> GenerateSasUploadUrlAsync(string fileName, string contentType, Guid userId, CancellationToken ct)
+        public Task<Result<SasUploadResponse>> GenerateSasUploadUrlAsync(string fileName, string contentType, string containerName, Guid userId, CancellationToken ct)
         {
             var extension = Path.GetExtension(fileName);
             var blobName = $"{userId}/{Guid.NewGuid()}{extension}";
 
             var blobClient = _blobServiceClient
-                .GetBlobContainerClient(_settings.ContainerName)
+                .GetBlobContainerClient(containerName)
                 .GetBlobClient(blobName);
 
             var sasBuilder = new BlobSasBuilder
             {
-                BlobContainerName = _settings.ContainerName,
+                BlobContainerName = containerName,
                 BlobName = blobName,
                 Resource = "b",
                 ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(_settings.SasExpiryMinutes)

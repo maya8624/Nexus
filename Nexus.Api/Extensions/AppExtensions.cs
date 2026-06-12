@@ -72,7 +72,10 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<CreateEnquiryRequest>, CreateEnquiryRequestValidator>();
             services.AddScoped<IValidator<UpdateEnquiryRequest>, UpdateEnquiryRequestValidator>();
             services.AddScoped<IBlobStorageService, BlobStorageService>();
+            services.AddScoped<IFileUploadService, FileUploadService>();
+            services.AddScoped<IFileUploadRepository, FileUploadRepository>();
             services.AddScoped<IValidator<GetUploadUrlRequest>, GetUploadUrlRequestValidator>();
+            services.AddScoped<IValidator<ConfirmUploadRequest>, ConfirmUploadRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
             services.AddScoped<InternalApiKeyFilter>();
         }

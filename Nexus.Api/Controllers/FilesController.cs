@@ -1,25 +1,34 @@
 using Microsoft.AspNetCore.Mvc;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Dtos.Responses;
-using Nexus.Application.Interfaces;
+using Nexus.Application.Interfaces.Business;
 
 namespace Nexus.Api.Controllers
 {
     public class FilesController : AppControllerBase
     {
-        private readonly IBlobStorageService _blobStorage;
+        private readonly IFileUploadService _fileUploadService;
 
-        public FilesController(IBlobStorageService blobStorage)
+        public FilesController(IFileUploadService fileUploadService)
         {
-            _blobStorage = blobStorage;
+            _fileUploadService = fileUploadService;
         }
 
         [HttpPost("upload-url")]
-        [ProducesResponseType(typeof(SasUploadResponse), StatusCodes.Status200OK)]
-        public async Task<ActionResult<SasUploadResponse>> GetUploadUrl([FromBody] GetUploadUrlRequest request, CancellationToken ct)
+        [ProducesResponseType(typeof(FileUploadInitiatedResponse), StatusCodes.Status200OK)]
+        public async Task<ActionResult<FileUploadInitiatedResponse>> GetUploadUrl([FromBody] GetUploadUrlRequest request, CancellationToken ct)
         {
-            var result = await _blobStorage.GenerateSasUploadUrlAsync(request.FileName, request.ContentType, UserId, ct);
+            var result = await _fileUploadService.InitiateAsync(request.FileName, request.ContentType, request.Purpose, UserId, ct);
+            return result.IsSuccess ? Ok(result.Value) : MapFailure(result);
+        }
 
+        [HttpPost("{id:guid}/confirm")]
+        [ProducesResponseType(typeof(FileUploadInitiatedResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<ActionResult<FileUploadInitiatedResponse>> ConfirmUpload(Guid id, [FromBody] ConfirmUploadRequest request, CancellationToken ct)
+        {
+            var result = await _fileUploadService.ConfirmAsync(id, UserId, request.FileSizeBytes, ct);
             return result.IsSuccess ? Ok(result.Value) : MapFailure(result);
         }
     }
