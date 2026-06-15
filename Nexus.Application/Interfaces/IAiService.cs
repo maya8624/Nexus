@@ -16,5 +16,6 @@ namespace Nexus.Application.Interfaces
         Task<Result<SuburbSummaryResponse>> GetSuburbSummary(SuburbSummaryRequest request, Guid userId, CancellationToken ct);
         Task<Result<EnquiryDraftResponse>> GetEnquiryDraft(EnquiryDraftRequest request, CancellationToken ct);
         IAsyncEnumerable<string> StreamReply(CopilotRequest request, CancellationToken ct);
+        Task<Result<DocumentIngestionResponse>> IngestDocumentAsync(byte[] fileBytes, string fileName, string? propertyId, string? docType, CancellationToken ct);
     }
 }

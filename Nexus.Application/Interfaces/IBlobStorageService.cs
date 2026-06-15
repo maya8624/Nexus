@@ -6,5 +6,6 @@ namespace Nexus.Application.Interfaces
     public interface IBlobStorageService
     {
         Task<Result<SasUploadResponse>> GenerateSasUploadUrlAsync(string fileName, string contentType, string containerName, Guid userId, CancellationToken ct);
+        Task<byte[]> DownloadBlobAsync(string containerName, string blobName, CancellationToken ct);
     }
 }

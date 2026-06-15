@@ -14,10 +14,22 @@ namespace Nexus.Infrastructure.Repositories
             _context = context;
         }
 
+        public async Task<FileUpload?> GetByIdAsync(Guid id, CancellationToken ct)
+        {
+            return await _context.FileUploads.FindAsync([id], ct);
+        }
+
         public async Task<FileUpload?> GetByIdForUserAsync(Guid id, Guid userId, CancellationToken ct)
         {
             return await _context.FileUploads
                 .Where(x => x.Id == id && x.UserId == userId)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        public async Task<FileUpload?> GetByBlobNameAsync(string blobName, CancellationToken ct)
+        {
+            return await _context.FileUploads
+                .Where(x => x.BlobName == blobName)
                 .FirstOrDefaultAsync(ct);
         }
     }

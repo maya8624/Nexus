@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.Extensions.Options;
 using Nexus.Application.Common;
 using Nexus.Application.Dtos.Responses;
@@ -16,17 +17,20 @@ namespace Nexus.Application.Services
         private readonly IFileUploadRepository _fileUploadRepository;
         private readonly IUnitOfWork _uow;
         private readonly BlobStorageSettings _settings;
+        private readonly IBackgroundJobClient _jobs;
 
         public FileUploadService(
             IBlobStorageService blobStorage,
             IFileUploadRepository fileUploadRepository,
             IUnitOfWork uow,
-            IOptions<BlobStorageSettings> settings)
+            IOptions<BlobStorageSettings> settings,
+            IBackgroundJobClient jobs)
         {
             _blobStorage = blobStorage;
             _fileUploadRepository = fileUploadRepository;
             _uow = uow;
             _settings = settings.Value;
+            _jobs = jobs;
         }
 
         public async Task<Result<FileUploadInitiatedResponse>> InitiateAsync(string fileName, string contentType, UploadPurpose purpose, Guid userId, CancellationToken ct)
@@ -34,8 +38,8 @@ namespace Nexus.Application.Services
             var containerName = purpose switch
             {
                 UploadPurpose.Extraction => _settings.ExtractionContainerName,
-                UploadPurpose.Ingestion  => _settings.IngestionContainerName,
-                _                        => _settings.ContainerName
+                UploadPurpose.Ingestion => _settings.IngestionContainerName,
+                _ => _settings.ContainerName
             };
 
             var sasResult = await _blobStorage.GenerateSasUploadUrlAsync(fileName, contentType, containerName, userId, ct);
@@ -90,7 +94,7 @@ namespace Nexus.Application.Services
             if (fileSizeBytes.HasValue)
                 record.FileSizeBytes = fileSizeBytes;
 
-            if (record.Purpose is UploadPurpose.Extraction or UploadPurpose.Ingestion)
+            if (record.Purpose is UploadPurpose.Extraction)
                 record.IngestionStatus = IngestionStatus.Queued;
 
             _fileUploadRepository.Update(record);
@@ -103,6 +107,22 @@ namespace Nexus.Application.Services
                 BlobName = record.BlobName,
                 SasExpiresAtUtc = record.SasExpiresAtUtc
             });
+        }
+
+        public async Task<Result<bool>> TriggerIngestionAsync(string blobName, CancellationToken ct)
+        {
+            var record = await _fileUploadRepository.GetByBlobNameAsync(blobName, ct);
+            if (record is null)
+                return Result<bool>.NotFound("FileUploadNotFound", "FileUpload record not found for the given blob.");
+
+            record.IngestionStatus = IngestionStatus.Queued;
+            record.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            _fileUploadRepository.Update(record);
+            await _uow.SaveChanges();
+
+            _jobs.Enqueue<IIngestionJob>(job => job.ExecuteAsync(record.Id));
+
+            return Result<bool>.Success(true);
         }
     }
 }

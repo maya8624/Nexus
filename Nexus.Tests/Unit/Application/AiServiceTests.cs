@@ -40,13 +40,14 @@ namespace Nexus.Tests.Unit.Application
 
             var settings = Options.Create(new AiServiceSettings
             {
-                BaseUrl = "http://localhost:8000",
-                ApiKey = "test-key",
-                Chat = "api/chat",
-                ChatStream = "api/chat/stream",
-                Preferences = "api/preferences",
+                BaseUrl       = "http://localhost:8000",
+                ApiKey        = "test-key",
+                Chat          = "api/chat",
+                ChatStream    = "api/chat/stream",
+                Preferences   = "api/preferences",
                 SuburbSummary = "api/suburb-summary",
-                EnquiryDraft = "api/enquiry/draft"
+                EnquiryDraft  = "api/enquiry/draft",
+                Ingestion     = "api/ingest"
             });
 
             _service = new AiService(

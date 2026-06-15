@@ -19,6 +19,7 @@ namespace Nexus.Application.Settings
         public required string Preferences { get; init; }
         public required string SuburbSummary { get; init; }
         public required string EnquiryDraft { get; init; }
+        public required string Ingestion { get; init; }
         public int TimeoutSeconds { get; init; } = 30;
     }
 }

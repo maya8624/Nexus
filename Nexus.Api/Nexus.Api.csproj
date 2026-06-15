@@ -26,4 +26,6 @@
     <ProjectReference Include="..\Nexus.Infrastructure\Nexus.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1development_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
+
 </Project>

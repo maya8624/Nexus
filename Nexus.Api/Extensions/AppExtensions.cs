@@ -77,6 +77,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IValidator<GetUploadUrlRequest>, GetUploadUrlRequestValidator>();
             services.AddScoped<IValidator<ConfirmUploadRequest>, ConfirmUploadRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
+            services.AddScoped<IIngestionJob, IngestionJob>();
             services.AddScoped<InternalApiKeyFilter>();
         }
     }

@@ -1,8 +1,10 @@
+using Hangfire;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nexus.Application.Common;
 using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Interfaces;
+using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Services;
 using Nexus.Application.Settings;
@@ -23,6 +25,7 @@ namespace Nexus.Tests.Unit.Application
         private readonly Mock<IBlobStorageService> _blobStorageMock = new();
         private readonly Mock<IFileUploadRepository> _repositoryMock = new();
         private readonly Mock<IUnitOfWork> _uowMock = new();
+        private readonly Mock<IBackgroundJobClient> _jobsMock = new();
         private readonly FileUploadService _service;
         private readonly Guid _userId = Guid.NewGuid();
 
@@ -33,14 +36,14 @@ namespace Nexus.Tests.Unit.Application
 
             var settings = Options.Create(new BlobStorageSettings
             {
-                ConnectionString     = "UseDevelopmentStorage=true",
-                ContainerName        = GeneralContainer,
+                ConnectionString        = "UseDevelopmentStorage=true",
+                ContainerName           = GeneralContainer,
                 ExtractionContainerName = ExtractionContainer,
                 IngestionContainerName  = IngestionContainer,
-                SasExpiryMinutes     = SasExpiryMinutes
+                SasExpiryMinutes        = SasExpiryMinutes
             });
 
-            _service = new FileUploadService(_blobStorageMock.Object, _repositoryMock.Object, _uowMock.Object, settings);
+            _service = new FileUploadService(_blobStorageMock.Object, _repositoryMock.Object, _uowMock.Object, settings, _jobsMock.Object);
         }
 
         private void SetupBlobSuccess(string sasUrl = "https://blob.example.com/file?sig=x", string blobName = "user/guid.pdf") =>
@@ -307,13 +310,10 @@ namespace Nexus.Tests.Unit.Application
             Assert.Null(record.FileSizeBytes);
         }
 
-        [Theory]
-        [InlineData(UploadPurpose.Ingestion)]
-        [InlineData(UploadPurpose.Extraction)]
-        public async Task ConfirmAsync_WithProcessingPurpose_ShouldSetIngestionStatusToQueued(UploadPurpose purpose)
+        [Fact]
+        public async Task ConfirmAsync_WithExtractionPurpose_ShouldSetIngestionStatusToQueued()
         {
-            var containerName = purpose == UploadPurpose.Ingestion ? IngestionContainer : ExtractionContainer;
-            var record = BuildPendingRecord(_userId, purpose, containerName);
+            var record = BuildPendingRecord(_userId, UploadPurpose.Extraction, ExtractionContainer);
             _repositoryMock
                 .Setup(x => x.GetByIdForUserAsync(record.Id, _userId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(record);
@@ -321,6 +321,19 @@ namespace Nexus.Tests.Unit.Application
             await _service.ConfirmAsync(record.Id, _userId, null, CancellationToken.None);
 
             Assert.Equal(IngestionStatus.Queued, record.IngestionStatus);
+        }
+
+        [Fact]
+        public async Task ConfirmAsync_WithIngestionPurpose_ShouldNotSetIngestionStatus()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Ingestion, IngestionContainer);
+            _repositoryMock
+                .Setup(x => x.GetByIdForUserAsync(record.Id, _userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            await _service.ConfirmAsync(record.Id, _userId, null, CancellationToken.None);
+
+            Assert.Null(record.IngestionStatus);
         }
 
         [Fact]
@@ -362,6 +375,77 @@ namespace Nexus.Tests.Unit.Application
 
             Assert.True(result.IsSuccess);
             Assert.Equal(record.Id, result.Value!.FileUploadId);
+        }
+
+        #endregion
+
+        #region TriggerIngestionAsync
+
+        [Fact]
+        public async Task TriggerIngestionAsync_WhenRecordNotFound_ShouldReturnNotFound()
+        {
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((FileUpload?)null);
+
+            var result = await _service.TriggerIngestionAsync("user/missing.pdf", CancellationToken.None);
+
+            Assert.Equal(ResultStatus.NotFound, result.Status);
+            Assert.Equal("FileUploadNotFound", Assert.Single(result.Errors).Code);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Never);
+        }
+
+        [Fact]
+        public async Task TriggerIngestionAsync_WhenRecordFound_ShouldSetIngestionStatusToQueued()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Ingestion, IngestionContainer);
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(record.BlobName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            await _service.TriggerIngestionAsync(record.BlobName, CancellationToken.None);
+
+            Assert.Equal(IngestionStatus.Queued, record.IngestionStatus);
+        }
+
+        [Fact]
+        public async Task TriggerIngestionAsync_WhenRecordFound_ShouldEnqueueJob()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Ingestion, IngestionContainer);
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(record.BlobName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            await _service.TriggerIngestionAsync(record.BlobName, CancellationToken.None);
+
+            _jobsMock.Verify(x => x.Create(It.IsAny<Hangfire.Common.Job>(), It.IsAny<Hangfire.States.IState>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task TriggerIngestionAsync_WhenRecordFound_ShouldCallUpdateAndSaveChanges()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Ingestion, IngestionContainer);
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(record.BlobName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            await _service.TriggerIngestionAsync(record.BlobName, CancellationToken.None);
+
+            _repositoryMock.Verify(x => x.Update(record), Times.Once);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task TriggerIngestionAsync_WhenRecordFound_ShouldReturnSuccess()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Ingestion, IngestionContainer);
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(record.BlobName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            var result = await _service.TriggerIngestionAsync(record.BlobName, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
         }
 
         #endregion

@@ -20,17 +20,20 @@ namespace Nexus.Api.Controllers
         private readonly IInspectionBookingService _bookingService;
         private readonly IDepositService _depositService;
         private readonly IDocumentSuggestionService _documentSuggestionService;
+        private readonly IFileUploadService _fileUploadService;
 
         public InternalController(
             IInspectionSlotService slotService,
             IInspectionBookingService bookingService,
             IDepositService depositService,
-            IDocumentSuggestionService documentSuggestionService)
+            IDocumentSuggestionService documentSuggestionService,
+            IFileUploadService fileUploadService)
         {
             _slotService = slotService;
             _bookingService = bookingService;
             _depositService = depositService;
             _documentSuggestionService = documentSuggestionService;
+            _fileUploadService = fileUploadService;
         }
 
         [HttpGet("inspection-bookings/available/{propertyId:guid}")]
@@ -117,6 +120,16 @@ namespace Nexus.Api.Controllers
                 return Ok(result.Value);
 
             return StatusCode(500, result.Errors.FirstOrDefault());
+        }
+
+        [HttpPost("documents/ingest")]
+        public async Task<IActionResult> TriggerIngestion([FromBody] TriggerIngestionRequest request, CancellationToken ct)
+        {
+            var result = await _fileUploadService.TriggerIngestionAsync(request.BlobName, ct);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors.FirstOrDefault());
+
+            return Accepted();
         }
     }
 }

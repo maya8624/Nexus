@@ -108,7 +108,7 @@ namespace Nexus.Application.Services
                     }).ToList() ?? []
                 });
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "AI service call failed for thread {ThreadId}", threadId);
                 throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
@@ -161,7 +161,7 @@ namespace Nexus.Application.Services
 
                 return Result<PreferenceSearchResponse>.Success(response);
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "AI preference search failed for user {UserId}", userId);
                 throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
@@ -200,7 +200,7 @@ namespace Nexus.Application.Services
                     }).ToList()
                 });
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "AI suburb summary failed for suburbs {Suburbs}", string.Join(", ", request.Suburbs));
                 throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
@@ -253,7 +253,7 @@ namespace Nexus.Application.Services
                     Sources = sources
                 });
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "AI enquiry draft failed for enquiry {EnquiryId}", request.Id);
                 throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
@@ -307,7 +307,7 @@ namespace Nexus.Application.Services
                 response = await http.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, ct);
                 response.EnsureSuccessStatusCode();
             }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "AI stream request failed for thread {ThreadId}", threadId);
                 throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
@@ -343,6 +343,54 @@ namespace Nexus.Application.Services
                 Body = body,
                 Url = $"{_settings.BaseUrl}/{endpoint}"
             };
+        }
+
+        private RequestBuilderOptions BuildAiRequestOptions(HttpContent content, string endpoint)
+        {
+            return new RequestBuilderOptions
+            {
+                Method = HttpMethod.Post,
+                AuthScheme = AuthScheme.None,
+                Headers = new Dictionary<string, string>
+                {
+                    ["X-API-Key"] = _settings.ApiKey
+                },
+                Content = content,
+                Url = $"{_settings.BaseUrl}/{endpoint}"
+            };
+        }
+
+        public async Task<Result<DocumentIngestionResponse>> IngestDocumentAsync(byte[] fileBytes, string fileName, string? propertyId, string? docType, CancellationToken ct)
+        {
+            using var form = new MultipartFormDataContent();
+            form.Add(new ByteArrayContent(fileBytes), "file", fileName);
+            if (propertyId is not null) form.Add(new StringContent(propertyId), "property_id");
+            if (docType is not null)    form.Add(new StringContent(docType),    "doc_type");
+
+            var options = BuildAiRequestOptions(form, _settings.Ingestion);
+            var request = HttpRequestFactory.CreateHttpRequestMessage(options);
+
+            try
+            {
+                var http = _httpClientFactory.CreateClient();
+                var response = await http.SendAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var raw = await response.Content.ReadFromJsonAsync<AiIngestionResponse>(cancellationToken: ct);
+
+                return Result<DocumentIngestionResponse>.Success(new DocumentIngestionResponse(
+                    raw!.filename,
+                    raw.property_id,
+                    raw.doc_type,
+                    raw.chunk_count,
+                    raw.message
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Document ingestion failed for {FileName}", fileName);
+                throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
+            }
         }
 
         public Task<CopilotResponse> SendMessage(string message, string threadId, CancellationToken cancellationToken = default)

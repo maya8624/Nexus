@@ -19,6 +19,16 @@ namespace Nexus.Application.Services
             _blobServiceClient = blobServiceClient;
         }
 
+        public async Task<byte[]> DownloadBlobAsync(string containerName, string blobName, CancellationToken ct)
+        {
+            var blobClient = _blobServiceClient
+                .GetBlobContainerClient(containerName)
+                .GetBlobClient(blobName);
+
+            var response = await blobClient.DownloadContentAsync(ct);
+            return response.Value.Content.ToArray();
+        }
+
         public Task<Result<SasUploadResponse>> GenerateSasUploadUrlAsync(string fileName, string contentType, string containerName, Guid userId, CancellationToken ct)
         {
             var extension = Path.GetExtension(fileName);

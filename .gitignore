@@ -6,6 +6,9 @@
 # ASP.NET Core environment configs
 appsettings.Development.json
 
+# Azure Functions local secrets
+local.settings.json
+
 # User-specific files
 *.rsuser
 *.suo

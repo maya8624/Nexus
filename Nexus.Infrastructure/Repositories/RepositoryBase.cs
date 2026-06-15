@@ -21,6 +21,7 @@ namespace Nexus.Infrastructure.Repositories
 
         public async Task CreateRange(IEnumerable<T> entities, CancellationToken ct)
             => await _dbSet.AddRangeAsync(entities, ct);
+
         public void Delete(T entity)
             => _dbSet.Remove(entity);
 
