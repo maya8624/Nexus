@@ -365,7 +365,7 @@ namespace Nexus.Application.Services
             using var form = new MultipartFormDataContent();
             form.Add(new ByteArrayContent(fileBytes), "file", fileName);
             if (propertyId is not null) form.Add(new StringContent(propertyId), "property_id");
-            if (docType is not null)    form.Add(new StringContent(docType),    "doc_type");
+            if (docType is not null) form.Add(new StringContent(docType), "doc_type");
 
             var options = BuildAiRequestOptions(form, _settings.Ingestion);
             var request = HttpRequestFactory.CreateHttpRequestMessage(options);

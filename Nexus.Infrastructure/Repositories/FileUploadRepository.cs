@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Domain.Entities;
+using Nexus.Domain.Enums;
 using Nexus.Infrastructure.Persistence;
 
 namespace Nexus.Infrastructure.Repositories
@@ -31,6 +32,13 @@ namespace Nexus.Infrastructure.Repositories
             return await _context.FileUploads
                 .Where(x => x.BlobName == blobName)
                 .FirstOrDefaultAsync(ct);
+        }
+
+        public async Task<List<FileUpload>> GetExpiredPendingAsync(CancellationToken ct)
+        {
+            return await _context.FileUploads
+                .Where(x => x.Status == UploadStatus.Pending && x.SasExpiresAtUtc < DateTimeOffset.UtcNow)
+                .ToListAsync(ct);
         }
     }
 }

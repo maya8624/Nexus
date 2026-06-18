@@ -56,3 +56,36 @@ jobs:
         with:
           app-name: nexus-api
           package: ./publish
+
+  deploy-functions:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Nexus.Functions/Nexus.Functions.csproj
+
+      - name: Build
+        run: dotnet build Nexus.Functions/Nexus.Functions.csproj -c Release --no-restore
+
+      - name: Publish
+        run: dotnet publish Nexus.Functions/Nexus.Functions.csproj -c Release -o ./functions-publish --no-build
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: func-rec-ingest-dev
+          package: ./functions-publish

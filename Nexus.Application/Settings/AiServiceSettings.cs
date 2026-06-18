@@ -15,11 +15,11 @@ namespace Nexus.Application.Settings
         public required string ApiKey { get; init; }
         public required string BaseUrl { get; init; }
         public required string Chat { get; init; }
+        public required string EnquiryDraft { get; init; }
+        public required string Ingestion { get; init; }
         public required string ChatStream { get; init; }
         public required string Preferences { get; init; }
         public required string SuburbSummary { get; init; }
-        public required string EnquiryDraft { get; init; }
-        public required string Ingestion { get; init; }
         public int TimeoutSeconds { get; init; } = 30;
     }
 }

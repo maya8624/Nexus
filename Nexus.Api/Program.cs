@@ -5,6 +5,7 @@ using Microsoft.OpenApi;
 using Nexus.Api.Extensions;
 using Nexus.Api.Filters;
 using Nexus.Application.Extensions;
+using Nexus.Application.Interfaces.Business;
 using Serilog;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using Swashbuckle.AspNetCore.Filters;
@@ -92,6 +93,11 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
     Authorization = [new HangfireAuthFilter()]
 });
+
+RecurringJob.AddOrUpdate<ISasExpiryJob>(
+    "sas-expiry-check",
+    job => job.ExecuteAsync(),
+    "*/15 * * * *");
 
 app.MapControllers();
 
