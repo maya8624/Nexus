@@ -16,6 +16,7 @@ namespace Nexus.Tests.Unit.Functions
         private readonly BlobIngestionSettings _settings = new()
         {
             IngestionContainerName = "rec-dev-ingestion",
+            InvoiceContainerName = "rec-dev-invoices",
             NexusApiUrl = "https://localhost:7289",
             NexusApiKey = "test-api-key"
         };

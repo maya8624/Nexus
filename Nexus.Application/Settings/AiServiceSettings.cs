@@ -17,6 +17,7 @@ namespace Nexus.Application.Settings
         public required string Chat { get; init; }
         public required string EnquiryDraft { get; init; }
         public required string Ingestion { get; init; }
+        public required string InvoiceExtract { get; init; }
         public required string ChatStream { get; init; }
         public required string Preferences { get; init; }
         public required string SuburbSummary { get; init; }

@@ -33,12 +33,14 @@ namespace Nexus.Application.Services
             _jobs = jobs;
         }
 
+
         public async Task<Result<FileUploadInitiatedResponse>> InitiateAsync(string fileName, string contentType, UploadPurpose purpose, Guid userId, CancellationToken ct)
         {
             var containerName = purpose switch
             {
                 UploadPurpose.Extraction => _settings.ExtractionContainerName,
                 UploadPurpose.Ingestion => _settings.IngestionContainerName,
+                UploadPurpose.Invoice => _settings.InvoiceContainerName,
                 _ => _settings.ContainerName
             };
 
@@ -94,7 +96,7 @@ namespace Nexus.Application.Services
             if (fileSizeBytes.HasValue)
                 record.FileSizeBytes = fileSizeBytes;
 
-            if (record.Purpose is UploadPurpose.Extraction)
+            if (record.Purpose is UploadPurpose.Extraction or UploadPurpose.Invoice)
                 record.IngestionStatus = IngestionStatus.Queued;
 
             _fileUploadRepository.Update(record);
@@ -121,6 +123,22 @@ namespace Nexus.Application.Services
             await _uow.SaveChanges();
 
             _jobs.Enqueue<IIngestionJob>(job => job.ExecuteAsync(record.Id));
+
+            return Result<bool>.Success(true);
+        }
+
+        public async Task<Result<bool>> TriggerInvoiceExtractionAsync(string blobName, CancellationToken ct)
+        {
+            var record = await _fileUploadRepository.GetByBlobNameAsync(blobName, ct);
+            if (record is null)
+                return Result<bool>.NotFound("FileUploadNotFound", "FileUpload record not found for the given blob.");
+
+            record.IngestionStatus = IngestionStatus.Queued;
+            record.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            _fileUploadRepository.Update(record);
+            await _uow.SaveChanges();
+
+            _jobs.Enqueue<IInvoiceExtractionJob>(job => job.ExecuteAsync(record.Id));
 
             return Result<bool>.Success(true);
         }

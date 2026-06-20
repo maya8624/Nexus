@@ -9,5 +9,6 @@ namespace Nexus.Application.Interfaces.Business
         Task<Result<FileUploadInitiatedResponse>> InitiateAsync(string fileName, string contentType, UploadPurpose purpose, Guid userId, CancellationToken ct);
         Task<Result<FileUploadInitiatedResponse>> ConfirmAsync(Guid id, Guid userId, long? fileSizeBytes, CancellationToken ct);
         Task<Result<bool>> TriggerIngestionAsync(string blobName, CancellationToken ct);
+        Task<Result<bool>> TriggerInvoiceExtractionAsync(string blobName, CancellationToken ct);
     }
 }

@@ -393,6 +393,56 @@ namespace Nexus.Application.Services
             }
         }
 
+        public async Task<Result<InvoiceExtractionResponse>> ExtractInvoiceAsync(byte[] fileBytes, string fileName, CancellationToken ct)
+        {
+            using var form = new MultipartFormDataContent();
+            form.Add(new ByteArrayContent(fileBytes), "file", fileName);
+
+            var options = BuildAiRequestOptions(form, _settings.InvoiceExtract);
+            var request = HttpRequestFactory.CreateHttpRequestMessage(options);
+
+            try
+            {
+                var http = _httpClientFactory.CreateClient();
+                var response = await http.SendAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var raw = await response.Content.ReadFromJsonAsync<AiInvoiceExtractionResponse>(cancellationToken: ct);
+
+                return Result<InvoiceExtractionResponse>.Success(new InvoiceExtractionResponse
+                {
+                    Success  = raw!.success,
+                    Filename = raw.filename,
+                    Data = raw.data is null ? null : new InvoiceDataDto
+                    {
+                        VendorName    = raw.data.vendor_name,
+                        VendorAddress = raw.data.vendor_address,
+                        CustomerName  = raw.data.customer_name,
+                        InvoiceNumber = raw.data.invoice_id,
+                        InvoiceDate   = DateOnly.TryParse(raw.data.invoice_date, out var invoiceDate) ? invoiceDate : null,
+                        DueDate       = DateOnly.TryParse(raw.data.due_date, out var dueDate) ? dueDate : null,
+                        Subtotal      = raw.data.subtotal.HasValue ? (decimal)raw.data.subtotal.Value : null,
+                        Tax           = raw.data.tax.HasValue ? (decimal)raw.data.tax.Value : null,
+                        Total         = raw.data.total.HasValue ? (decimal)raw.data.total.Value : null,
+                        Currency      = raw.data.currency,
+                        Confidence    = raw.data.confidence,
+                        LineItems     = raw.data.line_items.Select(li => new InvoiceLineItemDto
+                        {
+                            Description = li.description,
+                            Quantity    = li.quantity.HasValue ? (decimal)li.quantity.Value : null,
+                            UnitPrice   = li.unit_price.HasValue ? (decimal)li.unit_price.Value : null,
+                            Amount      = li.amount.HasValue ? (decimal)li.amount.Value : null
+                        }).ToList()
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Invoice extraction failed for {FileName}", fileName);
+                throw new AiServiceException("The AI service is currently unavailable. Please try again later.", ex);
+            }
+        }
+
         public Task<CopilotResponse> SendMessage(string message, string threadId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();

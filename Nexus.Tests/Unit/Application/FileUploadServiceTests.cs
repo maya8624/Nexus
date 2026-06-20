@@ -20,6 +20,7 @@ namespace Nexus.Tests.Unit.Application
         private const string GeneralContainer   = "uploads";
         private const string ExtractionContainer = "extraction";
         private const string IngestionContainer  = "ingestion";
+        private const string InvoiceContainer    = "invoices";
         private const int SasExpiryMinutes       = 15;
 
         private readonly Mock<IBlobStorageService> _blobStorageMock = new();
@@ -40,6 +41,7 @@ namespace Nexus.Tests.Unit.Application
                 ContainerName           = GeneralContainer,
                 ExtractionContainerName = ExtractionContainer,
                 IngestionContainerName  = IngestionContainer,
+                InvoiceContainerName    = InvoiceContainer,
                 SasExpiryMinutes        = SasExpiryMinutes
             });
 
@@ -118,6 +120,20 @@ namespace Nexus.Tests.Unit.Application
             await _service.InitiateAsync("lease.pdf", "application/pdf", UploadPurpose.Ingestion, _userId, CancellationToken.None);
 
             Assert.Equal(IngestionContainer, capturedContainer);
+        }
+
+        [Fact]
+        public async Task InitiateAsync_InvoicePurpose_ShouldRouteToInvoiceContainer()
+        {
+            string? capturedContainer = null;
+            _blobStorageMock
+                .Setup(x => x.GenerateSasUploadUrlAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .Callback<string, string, string, Guid, CancellationToken>((_, _, container, _, _) => capturedContainer = container)
+                .ReturnsAsync(Result<SasUploadResponse>.Success(new SasUploadResponse { SasUrl = "https://x", BlobName = "b" }));
+
+            await _service.InitiateAsync("invoice.pdf", "application/pdf", UploadPurpose.Invoice, _userId, CancellationToken.None);
+
+            Assert.Equal(InvoiceContainer, capturedContainer);
         }
 
         [Fact]
@@ -324,6 +340,19 @@ namespace Nexus.Tests.Unit.Application
         }
 
         [Fact]
+        public async Task ConfirmAsync_WithInvoicePurpose_ShouldSetIngestionStatusToQueued()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Invoice, InvoiceContainer);
+            _repositoryMock
+                .Setup(x => x.GetByIdForUserAsync(record.Id, _userId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            await _service.ConfirmAsync(record.Id, _userId, null, CancellationToken.None);
+
+            Assert.Equal(IngestionStatus.Queued, record.IngestionStatus);
+        }
+
+        [Fact]
         public async Task ConfirmAsync_WithIngestionPurpose_ShouldNotSetIngestionStatus()
         {
             var record = BuildPendingRecord(_userId, UploadPurpose.Ingestion, IngestionContainer);
@@ -444,6 +473,77 @@ namespace Nexus.Tests.Unit.Application
                 .ReturnsAsync(record);
 
             var result = await _service.TriggerIngestionAsync(record.BlobName, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+        }
+
+        #endregion
+
+        #region TriggerInvoiceExtractionAsync
+
+        [Fact]
+        public async Task TriggerInvoiceExtractionAsync_WhenRecordNotFound_ShouldReturnNotFound()
+        {
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((FileUpload?)null);
+
+            var result = await _service.TriggerInvoiceExtractionAsync("user/missing.pdf", CancellationToken.None);
+
+            Assert.Equal(ResultStatus.NotFound, result.Status);
+            Assert.Equal("FileUploadNotFound", Assert.Single(result.Errors).Code);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Never);
+        }
+
+        [Fact]
+        public async Task TriggerInvoiceExtractionAsync_WhenRecordFound_ShouldSetIngestionStatusToQueued()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Invoice, InvoiceContainer);
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(record.BlobName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            await _service.TriggerInvoiceExtractionAsync(record.BlobName, CancellationToken.None);
+
+            Assert.Equal(IngestionStatus.Queued, record.IngestionStatus);
+        }
+
+        [Fact]
+        public async Task TriggerInvoiceExtractionAsync_WhenRecordFound_ShouldEnqueueJob()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Invoice, InvoiceContainer);
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(record.BlobName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            await _service.TriggerInvoiceExtractionAsync(record.BlobName, CancellationToken.None);
+
+            _jobsMock.Verify(x => x.Create(It.IsAny<Hangfire.Common.Job>(), It.IsAny<Hangfire.States.IState>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task TriggerInvoiceExtractionAsync_WhenRecordFound_ShouldCallUpdateAndSaveChanges()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Invoice, InvoiceContainer);
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(record.BlobName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            await _service.TriggerInvoiceExtractionAsync(record.BlobName, CancellationToken.None);
+
+            _repositoryMock.Verify(x => x.Update(record), Times.Once);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task TriggerInvoiceExtractionAsync_WhenRecordFound_ShouldReturnSuccess()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Invoice, InvoiceContainer);
+            _repositoryMock
+                .Setup(x => x.GetByBlobNameAsync(record.BlobName, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(record);
+
+            var result = await _service.TriggerInvoiceExtractionAsync(record.BlobName, CancellationToken.None);
 
             Assert.True(result.IsSuccess);
         }

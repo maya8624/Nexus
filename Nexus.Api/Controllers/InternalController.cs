@@ -131,5 +131,15 @@ namespace Nexus.Api.Controllers
 
             return Accepted();
         }
+
+        [HttpPost("invoices/extract")]
+        public async Task<IActionResult> TriggerInvoiceExtraction([FromBody] TriggerInvoiceExtractionRequest request, CancellationToken ct)
+        {
+            var result = await _fileUploadService.TriggerInvoiceExtractionAsync(request.BlobName, ct);
+            if (!result.IsSuccess)
+                return NotFound(result.Errors.FirstOrDefault());
+
+            return Accepted();
+        }
     }
 }

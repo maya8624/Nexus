@@ -38,6 +38,7 @@ namespace Nexus.Infrastructure.Persistence
         public DbSet<Tenant> Tenants => Set<Tenant>();
         public DbSet<Lease> Leases => Set<Lease>();
         public DbSet<FileUpload> FileUploads => Set<FileUpload>();
+        public DbSet<Invoice> Invoices => Set<Invoice>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

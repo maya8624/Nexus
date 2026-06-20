@@ -74,10 +74,12 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IBlobStorageService, BlobStorageService>();
             services.AddScoped<IFileUploadService, FileUploadService>();
             services.AddScoped<IFileUploadRepository, FileUploadRepository>();
+            services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             services.AddScoped<IValidator<GetUploadUrlRequest>, GetUploadUrlRequestValidator>();
             services.AddScoped<IValidator<ConfirmUploadRequest>, ConfirmUploadRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
             services.AddScoped<IIngestionJob, IngestionJob>();
+            services.AddScoped<IInvoiceExtractionJob, InvoiceExtractionJob>();
             services.AddScoped<ISasExpiryJob, SasExpiryJob>();
             services.AddScoped<InternalApiKeyFilter>();
         }

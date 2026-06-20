@@ -4,7 +4,8 @@ namespace Nexus.Domain.Enums
     {
         General = 1,
         Extraction = 2,
-        Ingestion = 3
+        Ingestion = 3,
+        Invoice = 4
     }
 
     public enum UploadStatus

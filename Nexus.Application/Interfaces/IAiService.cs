@@ -17,5 +17,6 @@ namespace Nexus.Application.Interfaces
         Task<Result<EnquiryDraftResponse>> GetEnquiryDraft(EnquiryDraftRequest request, CancellationToken ct);
         IAsyncEnumerable<string> StreamReply(CopilotRequest request, CancellationToken ct);
         Task<Result<DocumentIngestionResponse>> IngestDocumentAsync(byte[] fileBytes, string fileName, string? propertyId, string? docType, CancellationToken ct);
+        Task<Result<InvoiceExtractionResponse>> ExtractInvoiceAsync(byte[] fileBytes, string fileName, CancellationToken ct);
     }
 }

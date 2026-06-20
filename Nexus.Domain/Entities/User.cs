@@ -43,6 +43,8 @@ namespace Nexus.Domain.Entities
         public ICollection<DocumentSuggestion> DocumentSuggestions { get; set; } = new List<DocumentSuggestion>();
 
         public ICollection<FileUpload> FileUploads { get; set; } = new List<FileUpload>();
+
+        public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
     }
 
 

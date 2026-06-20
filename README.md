@@ -13,9 +13,12 @@ A real estate property management and transaction platform built with .NET 8 and
 - **Background Jobs:** Hangfire (PostgreSQL-backed, with dashboard at `/hangfire`)
 - **Logging:** Serilog (console + daily rolling file under `logs/`)
 - **AI Chat:** External sidecar service (SSE streaming)
+- **File Storage:** Azure Blob Storage (SAS URL upload flow)
+- **Event Processing:** Azure Functions (isolated worker, blob trigger)
+- **Observability:** Application Insights (Functions)
 - **Secrets:** Azure Key Vault
 - **Docs:** Swagger / Swashbuckle
-- **Hosting:** Azure App Service (Web App)
+- **Hosting:** Azure App Service (Web API) + Azure Functions
 - **Database hosting:** Azure Database for PostgreSQL
 - **CI/CD:** GitHub Actions
 
@@ -26,6 +29,7 @@ Nexus/
 ├── Nexus.Api/             # Controllers, middleware, DI extensions
 ├── Nexus.Application/     # Services, DTOs, interfaces, validators
 ├── Nexus.Domain/          # Entities and enums
+├── Nexus.Functions/       # Azure Functions (isolated worker — blob ingestion trigger)
 ├── Nexus.Infrastructure/  # EF Core DbContext, repositories, migrations
 ├── Nexus.Network/         # External HTTP clients (PayPal, AI service)
 └── Nexus.Tests/           # Test project
@@ -70,6 +74,10 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 | **Deposits** | Stripe checkout sessions with webhook confirmation; idempotency keys; multi-currency |
 | **PayPal** | Sandbox order creation, capture, and refunds |
 | **AI Chat** | Per-user chat sessions with streaming (Server-Sent Events); tool execution tracking |
+| **AI Features** | Tenant preference property search, suburb market summaries, AI-generated enquiry reply drafts |
+| **File Uploads** | SAS URL flow — client uploads directly to Azure Blob Storage; server issues time-limited SAS tokens and tracks upload status; upload purposes: General, Extraction, Ingestion, Invoice |
+| **Document Ingestion** | Blob trigger (Azure Function) fires on new uploads; calls internal API to forward content to the AI sidecar for indexing |
+| **Invoice Extraction** | AI-powered extraction of structured invoice data (vendor, line items, totals, dates) from uploaded documents; results persisted as `Invoice` records linked to the source file upload and optionally a property |
 | **Enquiries** | Tenants submit enquiries to agents; agents draft and send replies; outgoing reply emails are dispatched via a Hangfire background job |
 | **Auth** | Email/password registration + login; Google external login; JWT (60-min expiry) + rotating refresh tokens (7-day expiry) |
 
@@ -83,10 +91,11 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 | `InspectionSlotController` | Create and manage inspection time slots |
 | `InspectionBookingController` | Book and manage inspection appointments |
 | `EnquiryController` | Submit, update, and send replies to property enquiries |
-| `AiController` | Chat, streaming chat |
+| `AiController` | Chat, streaming chat, preference search, suburb summaries, enquiry draft generation, document ingestion |
+| `FilesController` | Generate SAS upload URLs, confirm completed uploads |
 | `PayPalController` | PayPal payment flow |
 | `OrderController` | Legacy order management |
-| `InternalController` | Admin/internal operations (API-key protected) |
+| `InternalController` | Admin/internal operations (API-key protected): inspection bookings, deposits, document ingestion, invoice extraction |
 
 ## Authentication
 
@@ -115,7 +124,8 @@ The `IUserContext` abstraction resolves the current user inside services — use
 | `GoogleAuth` | OAuth client ID and secret |
 | `StripeSettings` | Secret key and webhook signing secret |
 | `PayPalSettings` | Client ID/secret, OAuth and order endpoints |
-| `AiServiceSettings` | Base URL and API key for the AI sidecar |
+| `AiServiceSettings` | Base URL, API key, and endpoint paths for the AI sidecar (chat, stream, preferences, suburb-summary, enquiry-draft, ingestion, invoice-extract) |
+| `BlobStorageSettings` | Azure Blob Storage connection string, container names (general, extraction, ingestion, invoice), SAS token expiry (minutes) |
 | `SmtpSettings` | Outlook SMTP host, port, credentials |
 | `CorsSettings:AllowedOrigins` | Frontend origins (e.g. `http://localhost:5173`) |
 | `KeyVaultUrl` | Azure Key Vault URI (production only) |
@@ -125,14 +135,14 @@ The `IUserContext` abstraction resolves the current user inside services — use
 
 The API is hosted on **Azure App Service**. The database runs on **Azure Database for PostgreSQL (Flexible Server)**. All production secrets (connection string, JWT key, Stripe keys, etc.) are stored in **Azure Key Vault** and loaded at startup via the `KeyVaultUrl` configuration key.
 
-Deployments are automated via **GitHub Actions**. Pushing to `main` triggers the workflow which builds, tests, and deploys to Azure App Service.
+Deployments are automated via **GitHub Actions**. Pushing to `main` triggers the workflow which builds, tests, and deploys both the API (Azure App Service) and the Functions app (`func-rec-ingest-dev`).
 
 No secrets should ever be committed to source control. The `appsettings.json` in the repository contains only empty placeholders.
 
 ## Development Notes
 
 - Frontend dev servers run on `http://localhost:5173` and `http://localhost:5174`.
-- The AI sidecar (`rec_brain`) runs on `http://localhost:8000` and requires an `X-API-Key` header.
+- The AI sidecar (`rec_brain`) runs on `http://localhost:8000` and requires an `X-API-Key` header. It exposes endpoints for chat, streaming chat, preference search, suburb summaries, enquiry draft generation, and document ingestion — all configured under `AiServiceSettings`.
 - Email notifications for inspection booking confirmations/cancellations are not yet implemented.
 - SMTP is configured via `SmtpSettings` (MailKit). Enquiry reply emails are sent as Hangfire background jobs.
 - The Hangfire dashboard is available at `/hangfire` and requires a valid JWT Bearer token.

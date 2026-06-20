@@ -24,11 +24,12 @@ namespace Nexus.Tests.Unit.Application
         {
             var settings = Options.Create(new BlobStorageSettings
             {
-                ConnectionString = "UseDevelopmentStorage=true",
-                ContainerName = ContainerName,
+                ConnectionString        = "UseDevelopmentStorage=true",
+                ContainerName           = ContainerName,
                 ExtractionContainerName = "test-extraction-container",
-                IngestionContainerName = "test-ingestion-container",
-                SasExpiryMinutes = SasExpiryMinutes
+                IngestionContainerName  = "test-ingestion-container",
+                InvoiceContainerName    = "test-invoice-container",
+                SasExpiryMinutes        = SasExpiryMinutes
             });
 
             _blobServiceClientMock

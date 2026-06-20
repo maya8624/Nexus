@@ -40,14 +40,15 @@ namespace Nexus.Tests.Unit.Application
 
             var settings = Options.Create(new AiServiceSettings
             {
-                BaseUrl       = "http://localhost:8000",
-                ApiKey        = "test-key",
-                Chat          = "api/chat",
-                ChatStream    = "api/chat/stream",
-                Preferences   = "api/preferences",
-                SuburbSummary = "api/suburb-summary",
-                EnquiryDraft  = "api/enquiry/draft",
-                Ingestion     = "api/ingest"
+                BaseUrl        = "http://localhost:8000",
+                ApiKey         = "test-key",
+                Chat           = "api/chat",
+                ChatStream     = "api/chat/stream",
+                Preferences    = "api/preferences",
+                SuburbSummary  = "api/suburb-summary",
+                EnquiryDraft   = "api/enquiry/draft",
+                Ingestion      = "api/ingest",
+                InvoiceExtract = "api/documents/invoice-extract"
             });
 
             _service = new AiService(
@@ -469,6 +470,156 @@ namespace Nexus.Tests.Unit.Application
                 _service.GetEnquiryDraft(new EnquiryDraftRequest { Id = enquiryId }, CancellationToken.None));
 
             _loggerMock.VerifyLog(LogLevel.Error, enquiryId.ToString());
+        }
+
+        #endregion
+
+        #region ExtractInvoiceAsync
+
+        private static string BuildInvoiceJson(
+            string vendorName = "Acme Plumbing",
+            string invoiceDate = "2026-06-01",
+            string? dueDate = "2026-06-15",
+            float subtotal = 450f,
+            float tax = 45f,
+            float total = 495f,
+            float confidence = 0.97f) =>
+            $$"""
+            {
+                "tool_name": "save_invoice",
+                "success": true,
+                "filename": "invoice.pdf",
+                "data": {
+                    "vendor_name": "{{vendorName}}",
+                    "vendor_address": "12 George St, Sydney NSW 2000",
+                    "customer_name": "Sunshine Realty",
+                    "invoice_id": "INV-0042",
+                    "invoice_date": "{{invoiceDate}}",
+                    "due_date": {{(dueDate is null ? "null" : $"\"{dueDate}\"")}},
+                    "subtotal": {{subtotal}},
+                    "tax": {{tax}},
+                    "total": {{total}},
+                    "currency": "$",
+                    "confidence": {{confidence}},
+                    "line_items": [
+                        {
+                            "description": "Emergency pipe repair",
+                            "quantity": 1.0,
+                            "unit_price": 350.0,
+                            "amount": 350.0
+                        }
+                    ]
+                }
+            }
+            """;
+
+        private static HttpResponseMessage BuildInvoiceHttpResponse(string? json = null) =>
+            new(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(json ?? BuildInvoiceJson(), Encoding.UTF8, "application/json")
+            };
+
+        [Fact]
+        public async Task ExtractInvoiceAsync_WithValidFile_ShouldReturnSuccess()
+        {
+            _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(CreateHttpClientWithResponse(BuildInvoiceHttpResponse()));
+
+            var result = await _service.ExtractInvoiceAsync([1, 2, 3], "invoice.pdf", CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+        }
+
+        [Fact]
+        public async Task ExtractInvoiceAsync_WithValidFile_ShouldMapTopLevelFields()
+        {
+            _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(CreateHttpClientWithResponse(BuildInvoiceHttpResponse()));
+
+            var result = await _service.ExtractInvoiceAsync([1, 2, 3], "invoice.pdf", CancellationToken.None);
+
+            Assert.True(result.Value!.Success);
+            Assert.Equal("invoice.pdf", result.Value.Filename);
+        }
+
+        [Fact]
+        public async Task ExtractInvoiceAsync_WithValidFile_ShouldMapDataFields()
+        {
+            _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(CreateHttpClientWithResponse(BuildInvoiceHttpResponse()));
+
+            var result = await _service.ExtractInvoiceAsync([1, 2, 3], "invoice.pdf", CancellationToken.None);
+
+            var data = result.Value!.Data!;
+            Assert.Equal("Acme Plumbing", data.VendorName);
+            Assert.Equal("12 George St, Sydney NSW 2000", data.VendorAddress);
+            Assert.Equal("Sunshine Realty", data.CustomerName);
+            Assert.Equal("INV-0042", data.InvoiceNumber);
+            Assert.Equal(new DateOnly(2026, 6, 1), data.InvoiceDate);
+            Assert.Equal(new DateOnly(2026, 6, 15), data.DueDate);
+            Assert.Equal(450m, data.Subtotal);
+            Assert.Equal(45m, data.Tax);
+            Assert.Equal(495m, data.Total);
+            Assert.Equal("$", data.Currency);
+            Assert.Equal(0.97f, data.Confidence, precision: 2);
+        }
+
+        [Fact]
+        public async Task ExtractInvoiceAsync_WithValidFile_ShouldMapLineItems()
+        {
+            _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(CreateHttpClientWithResponse(BuildInvoiceHttpResponse()));
+
+            var result = await _service.ExtractInvoiceAsync([1, 2, 3], "invoice.pdf", CancellationToken.None);
+
+            var item = Assert.Single(result.Value!.Data!.LineItems);
+            Assert.Equal("Emergency pipe repair", item.Description);
+            Assert.Equal(1m, item.Quantity);
+            Assert.Equal(350m, item.UnitPrice);
+            Assert.Equal(350m, item.Amount);
+        }
+
+        [Fact]
+        public async Task ExtractInvoiceAsync_WithNullDueDate_ShouldLeaveDueDateNull()
+        {
+            _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(CreateHttpClientWithResponse(BuildInvoiceHttpResponse(BuildInvoiceJson(dueDate: null))));
+
+            var result = await _service.ExtractInvoiceAsync([1, 2, 3], "invoice.pdf", CancellationToken.None);
+
+            Assert.Null(result.Value!.Data!.DueDate);
+        }
+
+        [Fact]
+        public async Task ExtractInvoiceAsync_WhenServerReturnsNonSuccess_ShouldThrowAiServiceException()
+        {
+            _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(CreateHttpClientWithResponse(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError)));
+
+            await Assert.ThrowsAsync<AiServiceException>(() =>
+                _service.ExtractInvoiceAsync([1, 2, 3], "invoice.pdf", CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ExtractInvoiceAsync_WhenHttpRequestFails_ShouldThrowAiServiceException()
+        {
+            _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(new MockHttpMessageHandler(new HttpRequestException("Network error."))));
+
+            await Assert.ThrowsAsync<AiServiceException>(() =>
+                _service.ExtractInvoiceAsync([1, 2, 3], "invoice.pdf", CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task ExtractInvoiceAsync_WhenHttpRequestFails_ShouldLogError()
+        {
+            _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+                .Returns(new HttpClient(new MockHttpMessageHandler(new HttpRequestException("Network error."))));
+
+            await Assert.ThrowsAsync<AiServiceException>(() =>
+                _service.ExtractInvoiceAsync([1, 2, 3], "invoice.pdf", CancellationToken.None));
+
+            _loggerMock.VerifyLog(LogLevel.Error, "invoice.pdf");
         }
 
         #endregion
