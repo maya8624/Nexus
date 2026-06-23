@@ -75,7 +75,9 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IFileUploadService, FileUploadService>();
             services.AddScoped<IFileUploadRepository, FileUploadRepository>();
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            services.AddScoped<IInvoiceService, InvoiceService>();
             services.AddScoped<IValidator<GetUploadUrlRequest>, GetUploadUrlRequestValidator>();
+            services.AddScoped<IValidator<UpdateInvoiceRequest>, UpdateInvoiceRequestValidator>();
             services.AddScoped<IValidator<ConfirmUploadRequest>, ConfirmUploadRequestValidator>();
             services.AddScoped<IPasswordHasherService, PasswordHasherService>();
             services.AddScoped<IIngestionJob, IngestionJob>();

@@ -127,6 +127,30 @@ namespace Nexus.Application.Services
             return Result<bool>.Success(true);
         }
 
+        public async Task<Result<List<FileUploadResponse>>> GetByPurposeAsync(UploadPurpose purpose, UploadStatus? status, CancellationToken ct)
+        {
+            var records = await _fileUploadRepository.GetByPurposeAsync(purpose, status, ct);
+
+            var response = records.Select(r => new FileUploadResponse
+            {
+                Id             = r.Id,
+                UserId         = r.UserId,
+                FileName       = r.FileName,
+                BlobName       = r.BlobName,
+                ContentType    = r.ContentType,
+                FileSizeBytes  = r.FileSizeBytes,
+                Purpose        = r.Purpose,
+                Status         = r.Status,
+                IngestionStatus = r.IngestionStatus,
+                IngestionError = r.IngestionError,
+                CompletedAtUtc = r.CompletedAtUtc,
+                IngestedAtUtc  = r.IngestedAtUtc,
+                CreatedAtUtc   = r.CreatedAtUtc
+            }).ToList();
+
+            return Result<List<FileUploadResponse>>.Success(response);
+        }
+
         public async Task<Result<bool>> TriggerInvoiceExtractionAsync(string blobName, CancellationToken ct)
         {
             var record = await _fileUploadRepository.GetByBlobNameAsync(blobName, ct);

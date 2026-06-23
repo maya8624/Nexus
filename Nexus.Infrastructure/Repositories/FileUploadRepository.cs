@@ -40,5 +40,14 @@ namespace Nexus.Infrastructure.Repositories
                 .Where(x => x.Status == UploadStatus.Pending && x.SasExpiresAtUtc < DateTimeOffset.UtcNow)
                 .ToListAsync(ct);
         }
+
+        public async Task<List<FileUpload>> GetByPurposeAsync(UploadPurpose purpose, UploadStatus? status, CancellationToken ct)
+        {
+            return await _context.FileUploads
+                .Where(x => x.Purpose == purpose && (status == null || x.Status == status))
+                .OrderByDescending(x => x.CreatedAtUtc)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
     }
 }

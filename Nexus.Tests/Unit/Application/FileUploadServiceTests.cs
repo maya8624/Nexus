@@ -549,5 +549,73 @@ namespace Nexus.Tests.Unit.Application
         }
 
         #endregion
+
+        #region GetByPurposeAsync
+
+        [Fact]
+        public async Task GetByPurposeAsync_WithPurposeOnly_ShouldReturnAllMatchingRecords()
+        {
+            var records = new List<FileUpload>
+            {
+                BuildPendingRecord(_userId, UploadPurpose.Invoice, InvoiceContainer),
+                BuildPendingRecord(_userId, UploadPurpose.Invoice, InvoiceContainer)
+            };
+            _repositoryMock
+                .Setup(x => x.GetByPurposeAsync(UploadPurpose.Invoice, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(records);
+
+            var result = await _service.GetByPurposeAsync(UploadPurpose.Invoice, null, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(2, result.Value!.Count);
+        }
+
+        [Fact]
+        public async Task GetByPurposeAsync_WithPurposeAndStatus_ShouldPassBothToRepository()
+        {
+            _repositoryMock
+                .Setup(x => x.GetByPurposeAsync(UploadPurpose.Invoice, UploadStatus.Completed, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([BuildPendingRecord(_userId, UploadPurpose.Invoice, InvoiceContainer)]);
+
+            var result = await _service.GetByPurposeAsync(UploadPurpose.Invoice, UploadStatus.Completed, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            _repositoryMock.Verify(x => x.GetByPurposeAsync(UploadPurpose.Invoice, UploadStatus.Completed, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetByPurposeAsync_WhenNoRecords_ShouldReturnEmptyList()
+        {
+            _repositoryMock
+                .Setup(x => x.GetByPurposeAsync(It.IsAny<UploadPurpose>(), It.IsAny<UploadStatus?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync([]);
+
+            var result = await _service.GetByPurposeAsync(UploadPurpose.Invoice, null, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Empty(result.Value!);
+        }
+
+        [Fact]
+        public async Task GetByPurposeAsync_ShouldMapFieldsCorrectly()
+        {
+            var record = BuildPendingRecord(_userId, UploadPurpose.Invoice, InvoiceContainer);
+            _repositoryMock
+                .Setup(x => x.GetByPurposeAsync(UploadPurpose.Invoice, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([record]);
+
+            var result = await _service.GetByPurposeAsync(UploadPurpose.Invoice, null, CancellationToken.None);
+
+            var item = Assert.Single(result.Value!);
+            Assert.Equal(record.Id, item.Id);
+            Assert.Equal(record.UserId, item.UserId);
+            Assert.Equal(record.FileName, item.FileName);
+            Assert.Equal(record.BlobName, item.BlobName);
+            Assert.Equal(record.ContentType, item.ContentType);
+            Assert.Equal(record.Purpose, item.Purpose);
+            Assert.Equal(record.Status, item.Status);
+        }
+
+        #endregion
     }
 }

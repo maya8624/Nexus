@@ -1,4 +1,5 @@
 using Nexus.Domain.Entities;
+using Nexus.Domain.Enums;
 
 namespace Nexus.Application.Interfaces.Repository
 {
@@ -8,5 +9,6 @@ namespace Nexus.Application.Interfaces.Repository
         Task<FileUpload?> GetByIdForUserAsync(Guid id, Guid userId, CancellationToken ct);
         Task<FileUpload?> GetByBlobNameAsync(string blobName, CancellationToken ct);
         Task<List<FileUpload>> GetExpiredPendingAsync(CancellationToken ct);
+        Task<List<FileUpload>> GetByPurposeAsync(UploadPurpose purpose, UploadStatus? status, CancellationToken ct);
     }
 }

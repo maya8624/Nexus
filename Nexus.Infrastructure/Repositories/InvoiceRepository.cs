@@ -23,5 +23,18 @@ namespace Nexus.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<Invoice?> GetByFileUploadIdAsync(Guid fileUploadId, Guid userId, CancellationToken ct)
+        {
+            return await _context.Invoices
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.FileUploadId == fileUploadId && x.UserId == userId, ct);
+        }
+
+        public async Task<Invoice?> GetByIdAsync(Guid id, Guid userId, CancellationToken ct)
+        {
+            return await _context.Invoices
+                .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, ct);
+        }
+
     }
 }

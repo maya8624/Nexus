@@ -93,6 +93,7 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 | `EnquiryController` | Submit, update, and send replies to property enquiries |
 | `AiController` | Chat, streaming chat, preference search, suburb summaries, enquiry draft generation, document ingestion |
 | `FilesController` | Generate SAS upload URLs, confirm completed uploads |
+| `InvoiceController` | Get extracted invoice by file upload ID, update invoice fields |
 | `PayPalController` | PayPal payment flow |
 | `OrderController` | Legacy order management |
 | `InternalController` | Admin/internal operations (API-key protected): inspection bookings, deposits, document ingestion, invoice extraction |

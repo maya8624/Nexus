@@ -50,12 +50,14 @@ namespace Nexus.Application.Dtos.Requests
             RuleFor(x => x)
                 .Must(r => !_extractionTypes.Contains(r.ContentType) || r.Purpose == UploadPurpose.Extraction || r.Purpose == UploadPurpose.General)
                 .WithMessage("Image files can only be used with General or Extraction purpose.")
-                .Must(r => !_ingestionTypes.Contains(r.ContentType) || r.Purpose == UploadPurpose.Ingestion || r.Purpose == UploadPurpose.General)
-                .WithMessage("Document files can only be used with General or Ingestion purpose.")
+                .Must(r => !_ingestionTypes.Contains(r.ContentType) || r.Purpose == UploadPurpose.Ingestion || r.Purpose == UploadPurpose.Invoice || r.Purpose == UploadPurpose.General)
+                .WithMessage("Document files can only be used with General, Ingestion, or Invoice purpose.")
                 .Must(r => r.Purpose != UploadPurpose.Extraction || _extractionTypes.Contains(r.ContentType))
                 .WithMessage("Extraction purpose only supports image files (jpeg, png, webp).")
                 .Must(r => r.Purpose != UploadPurpose.Ingestion || _ingestionTypes.Contains(r.ContentType))
-                .WithMessage("Ingestion purpose only supports document files (pdf, doc, docx).");
+                .WithMessage("Ingestion purpose only supports document files (pdf, doc, docx).")
+                .Must(r => r.Purpose != UploadPurpose.Invoice || _ingestionTypes.Contains(r.ContentType))
+                .WithMessage("Invoice purpose only supports document files (pdf, doc, docx).");
         }
     }
 }
