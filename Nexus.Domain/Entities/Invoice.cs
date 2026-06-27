@@ -1,3 +1,5 @@
+using Nexus.Domain.Enums;
+
 namespace Nexus.Domain.Entities
 {
     public class Invoice
@@ -5,6 +7,7 @@ namespace Nexus.Domain.Entities
         public Guid Id { get; set; }
         public Guid UserId { get; set; }
         public Guid? FileUploadId { get; set; }
+        public DocumentType DocumentType { get; set; } = DocumentType.Invoice;
         public string? Filename { get; set; }
         public string? VendorName { get; set; }
         public string? VendorAddress { get; set; }

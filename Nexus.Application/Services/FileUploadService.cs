@@ -96,7 +96,7 @@ namespace Nexus.Application.Services
             if (fileSizeBytes.HasValue)
                 record.FileSizeBytes = fileSizeBytes;
 
-            if (record.Purpose is UploadPurpose.Extraction or UploadPurpose.Invoice)
+            if (record.Purpose is not UploadPurpose.General)
                 record.IngestionStatus = IngestionStatus.Queued;
 
             _fileUploadRepository.Update(record);
@@ -133,19 +133,19 @@ namespace Nexus.Application.Services
 
             var response = records.Select(r => new FileUploadResponse
             {
-                Id             = r.Id,
-                UserId         = r.UserId,
-                FileName       = r.FileName,
-                BlobName       = r.BlobName,
-                ContentType    = r.ContentType,
-                FileSizeBytes  = r.FileSizeBytes,
-                Purpose        = r.Purpose,
-                Status         = r.Status,
+                Id = r.Id,
+                UserId = r.UserId,
+                FileName = r.FileName,
+                BlobName = r.BlobName,
+                ContentType = r.ContentType,
+                FileSizeBytes = r.FileSizeBytes,
+                Purpose = r.Purpose,
+                Status = r.Status,
                 IngestionStatus = r.IngestionStatus,
                 IngestionError = r.IngestionError,
                 CompletedAtUtc = r.CompletedAtUtc,
-                IngestedAtUtc  = r.IngestedAtUtc,
-                CreatedAtUtc   = r.CreatedAtUtc
+                IngestedAtUtc = r.IngestedAtUtc,
+                CreatedAtUtc = r.CreatedAtUtc
             }).ToList();
 
             return Result<List<FileUploadResponse>>.Success(response);

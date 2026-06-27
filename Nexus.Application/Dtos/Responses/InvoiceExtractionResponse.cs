@@ -9,6 +9,7 @@ namespace Nexus.Application.Dtos.Responses
 
     public class InvoiceDataDto
     {
+        public string? DocType { get; set; }
         public string? VendorName { get; set; }
         public string? VendorAddress { get; set; }
         public string? CustomerName { get; set; }

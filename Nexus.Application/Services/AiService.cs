@@ -415,6 +415,7 @@ namespace Nexus.Application.Services
                     Filename = raw.filename,
                     Data = raw.data is null ? null : new InvoiceDataDto
                     {
+                        DocType       = raw.data.doc_type,
                         VendorName    = raw.data.vendor_name,
                         VendorAddress = raw.data.vendor_address,
                         CustomerName  = raw.data.customer_name,

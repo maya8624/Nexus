@@ -4,6 +4,7 @@ using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.Services;
 using Nexus.Domain.Entities;
+using Nexus.Domain.Enums;
 using Xunit;
 
 namespace Nexus.Tests.Unit.Application
@@ -27,6 +28,7 @@ namespace Nexus.Tests.Unit.Application
             Id            = Guid.NewGuid(),
             UserId        = userId ?? _userId,
             FileUploadId  = fileUploadId ?? Guid.NewGuid(),
+            DocumentType  = DocumentType.Invoice,
             Filename      = "invoice.pdf",
             VendorName    = "Acme Corp",
             VendorAddress = "123 Main St",
@@ -88,6 +90,7 @@ namespace Nexus.Tests.Unit.Application
             Assert.Equal(invoice.Id,            dto.Id);
             Assert.Equal(invoice.UserId,         dto.UserId);
             Assert.Equal(invoice.FileUploadId,   dto.FileUploadId);
+            Assert.Equal(invoice.DocumentType,   dto.DocumentType);
             Assert.Equal(invoice.Filename,        dto.Filename);
             Assert.Equal(invoice.VendorName,      dto.VendorName);
             Assert.Equal(invoice.VendorAddress,   dto.VendorAddress);

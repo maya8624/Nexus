@@ -77,7 +77,7 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 | **AI Features** | Tenant preference property search, suburb market summaries, AI-generated enquiry reply drafts |
 | **File Uploads** | SAS URL flow — client uploads directly to Azure Blob Storage; server issues time-limited SAS tokens and tracks upload status; upload purposes: General, Extraction, Ingestion, Invoice |
 | **Document Ingestion** | Blob trigger (Azure Function) fires on new uploads; calls internal API to forward content to the AI sidecar for indexing |
-| **Invoice Extraction** | AI-powered extraction of structured invoice data (vendor, line items, totals, dates) from uploaded documents; results persisted as `Invoice` records linked to the source file upload and optionally a property |
+| **Invoice Extraction** | AI-powered extraction of structured data from invoices and receipts (vendor, line items, totals, dates); document type (`Invoice` or `Receipt`) is detected by the AI and stored as `DocumentType`; results persisted as `Invoice` records linked to the source file upload |
 | **Enquiries** | Tenants submit enquiries to agents; agents draft and send replies; outgoing reply emails are dispatched via a Hangfire background job |
 | **Auth** | Email/password registration + login; Google external login; JWT (60-min expiry) + rotating refresh tokens (7-day expiry) |
 

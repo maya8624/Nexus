@@ -1,3 +1,5 @@
+using Nexus.Domain.Enums;
+
 namespace Nexus.Application.Dtos.Responses
 {
     public sealed class InvoiceLineItemResponse
@@ -13,6 +15,7 @@ namespace Nexus.Application.Dtos.Responses
         public Guid Id { get; init; }
         public Guid UserId { get; init; }
         public Guid? FileUploadId { get; init; }
+        public DocumentType DocumentType { get; init; }
         public string? Filename { get; init; }
         public string? VendorName { get; init; }
         public string? VendorAddress { get; init; }

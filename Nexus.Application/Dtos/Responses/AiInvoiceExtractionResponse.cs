@@ -11,6 +11,7 @@ namespace Nexus.Application.Dtos.Responses
 
     public class AiInvoiceData
     {
+        public string? doc_type { get; set; }
         public string? vendor_name { get; set; }
         public string? vendor_address { get; set; }
         public string? customer_name { get; set; }

@@ -66,6 +66,7 @@ namespace Nexus.Application.Services
             Id            = invoice.Id,
             UserId        = invoice.UserId,
             FileUploadId  = invoice.FileUploadId,
+            DocumentType  = invoice.DocumentType,
             Filename      = invoice.Filename,
             VendorName    = invoice.VendorName,
             VendorAddress = invoice.VendorAddress,

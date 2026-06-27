@@ -62,6 +62,7 @@ namespace Nexus.Application.Services
                     Id = Guid.NewGuid(),
                     UserId = record.UserId,
                     FileUploadId = record.Id,
+                    DocumentType = data?.DocType == "receipt" ? DocumentType.Receipt : DocumentType.Invoice,
                     Filename = result.Value.Filename,
                     VendorName = data?.VendorName,
                     VendorAddress = data?.VendorAddress,
@@ -94,6 +95,7 @@ namespace Nexus.Application.Services
                 _logger.LogError(ex, "Invoice extraction failed for FileUpload {FileUploadId}.", fileUploadId);
                 record.IngestionStatus = IngestionStatus.Failed;
                 record.IngestionError = ex.Message;
+                throw;
             }
             finally
             {
