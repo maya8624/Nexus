@@ -49,12 +49,14 @@ namespace Nexus.Application.Services
 
                 record.IngestionStatus = IngestionStatus.Completed;
                 record.IngestedAtUtc = DateTimeOffset.UtcNow;
+                record.IngestionError = null;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ingestion failed for FileUpload {FileUploadId}.", fileUploadId);
                 record.IngestionStatus = IngestionStatus.Failed;
                 record.IngestionError = ex.Message;
+                throw;
             }
             finally
             {
