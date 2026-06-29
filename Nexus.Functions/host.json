@@ -9,8 +9,8 @@
     }
   },
   "extensions": {
-    "blobs": {
-      "webhookAuthorizationLevel": "anonymous"
+    "eventGrid": {
+      "maxDeliveryCount": 5
     }
   }
 }

@@ -1,3 +1,4 @@
+using Azure.Messaging.EventGrid;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,12 +25,20 @@ namespace Nexus.Functions.Functions
 
         [Function(nameof(BlobInvoiceExtractionFunction))]
         public async Task Run(
-            [BlobTrigger("%InvoiceContainerName%/{blobName}",
-                        Connection = "BlobStorageConnectionString",
-                        Source = BlobTriggerSource.EventGrid)] Stream blobStream,
-            string blobName,
+            [EventGridTrigger] EventGridEvent eventGridEvent,
             FunctionContext context)
         {
+            var subject = eventGridEvent.Subject;
+            var blobsMarker = "/blobs/";
+            var markerIndex = subject.IndexOf(blobsMarker, StringComparison.Ordinal);
+            if (markerIndex < 0)
+            {
+                _logger.LogWarning("Unexpected subject format: {Subject}", subject);
+                return;
+            }
+
+            var blobName = subject[(markerIndex + blobsMarker.Length)..];
+
             _logger.LogInformation("Invoice extraction triggered for {BlobName} in {Container}.", blobName, _settings.InvoiceContainerName);
 
             var payload = new { BlobName = blobName };
@@ -39,11 +48,10 @@ namespace Nexus.Functions.Functions
 
             var response = await http.PostAsJsonAsync($"{_settings.NexusApiUrl}/api/internal/invoices/extract", payload);
 
-            if (response.IsSuccessStatusCode == false)
+            if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync();
                 _logger.LogError("Invoice extraction API call failed for {BlobName}. Status: {Status}. Body: {Body}", blobName, response.StatusCode, body);
-
                 throw new InvalidOperationException($"Invoice extraction API returned {response.StatusCode} for blob {blobName}.");
             }
 
