@@ -24,7 +24,7 @@ namespace Nexus.Functions.Functions
 
         [Function(nameof(BlobInvoiceExtractionFunction))]
         public async Task Run(
-            [BlobTrigger("%InvoiceContainerName%/{blobName}", Connection = "BlobStorageConnectionString")] Stream blobStream,
+            [BlobTrigger("%InvoiceContainerName%/{blobName}", Connection = "BlobStorageConnectionString", Source = BlobTriggerSource.EventGrid)] Stream blobStream,
             string blobName,
             FunctionContext context)
         {
