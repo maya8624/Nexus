@@ -66,6 +66,17 @@ namespace Nexus.Api.Controllers
             return Ok(result.Value);
         }
 
+        [AllowAnonymous]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+        {
+            var result = await _userService.LogoutAsync(request.RefreshToken, cancellationToken);
+            if (!result.IsSuccess)
+                return MapFailure(result);
+
+            return NoContent();
+        }
+
         [HttpGet("me")]
         public ActionResult<UserResponse> GetMe()
         {

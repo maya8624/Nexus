@@ -606,6 +606,28 @@ namespace Nexus.Tests.Unit.Application
         }
 
         [Fact]
+        public async Task RefreshAsync_WithRevokedToken_ShouldRevokeAllTokensForUser()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+            stored.IsRevoked = true;
+
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+            _refreshTokenRepoMock.Setup(x => x.RevokeAllForUser(user.Id, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+            // Act
+            await _userService.RefreshAsync("revoked_token");
+
+            // Assert
+            _refreshTokenRepoMock.Verify(x => x.RevokeAllForUser(user.Id, It.IsAny<CancellationToken>()), Times.Once);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Once);
+            _refreshTokenRepoMock.Verify(x => x.Create(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+            _tokenServiceMock.Verify(x => x.CreateToken(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+        }
+
+        [Fact]
         public async Task RefreshAsync_WithExpiredToken_ShouldReturnUnauthorized()
         {
             // Arrange
@@ -686,6 +708,82 @@ namespace Nexus.Tests.Unit.Application
             Assert.Equal(userId, persisted.UserId);
             Assert.False(persisted.IsRevoked);
             Assert.True(persisted.ExpiresAt > DateTimeOffset.UtcNow);
+        }
+
+        #endregion
+
+        #region LogoutAsync Tests
+
+        [Fact]
+        public async Task LogoutAsync_WithValidToken_ShouldReturnSuccess()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+
+            _tokenServiceMock.Setup(x => x.HashToken("incoming_token")).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+
+            // Act
+            var result = await _userService.LogoutAsync("incoming_token");
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.True(result.Value);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_WithValidToken_ShouldRevokeToken()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+
+            // Act
+            await _userService.LogoutAsync("incoming_token");
+
+            // Assert
+            Assert.True(stored.IsRevoked);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_WithNonExistentToken_ShouldReturnNotFound()
+        {
+            // Arrange
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync((RefreshToken?)null);
+
+            // Act
+            var result = await _userService.LogoutAsync("ghost_token");
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ResultStatus.NotFound, result.Status);
+            Assert.Equal("REFRESH_TOKEN_NOT_FOUND", result.Errors[0].Code);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Never);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_WithAlreadyRevokedToken_ShouldStillReturnSuccess()
+        {
+            // Arrange
+            var user = SampleUser();
+            var stored = ValidStoredToken(user.Id, user);
+            stored.IsRevoked = true;
+
+            _tokenServiceMock.Setup(x => x.HashToken(It.IsAny<string>())).Returns("hashedtoken");
+            _refreshTokenRepoMock.Setup(x => x.GetByTokenHash("hashedtoken", It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+
+            // Act
+            var result = await _userService.LogoutAsync("already_revoked_token");
+
+            // Assert — logout is idempotent, not a signal of token theft like refresh reuse is
+            Assert.True(result.IsSuccess);
+            Assert.True(stored.IsRevoked);
         }
 
         #endregion

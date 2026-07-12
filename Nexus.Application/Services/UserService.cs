@@ -105,7 +105,19 @@ namespace Nexus.Application.Services
             var tokenHash = _tokenService.HashToken(refreshToken);
             var existing = await _refreshTokenRepo.GetByTokenHash(tokenHash, cancellationToken);
 
-            if (existing == null || existing.IsRevoked || existing.ExpiresAt <= DateTimeOffset.UtcNow)
+            if (existing == null)
+                return Result<UserResponse>.Unauthorized("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired");
+
+            if (existing.IsRevoked)
+            {
+                // Reuse of an already-rotated token signals possible theft — kill every
+                // active refresh token for this user, not just the one presented.
+                await _refreshTokenRepo.RevokeAllForUser(existing.UserId, cancellationToken);
+                await _uow.SaveChanges();
+                return Result<UserResponse>.Unauthorized("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired");
+            }
+
+            if (existing.ExpiresAt <= DateTimeOffset.UtcNow)
                 return Result<UserResponse>.Unauthorized("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired");
 
             existing.IsRevoked = true;
@@ -126,6 +138,20 @@ namespace Nexus.Application.Services
                 Token = accessToken,
                 RefreshToken = newRaw,
             });
+        }
+
+        public async Task<Result<bool>> LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
+        {
+            var tokenHash = _tokenService.HashToken(refreshToken);
+            var existing = await _refreshTokenRepo.GetByTokenHash(tokenHash, cancellationToken);
+
+            if (existing == null)
+                return Result<bool>.NotFound("REFRESH_TOKEN_NOT_FOUND", "Refresh token not found");
+
+            existing.IsRevoked = true;
+            await _uow.SaveChanges();
+
+            return Result<bool>.Success(true);
         }
 
         public async Task<User> CreateAuthUser(ExternalUserResponse externalUser, string providerName, CancellationToken cancellationToken = default)

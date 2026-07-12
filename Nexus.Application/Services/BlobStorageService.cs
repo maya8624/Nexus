@@ -41,7 +41,7 @@ namespace Nexus.Application.Services
             var sasBuilder = new BlobSasBuilder
             {
                 BlobContainerName = containerName,
-                BlobName = blobName,
+                BlobName = blobClient.Name,
                 Resource = "b",
                 ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(_settings.SasExpiryMinutes)
             };

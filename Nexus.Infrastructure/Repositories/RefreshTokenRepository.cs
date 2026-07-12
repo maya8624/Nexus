@@ -15,11 +15,21 @@ namespace Nexus.Infrastructure.Repositories
         }
 
         public Task<RefreshToken?> GetByTokenHash(string tokenHash, CancellationToken ct = default)
-        { 
+        {
             return _context.RefreshTokens
                 .Include(x => x.User)
                 .FirstOrDefaultAsync(x => x.TokenHash == tokenHash, ct);
-        
+
+        }
+
+        public async Task RevokeAllForUser(Guid userId, CancellationToken ct = default)
+        {
+            var tokens = await _context.RefreshTokens
+                .Where(x => x.UserId == userId && !x.IsRevoked)
+                .ToListAsync(ct);
+
+            foreach (var token in tokens)
+                token.IsRevoked = true;
         }
     }
 }
