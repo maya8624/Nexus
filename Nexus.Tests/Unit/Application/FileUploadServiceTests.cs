@@ -353,7 +353,7 @@ namespace Nexus.Tests.Unit.Application
         }
 
         [Fact]
-        public async Task ConfirmAsync_WithIngestionPurpose_ShouldNotSetIngestionStatus()
+        public async Task ConfirmAsync_WithIngestionPurpose_ShouldSetIngestionStatusToQueued()
         {
             var record = BuildPendingRecord(_userId, UploadPurpose.Ingestion, IngestionContainer);
             _repositoryMock
@@ -362,7 +362,7 @@ namespace Nexus.Tests.Unit.Application
 
             await _service.ConfirmAsync(record.Id, _userId, null, CancellationToken.None);
 
-            Assert.Null(record.IngestionStatus);
+            Assert.Equal(IngestionStatus.Queued, record.IngestionStatus);
         }
 
         [Fact]

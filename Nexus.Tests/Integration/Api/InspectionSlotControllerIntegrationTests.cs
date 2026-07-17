@@ -12,7 +12,6 @@ using Xunit;
 
 namespace Nexus.Tests.Integration.Api;
 
-// TODO: All endpoints are [AllowAnonymous] for now — add 401 tests for each endpoint once auth is enforced.
 public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
 {
     #region POST /api/inspection-slots
@@ -87,10 +86,12 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
         using var scope = CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seed = await SeedDataBuilder.SeedAsync(db, PropertyTypeId);
+        JwtTokenHelper.AuthenticateClient(Client, seed.UserId, seed.UserEmail);
 
         var request = new InspectionSlotRequest
         {
             PropertyId = seed.PropertyId,
+            ListingId = seed.ListingId,
             AgentId = Guid.NewGuid(),
             StartAtUtc = DateTimeOffset.UtcNow.AddDays(3),
             EndAtUtc = DateTimeOffset.UtcNow.AddDays(3).AddHours(1),
@@ -114,10 +115,12 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
         using var scope = CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seed = await SeedDataBuilder.SeedAsync(db, PropertyTypeId);
+        JwtTokenHelper.AuthenticateClient(Client, seed.UserId, seed.UserEmail);
 
         var request = new InspectionSlotRequest
         {
             PropertyId = Guid.NewGuid(),
+            ListingId = seed.ListingId,
             AgentId = seed.AgentId,
             StartAtUtc = DateTimeOffset.UtcNow.AddDays(3),
             EndAtUtc = DateTimeOffset.UtcNow.AddDays(3).AddHours(1),
@@ -141,11 +144,13 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
         using var scope = CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seed = await SeedDataBuilder.SeedAsync(db, PropertyTypeId);
+        JwtTokenHelper.AuthenticateClient(Client, seed.UserId, seed.UserEmail);
 
         // Seeded slot is at now+1day to now+1day+1hour — create an overlapping request
         var request = new InspectionSlotRequest
         {
             PropertyId = seed.PropertyId,
+            ListingId = seed.ListingId,
             AgentId = seed.AgentId,
             StartAtUtc = DateTimeOffset.UtcNow.AddDays(1).AddMinutes(30),
             EndAtUtc = DateTimeOffset.UtcNow.AddDays(1).AddHours(2),
@@ -173,9 +178,10 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
         using var scope = CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seed = await SeedDataBuilder.SeedAsync(db, PropertyTypeId);
+        JwtTokenHelper.AuthenticateClient(Client, seed.UserId, seed.UserEmail);
 
         // Act
-        var response = await Client.GetAsync($"/api/inspection-slots/available?listingId={seed.ListingId}");
+        var response = await Client.GetAsync($"/api/inspection-slots/available/{seed.PropertyId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -190,8 +196,11 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task GetAvailable_WithNoSlots_Returns200AndEmptyList()
     {
+        // Arrange
+        JwtTokenHelper.AuthenticateClient(Client, Guid.NewGuid(), "no-slots@nexus.com");
+
         // Act
-        var response = await Client.GetAsync($"/api/inspection-slots/available?listingId={Guid.NewGuid()}");
+        var response = await Client.GetAsync($"/api/inspection-slots/available/{Guid.NewGuid()}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -207,13 +216,14 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
         using var scope = CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seed = await SeedDataBuilder.SeedAsync(db, PropertyTypeId);
+        JwtTokenHelper.AuthenticateClient(Client, seed.UserId, seed.UserEmail);
 
         var slot = await db.InspectionSlots.FindAsync(seed.SlotId);
         slot!.Status = InspectionSlotStatus.Cancelled;
         await db.SaveChangesAsync();
 
         // Act
-        var response = await Client.GetAsync($"/api/inspection-slots/available?listingId={seed.ListingId}");
+        var response = await Client.GetAsync($"/api/inspection-slots/available/{seed.PropertyId}");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -233,6 +243,7 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
         using var scope = CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seed = await SeedDataBuilder.SeedAsync(db, PropertyTypeId);
+        JwtTokenHelper.AuthenticateClient(Client, seed.UserId, seed.UserEmail);
 
         // Act
         var response = await Client.GetAsync($"/api/inspection-slots/{seed.SlotId}");
@@ -250,6 +261,9 @@ public class InspectionSlotControllerIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task GetById_WithNonExistentId_Returns404()
     {
+        // Arrange
+        JwtTokenHelper.AuthenticateClient(Client, Guid.NewGuid(), "not-found@nexus.com");
+
         // Act
         var response = await Client.GetAsync($"/api/inspection-slots/{Guid.NewGuid()}");
 

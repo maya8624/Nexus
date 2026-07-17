@@ -1,3 +1,4 @@
+using Azure.Messaging.EventGrid;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -21,6 +22,13 @@ namespace Nexus.Tests.Unit.Functions
             NexusApiKey = "test-api-key"
         };
 
+        private static EventGridEvent CreateEvent(string blobName, string container = "rec-dev-ingestion")
+            => new(
+                $"/blobServices/default/containers/{container}/blobs/{blobName}",
+                "Microsoft.Storage.BlobCreated",
+                "1.0",
+                new BinaryData("{}"));
+
         private BlobIngestionFunction CreateSut(HttpResponseMessage response)
         {
             var handler = new FakeHttpMessageHandler(response);
@@ -39,7 +47,7 @@ namespace Nexus.Tests.Unit.Functions
         {
             var sut = CreateSut(new HttpResponseMessage(HttpStatusCode.OK));
 
-            await sut.Run(Stream.Null, "test.pdf", null!);
+            await sut.Run(CreateEvent("test.pdf"), null!);
 
             _loggerMock.VerifyLog(LogLevel.Information, "Ingestion job enqueued for test.pdf");
         }
@@ -52,7 +60,7 @@ namespace Nexus.Tests.Unit.Functions
                 Content = new StringContent("upstream error")
             });
 
-            var act = () => sut.Run(Stream.Null, "test.pdf", null!);
+            var act = () => sut.Run(CreateEvent("test.pdf"), null!);
 
             await Assert.ThrowsAsync<InvalidOperationException>(act);
             _loggerMock.VerifyLog(LogLevel.Error, "Ingestion API call failed for test.pdf");

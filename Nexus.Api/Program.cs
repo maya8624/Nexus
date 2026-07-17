@@ -1,6 +1,7 @@
 using Azure.Identity;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
 using Nexus.Api.Extensions;
 using Nexus.Api.Filters;
@@ -55,6 +56,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddNexusAuth(builder.Configuration);
+builder.Services.AddNexusRateLimiting(builder.Configuration);
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddSwaggerGen(options =>
@@ -73,6 +75,17 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Must run before anything that reads HttpContext.Connection.RemoteIpAddress (e.g. rate limiting) —
+// App Service sits in front of the app as a reverse proxy, so without this the app only ever sees
+// App Service's edge IP, not the real client. ForwardLimit = 1 trusts exactly the one hop App Service
+// itself appends; App Service's edge IPs aren't a fixed, enumerable set, so KnownProxies/KnownNetworks
+// isn't usable here.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor,
+    ForwardLimit = 1
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -88,6 +101,8 @@ app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {

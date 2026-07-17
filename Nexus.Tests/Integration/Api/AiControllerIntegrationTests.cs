@@ -7,6 +7,7 @@ using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Exceptions;
 using Nexus.Application.Interfaces;
+using Nexus.Tests.Integration.Helpers;
 using System.Net;
 using System.Net.Http.Json;
 using Xunit;
@@ -19,7 +20,7 @@ public class AiControllerIntegrationTests : IntegrationTestBase
 
     private HttpClient CreateClientWith(Mock<IAiService> mock)
     {
-        return Factory.WithWebHostBuilder(builder =>
+        var client = Factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureServices(services =>
             {
@@ -27,6 +28,10 @@ public class AiControllerIntegrationTests : IntegrationTestBase
                 services.AddScoped<IAiService>(_ => mock.Object);
             });
         }).CreateClient();
+
+        JwtTokenHelper.AuthenticateClient(client, Guid.NewGuid(), "chat@nexus.com");
+
+        return client;
     }
 
     #region POST /api/ai/chat

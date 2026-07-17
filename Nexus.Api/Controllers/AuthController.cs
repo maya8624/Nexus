@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Factories;
@@ -22,6 +23,7 @@ namespace Nexus.Api.Controllers
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("login")]
         [HttpPost("login")]
         public async Task<ActionResult<UserResponse>> Login([FromBody] EmailLoginRequest request, CancellationToken cancellationToken)
         {
@@ -33,6 +35,7 @@ namespace Nexus.Api.Controllers
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("register")]
         [HttpPost("register")]
         public async Task<ActionResult<UserResponse>> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
         {
@@ -56,6 +59,7 @@ namespace Nexus.Api.Controllers
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("refresh")]
         [HttpPost("refresh")]
         public async Task<ActionResult<UserResponse>> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
         {

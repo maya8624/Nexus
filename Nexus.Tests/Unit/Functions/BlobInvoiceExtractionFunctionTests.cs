@@ -1,3 +1,4 @@
+using Azure.Messaging.EventGrid;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -21,6 +22,13 @@ namespace Nexus.Tests.Unit.Functions
             NexusApiUrl            = "https://localhost:7289",
             NexusApiKey            = "test-api-key"
         };
+
+        private static EventGridEvent CreateEvent(string blobName, string container = "rec-dev-invoices")
+            => new(
+                $"/blobServices/default/containers/{container}/blobs/{blobName}",
+                "Microsoft.Storage.BlobCreated",
+                "1.0",
+                new BinaryData("{}"));
 
         private BlobInvoiceExtractionFunction CreateSut(HttpResponseMessage response)
         {
@@ -48,7 +56,7 @@ namespace Nexus.Tests.Unit.Functions
         {
             var sut = CreateSut(new HttpResponseMessage(HttpStatusCode.Accepted));
 
-            await sut.Run(Stream.Null, "invoice.pdf", null!);
+            await sut.Run(CreateEvent("invoice.pdf"), null!);
 
             _loggerMock.VerifyLog(LogLevel.Information, "Invoice extraction job enqueued for invoice.pdf");
         }
@@ -61,7 +69,7 @@ namespace Nexus.Tests.Unit.Functions
                 Content = new StringContent("upstream error")
             });
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Run(Stream.Null, "invoice.pdf", null!));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Run(CreateEvent("invoice.pdf"), null!));
 
             _loggerMock.VerifyLog(LogLevel.Error, "Invoice extraction API call failed for invoice.pdf");
         }
@@ -71,7 +79,7 @@ namespace Nexus.Tests.Unit.Functions
         {
             var sut = CreateSut(new HttpResponseMessage(HttpStatusCode.NotFound));
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Run(Stream.Null, "invoice.pdf", null!));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => sut.Run(CreateEvent("invoice.pdf"), null!));
         }
 
         [Fact]
@@ -79,7 +87,7 @@ namespace Nexus.Tests.Unit.Functions
         {
             var sut = CreateCapturingSut(out var captured);
 
-            await sut.Run(Stream.Null, "invoice.pdf", null!);
+            await sut.Run(CreateEvent("invoice.pdf"), null!);
 
             Assert.Single(captured);
             Assert.Equal(HttpMethod.Post, captured[0].Method);
@@ -91,7 +99,7 @@ namespace Nexus.Tests.Unit.Functions
         {
             var sut = CreateCapturingSut(out var captured);
 
-            await sut.Run(Stream.Null, "invoice.pdf", null!);
+            await sut.Run(CreateEvent("invoice.pdf"), null!);
 
             Assert.True(captured[0].Headers.Contains("X-Api-Key"));
             Assert.Equal("test-api-key", captured[0].Headers.GetValues("X-Api-Key").Single());
@@ -102,11 +110,11 @@ namespace Nexus.Tests.Unit.Functions
         {
             var sut = CreateCapturingSut(out var captured);
 
-            await sut.Run(Stream.Null, "invoices/abc.pdf", null!);
+            await sut.Run(CreateEvent("invoices/abc.pdf"), null!);
 
             var json = await captured[0].Content!.ReadAsStringAsync();
             var doc = JsonDocument.Parse(json);
-            Assert.Equal("invoices/abc.pdf", doc.RootElement.GetProperty("BlobName").GetString());
+            Assert.Equal("invoices/abc.pdf", doc.RootElement.GetProperty("blobName").GetString());
         }
 
         [Fact]
@@ -114,9 +122,9 @@ namespace Nexus.Tests.Unit.Functions
         {
             var sut = CreateSut(new HttpResponseMessage(HttpStatusCode.Accepted));
 
-            await sut.Run(Stream.Null, "invoice.pdf", null!);
+            await sut.Run(CreateEvent("invoice.pdf"), null!);
 
-            _loggerMock.VerifyLog(LogLevel.Information, "invoice.pdf");
+            _loggerMock.VerifyLog(LogLevel.Information, "Invoice extraction triggered for invoice.pdf");
         }
     }
 

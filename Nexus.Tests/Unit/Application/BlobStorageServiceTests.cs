@@ -5,6 +5,7 @@ using Moq;
 using Nexus.Application.Dtos.Requests;
 using Nexus.Application.Services;
 using Nexus.Application.Settings;
+using Nexus.Domain.Enums;
 using Xunit;
 
 namespace Nexus.Tests.Unit.Application
@@ -162,7 +163,8 @@ namespace Nexus.Tests.Unit.Application
             var result = _validator.Validate(new GetUploadUrlRequest
             {
                 FileName = "document.pdf",
-                ContentType = "application/pdf"
+                ContentType = "application/pdf",
+                Purpose = UploadPurpose.General
             });
 
             Assert.True(result.IsValid);
@@ -232,7 +234,8 @@ namespace Nexus.Tests.Unit.Application
             var result = _validator.Validate(new GetUploadUrlRequest
             {
                 FileName = "file.bin",
-                ContentType = contentType
+                ContentType = contentType,
+                Purpose = UploadPurpose.General
             });
 
             Assert.True(result.IsValid);

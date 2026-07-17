@@ -114,7 +114,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.DownloadBlobAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Blob not found."));
 
-            await _job.ExecuteAsync(record.Id);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _job.ExecuteAsync(record.Id));
 
             Assert.Equal(IngestionStatus.Failed, record.IngestionStatus);
             Assert.Equal("Blob not found.", record.IngestionError);
@@ -135,7 +135,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.IngestDocumentAsync(It.IsAny<byte[]>(), It.IsAny<string>(), null, null, It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new AiServiceException("AI unavailable.", new Exception("upstream")));
 
-            await _job.ExecuteAsync(record.Id);
+            await Assert.ThrowsAsync<AiServiceException>(() => _job.ExecuteAsync(record.Id));
 
             Assert.Equal(IngestionStatus.Failed, record.IngestionStatus);
             Assert.NotNull(record.IngestionError);
@@ -152,7 +152,7 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.DownloadBlobAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Blob not found."));
 
-            await _job.ExecuteAsync(record.Id);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _job.ExecuteAsync(record.Id));
 
             _uowMock.Verify(x => x.SaveChanges(), Times.Exactly(2));
         }

@@ -21,11 +21,11 @@ namespace Nexus.Tests.Unit.Api
     public class ExceptionHandlingMiddlewareTests
     {
         [Theory]
-        [InlineData(typeof(NotFoundException), CustomStatusCodes.NotFound, "NOT_FOUND")]
-        [InlineData(typeof(PayPalException), NetworkStatusCodes.PayPalIssue, "PAYPAL_ISSUE")]
-        [InlineData(typeof(PaymentException), CustomStatusCodes.PaymentIssue, "PAYMENT_ISSUE")]
-        [InlineData(typeof(RefundException), CustomStatusCodes.RefundIssue, "REFUND_ISSUE")]
-        public async Task InvokeAsync_WithAppException_ShouldReturnMappedErrorResponse(Type exceptionType, int expectedStatus, string expectedName)
+        [InlineData(typeof(NotFoundException), StatusCodes.Status404NotFound, CustomStatusCodes.NotFound, "NOT_FOUND")]
+        [InlineData(typeof(PayPalException), StatusCodes.Status502BadGateway, NetworkStatusCodes.PayPalIssue, "PAYPAL_ISSUE")]
+        [InlineData(typeof(PaymentException), StatusCodes.Status402PaymentRequired, CustomStatusCodes.PaymentIssue, "PAYMENT_ISSUE")]
+        [InlineData(typeof(RefundException), StatusCodes.Status422UnprocessableEntity, CustomStatusCodes.RefundIssue, "REFUND_ISSUE")]
+        public async Task InvokeAsync_WithAppException_ShouldReturnMappedErrorResponse(Type exceptionType, int expectedHttpStatus, int expectedCode, string expectedName)
         {
             // Arrange
             var context = new DefaultHttpContext();
@@ -45,7 +45,7 @@ namespace Nexus.Tests.Unit.Api
             await middleware.Invoke(context);
 
             // Assert
-            Assert.Equal(expectedStatus, context.Response.StatusCode);
+            Assert.Equal(expectedHttpStatus, context.Response.StatusCode);
             Assert.StartsWith("application/json", context.Response.ContentType);
 
             context.Response.Body.Seek(0, SeekOrigin.Begin);
@@ -57,7 +57,7 @@ namespace Nexus.Tests.Unit.Api
             var response = JsonSerializer.Deserialize<ErrorResponse>(json, options);
 
             Assert.NotNull(response);
-            Assert.Equal(expectedStatus, response.Code);
+            Assert.Equal(expectedCode, response.Code);
             Assert.Equal(expectedName, response.Name);
             Assert.Equal(exceptionMessage, response.Message);
         }

@@ -105,6 +105,7 @@ public static class SeedDataBuilder
         AppDbContext db,
         TestSeedData seed,
         Guid? userId = null,
+        Guid? slotId = null,
         InspectionBookingStatus status = InspectionBookingStatus.Pending)
     {
         var now = DateTimeOffset.UtcNow;
@@ -112,7 +113,7 @@ public static class SeedDataBuilder
         {
             Id = Guid.NewGuid(),
             UserId = userId ?? seed.UserId,
-            InspectionSlotId = seed.SlotId,
+            InspectionSlotId = slotId ?? seed.SlotId,
             PropertyId = seed.PropertyId,
             ListingId = seed.ListingId,
             AgentId = seed.AgentId,
@@ -125,6 +126,31 @@ public static class SeedDataBuilder
         await db.SaveChangesAsync();
 
         return booking;
+    }
+
+    public static async Task<Guid> AddSlotAsync(AppDbContext db, TestSeedData seed, InspectionSlotStatus status = InspectionSlotStatus.Open)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var slotId = Guid.NewGuid();
+
+        db.InspectionSlots.Add(new InspectionSlot
+        {
+            Id = slotId,
+            UserId = seed.UserId,
+            PropertyId = seed.PropertyId,
+            ListingId = seed.ListingId,
+            AgentId = seed.AgentId,
+            StartAtUtc = now.AddDays(2),
+            EndAtUtc = now.AddDays(2).AddHours(1),
+            Capacity = 5,
+            Status = status,
+            CreatedAtUtc = now,
+            UpdatedAtUtc = now
+        });
+
+        await db.SaveChangesAsync();
+
+        return slotId;
     }
 
     public static async Task<User> AddUserAsync(AppDbContext db)

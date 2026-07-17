@@ -191,9 +191,10 @@ public class InspectionBookingControllerIntegrationTests : IntegrationTestBase
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seed = await SeedDataBuilder.SeedAsync(db, PropertyTypeId);
 
-        // Add 2 bookings for this user
+        // Add 2 bookings for this user (different slots — a user can only have one booking per slot)
+        var secondSlotId = await SeedDataBuilder.AddSlotAsync(db, seed);
         await SeedDataBuilder.AddBookingAsync(db, seed);
-        await SeedDataBuilder.AddBookingAsync(db, seed);
+        await SeedDataBuilder.AddBookingAsync(db, seed, slotId: secondSlotId);
 
         // Add 1 booking for a different user on the same slot
         var otherUser = await SeedDataBuilder.AddUserAsync(db);
@@ -328,7 +329,7 @@ public class InspectionBookingControllerIntegrationTests : IntegrationTestBase
     #region PATCH /api/inspection-bookings/{id}/cancel
 
     [Fact]
-    public async Task Cancel_WithPendingBooking_Returns200AndCancelledStatus()
+    public async Task Cancel_WithPendingBooking_Returns204()
     {
         // Arrange
         using var scope = CreateScope();
@@ -342,15 +343,16 @@ public class InspectionBookingControllerIntegrationTests : IntegrationTestBase
         var response = await Client.PatchAsync($"/api/inspection-bookings/{booking.Id}/cancel", null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var body = await response.Content.ReadFromJsonAsync<InspectionBookingDto>(JsonOptions);
-        body!.Status.Should().Be("Cancelled");
-        body.Id.Should().Be(booking.Id);
+        using var scope2 = CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        var updated = await db2.InspectionBookings.FindAsync(booking.Id);
+        updated!.Status.Should().Be(InspectionBookingStatus.Cancelled);
     }
 
     [Fact]
-    public async Task Cancel_WithConfirmedBooking_Returns200AndCancelledStatus()
+    public async Task Cancel_WithConfirmedBooking_Returns204()
     {
         // Arrange
         using var scope = CreateScope();
@@ -364,10 +366,12 @@ public class InspectionBookingControllerIntegrationTests : IntegrationTestBase
         var response = await Client.PatchAsync($"/api/inspection-bookings/{booking.Id}/cancel", null);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var body = await response.Content.ReadFromJsonAsync<InspectionBookingDto>(JsonOptions);
-        body!.Status.Should().Be("Cancelled");
+        using var scope2 = CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        var updated = await db2.InspectionBookings.FindAsync(booking.Id);
+        updated!.Status.Should().Be(InspectionBookingStatus.Cancelled);
     }
 
     [Fact]
