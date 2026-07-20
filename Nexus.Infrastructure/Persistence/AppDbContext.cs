@@ -39,6 +39,9 @@ namespace Nexus.Infrastructure.Persistence
         public DbSet<Lease> Leases => Set<Lease>();
         public DbSet<FileUpload> FileUploads => Set<FileUpload>();
         public DbSet<Invoice> Invoices => Set<Invoice>();
+        public DbSet<Fingerprint> Fingerprints => Set<Fingerprint>();
+        public DbSet<FingerprintOccurrence> FingerprintOccurrences => Set<FingerprintOccurrence>();
+        public DbSet<IngestCursor> IngestCursors => Set<IngestCursor>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

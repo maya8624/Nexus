@@ -32,7 +32,8 @@ Azure App Insights (Log Analytics workspace)
 [.NET] FingerprintRouter ── ownership map (JSON config) → GitHub assignee (no LLM, ever)
    │
    ▼
-[.NET] GitHubIssueService (Octokit) ── create / update / reopen issue, labels
+[.NET] GitHubIssueService (Octokit) ── Python /summarize → title/body/suggested_fix;
+                                        create / update / reopen issue, labels
    │
    ▼
 [.NET] REST API ── consumed by a future React dashboard (not built here)
@@ -57,7 +58,7 @@ Keep `Id` as `string` (`fp_<hash prefix>`), not a `Guid` surrogate key.
   without a DB round-trip — which is exactly what makes the ingest upsert idempotent
   under retry. A surrogate `Guid` would need a `hash → id` lookup before every write
   anyway, so it buys nothing.
-- It's also the GitHub-issue-idempotency key and the REST route key — `fp_a1b2c3` is
+- It's also the GitHub-issue-idempotency key and the REST route key — `fp_a1b2c3d4` is
   far nicer in an issue title/URL or dashboard URL than a GUID.
 - Not a foreign pattern here: `Order`/`Payment` already use `int` PKs, and every
   repository already defines its own typed `GetByIdAsync` rather than relying on the
@@ -96,7 +97,7 @@ public class FingerprintRoutingSettings
 {
     public List<OwnershipRule> Ownership { get; init; } = new();
     public string DefaultAssignee { get; init; } = default!;
-    public List<string> AutoFixAllowlistCategories { get; init; } = new();  // e.g. DataQuality, NewRegression, ConfigAuth
+    public List<string> AutoFixAllowlistCategories { get; init; } = new();  // e.g. DATA_QUALITY, NEW_REGRESSION, CONFIG_AUTH
     public List<string> AutoFixDenylistNamespaces { get; init; } = new();   // e.g. "Nexus.Payments", "Nexus.Auth"
 }
 
@@ -122,6 +123,32 @@ JSON-file-loader needed. List order in the JSON array = evaluation order = "firs
 match wins". A redeploy to change ownership rules is acceptable for MVP; swapping to
 `IOptionsMonitor<T>` later for no-redeploy edits is a one-line future change if ever
 needed.
+
+### LLM-suggested fix — gated by the same auto-fix allow/deny lists
+
+`/summarize` also returns an optional `suggested_fix` string — a human-reviewed
+starting point for whoever the Ownership map assigned the issue to, not an
+autonomous edit. Kept as a distinct field on `AiFingerprintSummarizeResponse` /
+`FingerprintIssueContent`, not folded into `body`:
+
+- `GitHubIssueService` only appends the `## Suggested Fix` section when
+  `fp.AutoFixEligible` is true — reusing the exact same
+  `AutoFixAllowlistCategories` / `AutoFixDenylistNamespaces` guardrail already
+  computed by `FingerprintRuleClassifier` for the `auto-fix-candidate` label
+  (denylist still wins). One classifier-computed flag now gates two things
+  instead of duplicating the allow/deny logic a second time.
+- Keeping it a separate field (rather than embedding the suggestion directly in
+  `body`) means it can be independently included/suppressed, and later measured
+  or iterated on (e.g. thumbs-up/down from the assignee) without touching the
+  summary text itself.
+- Quality is expected to be uneven — the LLM only ever sees the fingerprint's
+  metadata and up to 5 rendered messages, never the actual source. Solid for
+  well-understood categories like `DEPENDENCY_FAILURE`/`CONFIG_AUTH`, weak for
+  `NEW_REGRESSION` where there's no established pattern yet. The issue body
+  should frame it as a starting point, not an authoritative fix.
+- This is unrelated to the out-of-scope GitHub Actions coding-agent workflow —
+  no code is written or run here, it's prose in an issue body for a human to
+  read.
 
 ### One migration for all three new tables
 
@@ -189,7 +216,14 @@ else
     _fingerprintRepository.Update(existing);
 }
 
-await _fingerprintRepository.AddOccurrence(existing.Id, windowFrom, row.Count, ...);
+await _fingerprintRepository.AddOccurrence(new FingerprintOccurrence
+{
+    FingerprintId = existing.Id,
+    OccurredAt = windowFrom,
+    OccurrenceCount = row.Count,
+    RenderedMessage = row.RenderedMessage,
+    CreatedAtUtc = DateTimeOffset.UtcNow
+}, ct);
 await _classifier.ClassifyAsync(existing, isNewFingerprint, row.Count, ct);
 ```
 
@@ -229,7 +263,7 @@ deviation from the int-enum norm elsewhere in the repo.
   {
       public static string ComputeExceptionHash(string problemId);      // SHA256("appinsights|exception|" + problemId)
       public static string ComputeTraceHash(string normalizedMessage);  // SHA256("appinsights|trace|" + normalizedMessage)
-      public static string GenerateFingerprintId(string hashHex);       // "fp_" + hashHex[..6]
+      public static string GenerateFingerprintId(string hashHex);       // "fp_" + hashHex[..8]
       public static string NormalizeMessage(string raw);
   }
   ```
@@ -302,13 +336,16 @@ deviation from the int-enum norm elsewhere in the repo.
 - `Nexus.Application/Services/AppInsightsQueryService.cs` — wraps `LogsQueryClient`,
   holds the two KQL `const string`s, maps `LogsTable` rows → read models.
 - `Nexus.Application/Settings/FingerprintIngestSettings.cs` — `WorkspaceId`,
-  `PollWindowMinutes = 15`, `IngestionLagMinutes = 5`.
+  `BootstrapLookbackMinutes = 60`, `IngestionLagMinutes = 5`.
 - `Nexus.Application/Common/FingerprintHasher.cs`.
 - `Nexus.Application/Constants/FingerprintConstants.cs` — sparkline bucket count (7),
   baseline-spike multiplier (3), comment-throttle window (1h), min digit-run length (3).
 - Register `LogsQueryClient` singleton in `InfrasExtensions.cs` (mirrors
   `BlobServiceClient`): `services.AddSingleton(sp => new LogsQueryClient(new DefaultAzureCredential()))`.
   Bind `FingerprintIngestSettings`.
+- Add `Azure.Monitor.Query` (the `LogsQueryClient`/`LogsQueryResult` SDK) and
+  `Azure.Identity` (`DefaultAzureCredential`) NuGet packages to
+  `Nexus.Application.csproj`.
 - Tests: `Nexus.Tests/Unit/Application/FingerprintHasherTests.cs` (hash determinism,
   each normalization case, ordering edge cases).
 
@@ -325,7 +362,11 @@ deviation from the int-enum norm elsewhere in the repo.
   `ILogger<FingerprintIngestJob>`. `ExecuteAsync()`: read cursor → compute
   `[from, now-5min)` window → run both KQL queries → run each row through
   `FingerprinterService` → advance cursor **only after** `_uow.SaveChanges()`
-  commits the whole batch.
+  commits the whole batch. `from` is the cursor's `LastPolledTo` on every run
+  except the very first — when no `IngestCursor` row exists yet for this
+  `source`, `from` defaults to `now - BootstrapLookbackMinutes` (1 hour) instead
+  of the recurring ~15-minute gap, so the first-ever poll captures a reasonable
+  initial slice of history rather than starting from nothing.
 - Register in `AppExtensions.cs`; add
   `RecurringJob.AddOrUpdate<IFingerprintIngestJob>("fingerprint-ingest", job => job.ExecuteAsync(), "*/15 * * * *")`
   in `Program.cs`, alongside the existing `sas-expiry-check` registration.
@@ -337,7 +378,7 @@ deviation from the int-enum norm elsewhere in the repo.
 ### Phase 4 — Rule classifier + Python `/classify` contract + ownership router
 
 - `Nexus.Application/Settings/FingerprintRoutingSettings.cs` + `OwnershipRule` +
-  `OwnershipMatch` (see [Design decisions](#ownership-map--plain-optionst-binding-a-json-array)).
+  `OwnershipMatch` (see [Design decisions](#ownership-map--plain-ioptions-binding-a-json-array)).
   Add section to `appsettings.json`, bind in `InfrasExtensions.cs`.
 - Extend `AiServiceSettings.cs` with `Classify` and `Summarize` endpoint-path
   properties; add to `appsettings.json`.
@@ -378,15 +419,20 @@ deviation from the int-enum norm elsewhere in the repo.
 - Add `Octokit` NuGet package to `Nexus.Application.csproj`.
 - `Nexus.Application/Dtos/Requests/AiFingerprintSummarizeRequest.cs` (nested
   snake_case fingerprint + last-5-occurrences), `AiFingerprintSummarizeResponse.cs`
-  (`title`, `body`). Add `SummarizeAsync` to `IFingerprintAiService`.
-- `Nexus.Application/ReadModels/FingerprintIssueContent.cs` (`Title`, `Body`).
+  (`title`, `body`, `suggested_fix` — nullable). Add `SummarizeAsync` to
+  `IFingerprintAiService`.
+- `Nexus.Application/ReadModels/FingerprintIssueContent.cs` (`Title`, `Body`,
+  `SuggestedFix` — nullable).
 - `Nexus.Application/Interfaces/Business/IGitHubIssueService.cs` /
   `Nexus.Application/Services/GitHubIssueService.cs`:
   - `ProcessFingerprintAsync(fp, windowOccurrenceCount, isNewRegression, ct)` — used
     by the ingest pipeline; implements all four idempotency branches: no issue +
     `ShouldFileIssue` → create; open issue → throttled count comment (via
     `GithubLastCommentedAtUtc`); closed issue reappears → reopen + "regressed"
-    comment; below-threshold and not new → no-op.
+    comment; below-threshold and not new → no-op. On create, appends a
+    `## Suggested Fix` section built from `SuggestedFix` only when
+    `fp.AutoFixEligible` is true — see
+    [LLM-suggested fix](#llm-suggested-fix--gated-by-the-same-auto-fix-allowdeny-lists).
   - `ForceFileIssueAsync(fp, ct)` — manual REST trigger; skips the noise threshold
     but still respects "already open" / "closed → reopen".
   - `AddAutoFixCandidateLabelAsync(fp, ct)` — the entire "agent loop" hook: adds
@@ -463,13 +509,17 @@ as every other `AiService` call: header `X-API-Key: <AiServiceSettings.ApiKey>`.
 The .NET mapping layer in `FingerprintAiService` is responsible for translating this
 to the `FingerprintCategory` enum.
 
+`category` also indirectly gates whether `/summarize`'s `suggested_fix` is ever
+surfaced — see
+[LLM-suggested fix](#llm-suggested-fix--gated-by-the-same-auto-fix-allowdeny-lists).
+
 ### `POST {AiServiceSettings.BaseUrl}/{AiServiceSettings.Summarize}`
 
 ```json
 // request
 {
   "fingerprint": {
-    "id": "fp_a1b2c3",
+    "id": "fp_a1b2c3d4",
     "level": "error",
     "category": "DEPENDENCY_FAILURE",
     "exception_type": "System.Net.Http.HttpRequestException",
@@ -488,9 +538,16 @@ to the `FingerprintCategory` enum.
 // response
 {
   "title": "DependencyFailure: RagService.QueryDocuments connection refused (47x since Jul 15)",
-  "body": "## Summary\n...\n## Fingerprint\n`fp_a1b2c3`\n..."
+  "body": "## Summary\n...\n## Fingerprint\n`fp_a1b2c3d4`\n...",
+  "suggested_fix": "Check RagService's outbound connection pool / timeout settings against the target host's availability. Consider adding a retry with backoff around RagService.QueryDocuments if the dependency is expected to be intermittently unavailable."
 }
 ```
+
+`suggested_fix` is nullable — the model can return `null` when it has nothing
+useful to add (e.g. `NEW_REGRESSION` with too little context). `.NET` only
+surfaces it on the issue when `fp.AutoFixEligible` is true, regardless of
+whether Python returned a value — see
+[LLM-suggested fix](#llm-suggested-fix--gated-by-the-same-auto-fix-allowdeny-lists).
 
 ---
 
