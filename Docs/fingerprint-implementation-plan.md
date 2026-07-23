@@ -182,12 +182,49 @@ agent loop a post-MVP hook.)
 `Azure.Monitor.Query`'s `LogsQueryResult`/`LogsTable`/`LogsTableRow` have no public
 constructors suited to hand-building fake data cheaply in unit tests. The adapter
 interface (`IAppInsightsQueryService`) returns plain, repo-owned `ReadModels`
-(`AppInsightsExceptionGroupReadModel`, `AppInsightsTraceWarningReadModel`) —
+(`AppInsightsExceptionGroupReadModel`, `AppInsightsTraceWarningGroupReadModel`) —
 `Nexus.Application/ReadModels` is already the repo's home for this kind of internal,
 non-API-exposed projection shape (`AvailableInspectionSlotReadModel`, etc.). Only the
 adapter implementation ever touches `LogsQueryClient`/`LogsQueryResult`; everything
 upstream (fingerprinter, its tests) mocks `IAppInsightsQueryService` and works with
 plain POCOs.
+
+Each instance is one grouped KQL row over the poll window, not one raw telemetry
+record — `Count`/`LastSeen` are aggregates. `AppInsightsExceptionGroupReadModel`
+comes from grouping `exceptions` by `problemId` (App Insights' own "same exception
+shape" key — what `FingerprintHasher.ComputeExceptionHash` hashes into the
+fingerprint id):
+
+```csharp
+var readModel = new AppInsightsExceptionGroupReadModel
+{
+    ProblemId = "Nexus.Application.Services.InvoiceExtractionJob!ExecuteAsync",
+    ExceptionType = "System.Net.Http.HttpRequestException",
+    Operation = "POST /api/internal/invoices/extract",
+    ServiceName = "nexus-api-dev",
+    SampleMessage = "Response status code does not indicate success: 503 (Service Unavailable).",
+    Count = 14,
+    LastSeen = DateTimeOffset.Parse("2026-07-21T09:52:11Z")
+};
+```
+
+`AppInsightsTraceWarningGroupReadModel` comes from grouping `traces` at `warning`
+severity by the *raw* message — normalization (`FingerprintHasher.NormalizeMessage`)
+happens downstream in `FingerprinterService`, not in the adapter:
+
+```csharp
+var readModel = new AppInsightsTraceWarningGroupReadModel
+{
+    RawMessage = "Connection refused to 10.0.0.4:5432",
+    Operation = "RagService.QueryDocuments",
+    ServiceName = "rag-service",
+    Count = 12,
+    LastSeen = DateTimeOffset.Parse("2026-07-16T08:45:00Z")
+};
+```
+
+`Operation`/`ServiceName` are nullable on both models because not every row has
+`operation_Name`/`cloud_RoleName` populated in App Insights.
 
 ### NEW_REGRESSION detection — explicit read-then-branch, not an upsert trick
 
@@ -330,16 +367,16 @@ deviation from the int-enum norm elsewhere in the repo.
 ### Phase 2 — App Insights adapter + hashing/normalization
 
 - `Nexus.Application/ReadModels/AppInsightsExceptionGroupReadModel.cs`,
-  `AppInsightsTraceWarningReadModel.cs`.
+  `AppInsightsTraceWarningGroupReadModel.cs`.
 - `Nexus.Application/Interfaces/IAppInsightsQueryService.cs` —
-  `QueryExceptionGroupsAsync(from, to, ct)`, `QueryTraceWarningsAsync(from, to, ct)`.
+  `QueryExceptionGroupsAsync(from, to, ct)`, `QueryTraceWarningGroupsAsync(from, to, ct)`.
 - `Nexus.Application/Services/AppInsightsQueryService.cs` — wraps `LogsQueryClient`,
   holds the two KQL `const string`s, maps `LogsTable` rows → read models.
 - `Nexus.Application/Settings/FingerprintIngestSettings.cs` — `WorkspaceId`,
-  `BootstrapLookbackMinutes = 60`, `IngestionLagMinutes = 5`.
+  `InitialLookbackMinutes = 60`, `IngestionSafetyLagMinutes = 5`.
 - `Nexus.Application/Common/FingerprintHasher.cs`.
-- `Nexus.Application/Constants/FingerprintConstants.cs` — sparkline bucket count (7),
-  baseline-spike multiplier (3), comment-throttle window (1h), min digit-run length (3).
+- `Nexus.Application/Constants/FingerprintConstants.cs` — sparkline history hours (7),
+  min spike multiplier (3), min hours between comments (1), min digit-run length (3).
 - Register `LogsQueryClient` singleton in `InfrasExtensions.cs` (mirrors
   `BlobServiceClient`): `services.AddSingleton(sp => new LogsQueryClient(new DefaultAzureCredential()))`.
   Bind `FingerprintIngestSettings`.
@@ -364,7 +401,7 @@ deviation from the int-enum norm elsewhere in the repo.
   `FingerprinterService` → advance cursor **only after** `_uow.SaveChanges()`
   commits the whole batch. `from` is the cursor's `LastPolledTo` on every run
   except the very first — when no `IngestCursor` row exists yet for this
-  `source`, `from` defaults to `now - BootstrapLookbackMinutes` (1 hour) instead
+  `source`, `from` defaults to `now - InitialLookbackMinutes` (1 hour) instead
   of the recurring ~15-minute gap, so the first-ever poll captures a reasonable
   initial slice of history rather than starting from nothing.
 - Register in `AppExtensions.cs`; add

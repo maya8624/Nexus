@@ -1,0 +1,10 @@
+namespace Nexus.Application.Constants
+{
+    public static class FingerprintConstants
+    {
+        public const int SparklineHistoryHours = 7;
+        public const int MinSpikeMultiplier = 3;
+        public const int MinHoursBetweenComments = 1;
+        public const int MinDigitRunLength = 3;
+    }
+}

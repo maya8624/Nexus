@@ -1,4 +1,6 @@
-﻿using Azure.Storage.Blobs;
+﻿using Azure.Identity;
+using Azure.Monitor.Query;
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -22,8 +24,10 @@ namespace Nexus.Api.Extensions
             services.Configure<StripeSettings>(config.GetSection(nameof(StripeSettings)));
             services.Configure<SmtpSettings>(config.GetSection(nameof(SmtpSettings)));
             services.Configure<BlobStorageSettings>(config.GetSection(nameof(BlobStorageSettings)));
+            services.Configure<FingerprintIngestSettings>(config.GetSection(nameof(FingerprintIngestSettings)));
             services.AddSingleton(sp =>
                 new BlobServiceClient(sp.GetRequiredService<IOptions<BlobStorageSettings>>().Value.ConnectionString));
+            services.AddSingleton(sp => new LogsQueryClient(new DefaultAzureCredential()));
             services.AddSingleton<IStripeClient>(new StripeClient(config.GetSection(nameof(StripeSettings.SecretKey)).Value));
             services.AddScoped(x => new SessionService(x.GetRequiredService<IStripeClient>()));
 
