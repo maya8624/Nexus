@@ -114,6 +114,11 @@ RecurringJob.AddOrUpdate<ISasExpiryJob>(
     job => job.ExecuteAsync(),
     "*/15 * * * *");
 
+RecurringJob.AddOrUpdate<IFingerprintIngestJob>(
+    "fingerprint-ingest",
+    job => job.ExecuteAsync(),
+    "*/15 * * * *");
+
 app.MapControllers();
 
 

@@ -123,8 +123,22 @@ Full design lives in `Docs/fingerprint-implementation-plan.md` — poll App Insi
 dedupe telemetry into "fingerprints", classify (rules → LLM fallback), route to a
 GitHub assignee, file/update GitHub issues idempotently. Built phase-by-phase, one
 PR per phase; each phase's plan is worked out fresh against the doc before coding.
-**Phase 1 (schema/domain/repositories) is done.** Later phases (App Insights adapter,
-Hangfire ingest job, classifier, GitHub actor, REST API, config) are not yet built.
+**Phases 1–3 are done**: schema/domain/repositories, the App Insights adapter +
+hashing/normalization, and the `FingerprinterService`/`FingerprintIngestJob` pair that
+polls App Insights on a 15-minute Hangfire recurring job and upserts `Fingerprint`/
+`FingerprintOccurrence` rows by hash. Later phases (rule classifier, GitHub actor,
+REST API, routing/GitHub config) are not yet built.
+
+`FingerprintOccurrence` and `IngestCursor` each get their own repository
+(`FingerprintOccurrenceRepository`, `IngestCursorRepository`) instead of a bespoke
+method bolted onto `IFingerprintRepository` — `RepositoryBase<T>`'s generic
+`Create`/`Update` are bound to one `T` per class, so a child/unrelated entity can't
+reuse another aggregate's repository to stage its own writes. `IngestCursorRepository`
+only adds a custom `GetAsync(source, ct)` lookup on top of the inherited `Create`/
+`Update`; the create-vs-update branching for advancing the cursor lives in
+`FingerprintIngestJob.AdvanceCursorAsync` (reusing the `IngestCursor` it already
+fetched at the top of `ExecuteAsync`), not the repository — repositories here stay
+limited to persistence primitives per [Repository + Unit of Work](#repository--unit-of-work).
 
 Two repo-convention deviations, both deliberate:
 - **`Fingerprint.Id` is this repo's first string primary key** (`fp_` + 8 hex chars,

@@ -77,8 +77,10 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
             services.AddScoped<IInvoiceService, InvoiceService>();
             services.AddScoped<IFingerprintRepository, FingerprintRepository>();
+            services.AddScoped<IFingerprintOccurrenceRepository, FingerprintOccurrenceRepository>();
             services.AddScoped<IIngestCursorRepository, IngestCursorRepository>();
             services.AddScoped<IAppInsightsQueryService, AppInsightsQueryService>();
+            services.AddScoped<IFingerprinterService, FingerprinterService>();
             services.AddScoped<IValidator<GetUploadUrlRequest>, GetUploadUrlRequestValidator>();
             services.AddScoped<IValidator<UpdateInvoiceRequest>, UpdateInvoiceRequestValidator>();
             services.AddScoped<IValidator<ConfirmUploadRequest>, ConfirmUploadRequestValidator>();
@@ -86,6 +88,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IIngestionJob, IngestionJob>();
             services.AddScoped<IInvoiceExtractionJob, InvoiceExtractionJob>();
             services.AddScoped<ISasExpiryJob, SasExpiryJob>();
+            services.AddScoped<IFingerprintIngestJob, FingerprintIngestJob>();
             services.AddScoped<InternalApiKeyFilter>();
         }
     }

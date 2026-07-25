@@ -8,7 +8,6 @@ namespace Nexus.Application.Interfaces.Repository
     {
         Task<Fingerprint?> GetByIdAsync(string id, CancellationToken ct);
         Task<Fingerprint?> GetByHashAsync(string hash, CancellationToken ct);
-        Task AddOccurrence(FingerprintOccurrence occurrence, CancellationToken ct);
         Task<IList<Fingerprint>> GetOpenAsync(FingerprintLevel? level, CancellationToken ct);
         Task<IList<FingerprintSparklineBucketReadModel>> GetSparklineBucketsAsync(string fingerprintId, int bucketCount, CancellationToken ct);
         Task<FingerprintHourlyBaselineReadModel?> GetHourlyBaselineAsync(string fingerprintId, CancellationToken ct);

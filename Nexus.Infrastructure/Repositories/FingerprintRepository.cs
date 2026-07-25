@@ -28,11 +28,6 @@ namespace Nexus.Infrastructure.Repositories
                 .FirstOrDefaultAsync(ct);
         }
 
-        public async Task AddOccurrence(FingerprintOccurrence occurrence, CancellationToken ct)
-        {
-            await _context.FingerprintOccurrences.AddAsync(occurrence, ct);
-        }
-
         public async Task<IList<Fingerprint>> GetOpenAsync(FingerprintLevel? level, CancellationToken ct)
         {
             return await _context.Fingerprints
