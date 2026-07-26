@@ -11,13 +11,16 @@ namespace Nexus.Application.Services
     {
         private readonly IFingerprintRepository _fingerprintRepository;
         private readonly IFingerprintOccurrenceRepository _fingerprintOccurrenceRepository;
+        private readonly IFingerprintClassifier _classifier;
 
         public FingerprinterService(
             IFingerprintRepository fingerprintRepository,
-            IFingerprintOccurrenceRepository fingerprintOccurrenceRepository)
+            IFingerprintOccurrenceRepository fingerprintOccurrenceRepository,
+            IFingerprintClassifier classifier)
         {
             _fingerprintRepository = fingerprintRepository;
             _fingerprintOccurrenceRepository = fingerprintOccurrenceRepository;
+            _classifier = classifier;
         }
 
         public async Task<(Fingerprint Fingerprint, bool IsNewFingerprint, int WindowCount)> ProcessExceptionGroupAsync(
@@ -52,6 +55,8 @@ namespace Nexus.Application.Services
             {
                 UpdateFingerprint(existing, row.Count, row.LastSeen, now);
             }
+
+            await _classifier.ClassifyAsync(existing, isNew, row.Count, row.ProblemId, ct);
 
             await AddOccurrenceAsync(existing.Id, windowFrom, row.Count, row.SampleMessage, now, ct);
 
@@ -91,6 +96,8 @@ namespace Nexus.Application.Services
             {
                 UpdateFingerprint(existing, row.Count, row.LastSeen, now);
             }
+
+            await _classifier.ClassifyAsync(existing, isNew, row.Count, problemId: null, ct);
 
             await AddOccurrenceAsync(existing.Id, windowFrom, row.Count, row.RawMessage, now, ct);
 

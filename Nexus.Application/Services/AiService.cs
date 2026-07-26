@@ -10,7 +10,6 @@ using Nexus.Domain.Enums;
 using Nexus.Application.Settings;
 using Nexus.Domain.ValueObjects;
 using Nexus.Network;
-using Nexus.Network.Enums;
 using Nexus.Network.Interfaces;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
@@ -81,7 +80,7 @@ namespace Nexus.Application.Services
                 }
             };
 
-            var options = BuildAiRequestOptions(aiServiceRequest, _settings.Chat);
+            var options = AiRequestOptionsFactory.Build(_settings, aiServiceRequest, _settings.Chat);
 
             try
             {
@@ -131,7 +130,7 @@ namespace Nexus.Application.Services
                 availableWithinDays = request.AvailableWithinDays
             };
 
-            var options = BuildAiRequestOptions(aiRequest, _settings.Preferences);
+            var options = AiRequestOptionsFactory.Build(_settings, aiRequest, _settings.Preferences);
 
             try
             {
@@ -176,7 +175,7 @@ namespace Nexus.Application.Services
                 return Result<SuburbSummaryResponse>.NotFound("UserNotFound", "User not found or inactive.");
 
             var aiRequest = new { suburbs = request.Suburbs };
-            var options = BuildAiRequestOptions(aiRequest, _settings.SuburbSummary);
+            var options = AiRequestOptionsFactory.Build(_settings, aiRequest, _settings.SuburbSummary);
 
             try
             {
@@ -225,7 +224,7 @@ namespace Nexus.Application.Services
                 intent = enquiry.Intent
             };
 
-            var options = BuildAiRequestOptions(aiRequest, _settings.EnquiryDraft);
+            var options = AiRequestOptionsFactory.Build(_settings, aiRequest, _settings.EnquiryDraft);
 
             try
             {
@@ -330,36 +329,6 @@ namespace Nexus.Application.Services
             }
         }
 
-        private RequestBuilderOptions BuildAiRequestOptions(object body, string endpoint)
-        {
-            return new RequestBuilderOptions
-            {
-                Method = HttpMethod.Post,
-                AuthScheme = AuthScheme.None,
-                Headers = new Dictionary<string, string>
-                {
-                    ["X-API-Key"] = _settings.ApiKey
-                },
-                Body = body,
-                Url = $"{_settings.BaseUrl}/{endpoint}"
-            };
-        }
-
-        private RequestBuilderOptions BuildAiRequestOptions(HttpContent content, string endpoint)
-        {
-            return new RequestBuilderOptions
-            {
-                Method = HttpMethod.Post,
-                AuthScheme = AuthScheme.None,
-                Headers = new Dictionary<string, string>
-                {
-                    ["X-API-Key"] = _settings.ApiKey
-                },
-                Content = content,
-                Url = $"{_settings.BaseUrl}/{endpoint}"
-            };
-        }
-
         public async Task<Result<DocumentIngestionResponse>> IngestDocumentAsync(byte[] fileBytes, string fileName, string? propertyId, string? docType, CancellationToken ct)
         {
             using var form = new MultipartFormDataContent();
@@ -367,7 +336,7 @@ namespace Nexus.Application.Services
             if (propertyId is not null) form.Add(new StringContent(propertyId), "property_id");
             if (docType is not null) form.Add(new StringContent(docType), "doc_type");
 
-            var options = BuildAiRequestOptions(form, _settings.Ingestion);
+            var options = AiRequestOptionsFactory.Build(_settings, form, _settings.Ingestion);
             var request = HttpRequestFactory.CreateHttpRequestMessage(options);
 
             try
@@ -398,7 +367,7 @@ namespace Nexus.Application.Services
             using var form = new MultipartFormDataContent();
             form.Add(new ByteArrayContent(fileBytes), "file", fileName);
 
-            var options = BuildAiRequestOptions(form, _settings.InvoiceExtract);
+            var options = AiRequestOptionsFactory.Build(_settings, form, _settings.InvoiceExtract);
             var request = HttpRequestFactory.CreateHttpRequestMessage(options);
 
             try

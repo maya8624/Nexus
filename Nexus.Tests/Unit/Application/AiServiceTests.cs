@@ -48,7 +48,9 @@ namespace Nexus.Tests.Unit.Application
                 SuburbSummary  = "api/suburb-summary",
                 EnquiryDraft   = "api/enquiry/draft",
                 Ingestion      = "api/ingest",
-                InvoiceExtract = "api/documents/invoice-extract"
+                InvoiceExtract = "api/documents/invoice-extract",
+                Classify       = "api/fingerprints/classify",
+                Summarize      = "api/fingerprints/summarize"
             });
 
             _service = new AiService(

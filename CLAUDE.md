@@ -123,11 +123,45 @@ Full design lives in `Docs/fingerprint-implementation-plan.md` — poll App Insi
 dedupe telemetry into "fingerprints", classify (rules → LLM fallback), route to a
 GitHub assignee, file/update GitHub issues idempotently. Built phase-by-phase, one
 PR per phase; each phase's plan is worked out fresh against the doc before coding.
-**Phases 1–3 are done**: schema/domain/repositories, the App Insights adapter +
-hashing/normalization, and the `FingerprinterService`/`FingerprintIngestJob` pair that
+**Phases 1–4 are done**: schema/domain/repositories, the App Insights adapter +
+hashing/normalization, the `FingerprinterService`/`FingerprintIngestJob` pair that
 polls App Insights on a 15-minute Hangfire recurring job and upserts `Fingerprint`/
-`FingerprintOccurrence` rows by hash. Later phases (rule classifier, GitHub actor,
-REST API, routing/GitHub config) are not yet built.
+`FingerprintOccurrence` rows by hash, and the rule classifier + Python `/classify`
+contract + ownership router. Later phases (GitHub actor, REST API, routing/GitHub
+config) are not yet built.
+
+**Phase 4** wires classification into `FingerprinterService`, immediately after the
+upsert `if/else` and before `AddOccurrenceAsync`, via `IFingerprintClassifier`
+(`FingerprintRuleClassifierService`): `NEW_REGRESSION` short-circuits on `isNewFingerprint`
+before any repository/AI call; then fixed-priority content rules match
+`ExceptionType`/`MessageTemplate` keyword tables (`DependencyFailure` >
+`ConfigAuth` > `DataQuality` > `Performance`); then `RECURRING_KNOWN` compares the
+window count against `GetHourlyBaselineAsync(...) * FingerprintConstants.MinSpikeMultiplier`
+(that baseline averages the fingerprint's *whole* occurrence history, not a recent
+window — an accepted MVP tradeoff, not a bug); only if nothing matched **and**
+`fingerprint.Category is null` (classify once, sticky — a later rule can still
+override a stale LLM call, but a bad LLM result isn't retried) does it fall back to
+`IFingerprintAiService.ClassifyAsync`. A `FingerprintAiServiceException` from that
+call is caught and swallowed *inside the classifier*, not propagated — one flaky AI
+call must not abort the whole poll batch's single end-of-job `SaveChanges`, so the
+fingerprint is just left unclassified and retried next poll.
+
+`AutoFixEligible` is computed by every branch that sets a category, gated on
+`AutoFixAllowlistCategories`/`AutoFixDenylistNamespaces` (`FingerprintRoutingSettings`)
+and matched against `row.ProblemId` — the only namespace-shaped string available
+(e.g. `"Nexus.Application.Services.InvoiceExtractionJob!ExecuteAsync"`), passed as
+an extra classifier parameter since it's never persisted on `Fingerprint` itself.
+Trace/warning-origin rows have no `ProblemId` at all, so `problemId is null` **fails
+closed** — trace-origin fingerprints can never be `AutoFixEligible` in Phase 4.
+`FingerprintCategoryWireFormat` (`Common/`) is the one place that converts between
+the enum's PascalCase C# names and the SCREAMING_SNAKE_CASE strings the Python
+contract / GitHub labels / `AutoFixAllowlistCategories` all use.
+
+`IFingerprintRouter`/`FingerprintRouter` and `FingerprintFilingPolicy` are both
+built, unit-tested, and registered in DI in Phase 4 but **not called** from
+`FingerprinterService`/`FingerprintIngestJob` — neither has a real consumer until
+Phase 5's GitHub actor exists. Don't treat their absence from the ingest pipeline as
+a missed wiring step; it's deliberate.
 
 `FingerprintOccurrence` and `IngestCursor` each get their own repository
 (`FingerprintOccurrenceRepository`, `IngestCursorRepository`) instead of a bespoke

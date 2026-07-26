@@ -26,7 +26,7 @@ Azure App Insights (Log Analytics workspace)
 [.NET] FingerprinterService ── normalize to fingerprint id, upsert counts in Postgres
    │
    ▼
-[.NET] FingerprintRuleClassifier ── known patterns → category; unknown → Python /classify
+[.NET] FingerprintRuleClassifierService ── known patterns → category; unknown → Python /classify
    │
    ▼
 [.NET] FingerprintRouter ── ownership map (JSON config) → GitHub assignee (no LLM, ever)
@@ -134,7 +134,7 @@ autonomous edit. Kept as a distinct field on `AiFingerprintSummarizeResponse` /
 - `GitHubIssueService` only appends the `## Suggested Fix` section when
   `fp.AutoFixEligible` is true — reusing the exact same
   `AutoFixAllowlistCategories` / `AutoFixDenylistNamespaces` guardrail already
-  computed by `FingerprintRuleClassifier` for the `auto-fix-candidate` label
+  computed by `FingerprintRuleClassifierService` for the `auto-fix-candidate` label
   (denylist still wins). One classifier-computed flag now gates two things
   instead of duplicating the allow/deny logic a second time.
 - Keeping it a separate field (rather than embedding the suggestion directly in
@@ -422,15 +422,15 @@ deviation from the int-enum norm elsewhere in the repo.
 - `Nexus.Application/Dtos/Requests/AiFingerprintClassifyRequest.cs` (snake_case:
   `exception_type`, `message_template`, `sample_trace`, `operation`),
   `Nexus.Application/Dtos/Responses/AiFingerprintClassifyResponse.cs` (`category`,
-  `confidence`, `rationale`).
+  `confidence`, `reason`).
 - `Nexus.Application/ReadModels/FingerprintClassificationResult.cs` (`Category`,
-  `Confidence`, `Rationale`, `Source`).
+  `Confidence`, `Reason`, `Source`).
 - `Nexus.Application/Interfaces/IFingerprintAiService.cs` /
   `Nexus.Application/Services/FingerprintAiService.cs` — `ClassifyAsync(...)`,
   builds request/maps response exactly like `AiService`, throws
   `FingerprintAiServiceException` on failure (mirrors `AiServiceException`).
 - `Nexus.Application/Interfaces/Business/IFingerprintClassifier.cs` /
-  `Nexus.Application/Services/FingerprintRuleClassifier.cs` — rule table first
+  `Nexus.Application/Services/FingerprintRuleClassifierService.cs` — rule table first
   (`DEPENDENCY_FAILURE`, `CONFIG_AUTH`, `DATA_QUALITY`, `PERFORMANCE` matchers;
   `RECURRING_KNOWN` via `GetHourlyBaselineAsync` + 3x multiplier; `NEW_REGRESSION`
   short-circuits on `isNewFingerprint == true` before any other rule runs); falls
@@ -442,7 +442,7 @@ deviation from the int-enum norm elsewhere in the repo.
   `Ownership`, falls back to `DefaultAssignee`. No LLM call, ever.
 - Wire classifier + router into `FingerprinterService`/`FingerprintIngestJob`,
   immediately after upsert, before occurrence commit.
-- Tests: `FingerprintRuleClassifierTests.cs` (each taxonomy rule; LLM fallback only
+- Tests: `FingerprintRuleClassifierServiceTests.cs` (each taxonomy rule; LLM fallback only
   when no rule matches; `NEW_REGRESSION` short-circuit verified via `Times.Never` on
   the AI mock), `FingerprintRouterTests.cs`, `FingerprintFilingPolicyTests.cs`.
 
@@ -537,7 +537,7 @@ as every other `AiService` call: header `X-API-Key: <AiServiceSettings.ApiKey>`.
 {
   "category": "DEPENDENCY_FAILURE",
   "confidence": 0.87,
-  "rationale": "Outbound HTTP timeout to an external service dependency."
+  "reason": "Outbound HTTP timeout to an external service dependency."
 }
 ```
 

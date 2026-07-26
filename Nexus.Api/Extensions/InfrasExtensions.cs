@@ -25,6 +25,7 @@ namespace Nexus.Api.Extensions
             services.Configure<SmtpSettings>(config.GetSection(nameof(SmtpSettings)));
             services.Configure<BlobStorageSettings>(config.GetSection(nameof(BlobStorageSettings)));
             services.Configure<FingerprintIngestSettings>(config.GetSection(nameof(FingerprintIngestSettings)));
+            services.Configure<FingerprintRoutingSettings>(config.GetSection(nameof(FingerprintRoutingSettings)));
             services.AddSingleton(sp =>
                 new BlobServiceClient(sp.GetRequiredService<IOptions<BlobStorageSettings>>().Value.ConnectionString));
             services.AddSingleton(sp => new LogsQueryClient(new DefaultAzureCredential()));

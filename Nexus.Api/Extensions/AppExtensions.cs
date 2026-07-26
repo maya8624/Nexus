@@ -80,6 +80,9 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IFingerprintOccurrenceRepository, FingerprintOccurrenceRepository>();
             services.AddScoped<IIngestCursorRepository, IngestCursorRepository>();
             services.AddScoped<IAppInsightsQueryService, AppInsightsQueryService>();
+            services.AddScoped<IFingerprintAiService, FingerprintAiService>();
+            services.AddScoped<IFingerprintClassifier, FingerprintRuleClassifierService>();
+            services.AddScoped<IFingerprintRouter, FingerprintRouter>();
             services.AddScoped<IFingerprinterService, FingerprinterService>();
             services.AddScoped<IValidator<GetUploadUrlRequest>, GetUploadUrlRequestValidator>();
             services.AddScoped<IValidator<UpdateInvoiceRequest>, UpdateInvoiceRequestValidator>();

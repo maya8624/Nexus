@@ -1,5 +1,6 @@
 using Moq;
 using Nexus.Application.Common;
+using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.ReadModels;
 using Nexus.Application.Services;
@@ -14,11 +15,12 @@ namespace Nexus.Tests.Unit.Application
     {
         private readonly Mock<IFingerprintRepository> _repositoryMock = new();
         private readonly Mock<IFingerprintOccurrenceRepository> _occurrenceRepositoryMock = new();
+        private readonly Mock<IFingerprintClassifier> _classifierMock = new();
         private readonly FingerprinterService _service;
 
         public FingerprinterServiceTests()
         {
-            _service = new FingerprinterService(_repositoryMock.Object, _occurrenceRepositoryMock.Object);
+            _service = new FingerprinterService(_repositoryMock.Object, _occurrenceRepositoryMock.Object, _classifierMock.Object);
         }
 
         private static AppInsightsExceptionGroupReadModel BuildExceptionRow(
@@ -172,6 +174,34 @@ namespace Nexus.Tests.Unit.Application
             var (fingerprint, _, _) = await _service.ProcessExceptionGroupAsync(row, row.LastSeen, CancellationToken.None);
 
             Assert.Equal(500, fingerprint.ExceptionType!.Length);
+        }
+
+        [Fact]
+        public async Task ProcessExceptionGroupAsync_CallsClassifierWithProblemIdAndWindowCount()
+        {
+            var row = BuildExceptionRow(count: 7);
+            _repositoryMock
+                .Setup(x => x.GetByHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Fingerprint?)null);
+
+            await _service.ProcessExceptionGroupAsync(row, row.LastSeen, CancellationToken.None);
+
+            _classifierMock.Verify(x => x.ClassifyAsync(
+                It.IsAny<Fingerprint>(), true, row.Count, row.ProblemId, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ProcessTraceWarningGroupAsync_CallsClassifierWithNullProblemId()
+        {
+            var row = BuildTraceRow(count: 4);
+            _repositoryMock
+                .Setup(x => x.GetByHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Fingerprint?)null);
+
+            await _service.ProcessTraceWarningGroupAsync(row, row.LastSeen, CancellationToken.None);
+
+            _classifierMock.Verify(x => x.ClassifyAsync(
+                It.IsAny<Fingerprint>(), true, row.Count, null, It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 }
