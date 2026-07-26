@@ -94,7 +94,7 @@ The Event Grid subscriptions must be created manually via **REST API** — the A
 The `eventgrid_extension` system key can be retrieved from the function app's host keys in the Azure portal. URL-encode the key (`==` → `%3D%3D`) when constructing the webhook URL via REST API.
 
 ### AI sidecar (rec_brain)
-Base URL and endpoint paths live under `AiServiceSettings`. All requests require `X-API-Key` header. `AiService` wraps all calls; raw Python response DTOs use snake_case fields (e.g. `AiInvoiceExtractionResponse`), which are mapped to PascalCase application DTOs before returning.
+Base URL and endpoint paths live under `AiServiceSettings`. All requests require `X-API-Key` header. `AiService` wraps the chat/ingestion/invoice calls and `FingerprintAiService` wraps `/classify`; both build their `RequestBuilderOptions` through the shared `AiRequestOptionsFactory` (`Nexus.Application/Common/`) — don't re-add per-service private builder methods. Raw Python response DTOs use snake_case fields (e.g. `AiInvoiceExtractionResponse`), which are mapped to PascalCase application DTOs before returning.
 
 ### Database
 PostgreSQL via EF Core with Npgsql snake_case naming convention. Migrations are in `Nexus.Infrastructure/Migrations/`. Add migrations with:
@@ -156,6 +156,14 @@ closed** — trace-origin fingerprints can never be `AutoFixEligible` in Phase 4
 `FingerprintCategoryWireFormat` (`Common/`) is the one place that converts between
 the enum's PascalCase C# names and the SCREAMING_SNAKE_CASE strings the Python
 contract / GitHub labels / `AutoFixAllowlistCategories` all use.
+
+The `/classify` response contract is `category`/`confidence`/`reason`
+(`AiFingerprintClassifyResponse`; the explanation field was renamed from
+`rationale` to `reason` on the C# side). **The rec_brain Python side still sends
+`"rationale"` and has not been updated yet** — the field is `required`, so
+deserialization of a real `/classify` response will fail until rec_brain sends
+`"reason"`. Update the sidecar (or add `[JsonPropertyName("rationale")]`) before
+exercising the LLM fallback against the real service.
 
 `IFingerprintRouter`/`FingerprintRouter` and `FingerprintFilingPolicy` are both
 built, unit-tested, and registered in DI in Phase 4 but **not called** from
