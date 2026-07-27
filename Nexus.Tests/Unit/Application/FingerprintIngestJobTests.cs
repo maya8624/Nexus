@@ -19,6 +19,7 @@ namespace Nexus.Tests.Unit.Application
     {
         private readonly Mock<IAppInsightsQueryService> _appInsightsMock = new();
         private readonly Mock<IFingerprinterService> _fingerprinterMock = new();
+        private readonly Mock<IGitHubIssueService> _gitHubIssueServiceMock = new();
         private readonly Mock<IIngestCursorRepository> _cursorRepositoryMock = new();
         private readonly Mock<IUnitOfWork> _uowMock = new();
         private readonly Mock<ILogger<FingerprintIngestJob>> _loggerMock = new();
@@ -44,6 +45,7 @@ namespace Nexus.Tests.Unit.Application
             _job = new FingerprintIngestJob(
                 _appInsightsMock.Object,
                 _fingerprinterMock.Object,
+                _gitHubIssueServiceMock.Object,
                 _cursorRepositoryMock.Object,
                 _uowMock.Object,
                 settings,

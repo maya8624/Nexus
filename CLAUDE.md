@@ -123,12 +123,13 @@ Full design lives in `Docs/fingerprint-implementation-plan.md` — poll App Insi
 dedupe telemetry into "fingerprints", classify (rules → LLM fallback), route to a
 GitHub assignee, file/update GitHub issues idempotently. Built phase-by-phase, one
 PR per phase; each phase's plan is worked out fresh against the doc before coding.
-**Phases 1–4 are done**: schema/domain/repositories, the App Insights adapter +
+**Phases 1–5 are done**: schema/domain/repositories, the App Insights adapter +
 hashing/normalization, the `FingerprinterService`/`FingerprintIngestJob` pair that
 polls App Insights on a 15-minute Hangfire recurring job and upserts `Fingerprint`/
-`FingerprintOccurrence` rows by hash, and the rule classifier + Python `/classify`
-contract + ownership router. Later phases (GitHub actor, REST API, routing/GitHub
-config) are not yet built.
+`FingerprintOccurrence` rows by hash, the rule classifier + Python `/classify`
+contract + ownership router, and the GitHub actor (`GitHubIssueService`, Octokit)
++ Python `/summarize` contract. Later phases (REST API, real routing/GitHub
+config values) are not yet built.
 
 **Phase 4** wires classification into `FingerprinterService`, immediately after the
 upsert `if/else` and before `AddOccurrenceAsync`, via `IFingerprintClassifier`
@@ -159,17 +160,28 @@ contract / GitHub labels / `AutoFixAllowlistCategories` all use.
 
 The `/classify` response contract is `category`/`confidence`/`reason`
 (`AiFingerprintClassifyResponse`; the explanation field was renamed from
-`rationale` to `reason` on the C# side). **The rec_brain Python side still sends
-`"rationale"` and has not been updated yet** — the field is `required`, so
-deserialization of a real `/classify` response will fail until rec_brain sends
-`"reason"`. Update the sidecar (or add `[JsonPropertyName("rationale")]`) before
-exercising the LLM fallback against the real service.
+`rationale` to `reason`, and the rec_brain Python side has been updated to
+send `"reason"` as well — both sides now match).
 
-`IFingerprintRouter`/`FingerprintRouter` and `FingerprintFilingPolicy` are both
-built, unit-tested, and registered in DI in Phase 4 but **not called** from
-`FingerprinterService`/`FingerprintIngestJob` — neither has a real consumer until
-Phase 5's GitHub actor exists. Don't treat their absence from the ingest pipeline as
-a missed wiring step; it's deliberate.
+**Phase 5** adds the GitHub actor: `IGitHubIssueService`/`GitHubIssueService`
+(Octokit; `IGitHubClient` registered singleton in `InfrasExtensions`, credentials
+skipped when `GitHubSettings.Token` is blank so local boot doesn't crash).
+`FingerprintIngestJob` calls `ProcessFingerprintAsync(fp, windowCount, isNew, ct)`
+per row after the fingerprinter tuple returns; this is where the Phase 4-built
+`FingerprintRouter` (issue assignee) and `FingerprintFilingPolicy` (noise
+threshold) finally get their consumers. Four idempotency branches keyed off
+`GithubStatus`: `None` + `ShouldFileIssue` → create (labels `severity/<level>`,
+`category/<WIRE>`, assignee from router, body from `/summarize` with
+`## Suggested Fix` appended only when `AutoFixEligible`); `Open` → count comment
+throttled via `GithubLastCommentedAtUtc` (min 1h); `Closed` → reopen + "Regressed"
+comment; `Pr`/`Merged`/below-threshold → no-op. All GitHub/AI failures are
+swallowed inside `ProcessFingerprintAsync` (same batch-safety rationale as the
+classifier); `ForceFileIssueAsync`/`AddAutoFixCandidateLabelAsync` (for Phase 6's
+REST API) do *not* swallow and return `Result<Fingerprint>` with `Conflict` for
+already-open / not-eligible / no-issue cases. `GitHubIssueService` calls
+`_uow.SaveChanges()` immediately after each GitHub side effect rather than
+waiting for the job's batch commit — a crash between issue creation and the batch
+commit would lose the issue number and file a duplicate next poll.
 
 `FingerprintOccurrence` and `IngestCursor` each get their own repository
 (`FingerprintOccurrenceRepository`, `IngestCursorRepository`) instead of a bespoke

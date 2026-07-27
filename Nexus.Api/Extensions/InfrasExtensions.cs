@@ -26,9 +26,20 @@ namespace Nexus.Api.Extensions
             services.Configure<BlobStorageSettings>(config.GetSection(nameof(BlobStorageSettings)));
             services.Configure<FingerprintIngestSettings>(config.GetSection(nameof(FingerprintIngestSettings)));
             services.Configure<FingerprintRoutingSettings>(config.GetSection(nameof(FingerprintRoutingSettings)));
+            services.Configure<GitHubSettings>(config.GetSection(nameof(GitHubSettings)));
             services.AddSingleton(sp =>
                 new BlobServiceClient(sp.GetRequiredService<IOptions<BlobStorageSettings>>().Value.ConnectionString));
             services.AddSingleton(sp => new LogsQueryClient(new DefaultAzureCredential()));
+            services.AddSingleton<Octokit.IGitHubClient>(sp =>
+            {
+                var settings = sp.GetRequiredService<IOptions<GitHubSettings>>().Value;
+                var client = new Octokit.GitHubClient(new Octokit.ProductHeaderValue("Nexus"));
+                // Blank placeholder token (local dev before setup) must not crash app boot -
+                // Octokit's Credentials ctor rejects empty strings.
+                if (!string.IsNullOrWhiteSpace(settings.Token))
+                    client.Credentials = new Octokit.Credentials(settings.Token);
+                return client;
+            });
             services.AddSingleton<IStripeClient>(new StripeClient(config.GetSection(nameof(StripeSettings.SecretKey)).Value));
             services.AddScoped(x => new SessionService(x.GetRequiredService<IStripeClient>()));
 

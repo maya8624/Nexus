@@ -84,6 +84,7 @@ namespace Nexus.Application.Extensions
             services.AddScoped<IFingerprintClassifier, FingerprintRuleClassifierService>();
             services.AddScoped<IFingerprintRouter, FingerprintRouter>();
             services.AddScoped<IFingerprinterService, FingerprinterService>();
+            services.AddScoped<IGitHubIssueService, GitHubIssueService>();
             services.AddScoped<IValidator<GetUploadUrlRequest>, GetUploadUrlRequestValidator>();
             services.AddScoped<IValidator<UpdateInvoiceRequest>, UpdateInvoiceRequestValidator>();
             services.AddScoped<IValidator<ConfirmUploadRequest>, ConfirmUploadRequestValidator>();

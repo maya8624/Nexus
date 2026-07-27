@@ -14,6 +14,7 @@ namespace Nexus.Application.Services
     {
         private readonly IAppInsightsQueryService _appInsightsQueryService;
         private readonly IFingerprinterService _fingerprinterService;
+        private readonly IGitHubIssueService _gitHubIssueService;
         private readonly IIngestCursorRepository _cursorRepository;
         private readonly IUnitOfWork _uow;
         private readonly FingerprintIngestSettings _settings;
@@ -22,6 +23,7 @@ namespace Nexus.Application.Services
         public FingerprintIngestJob(
             IAppInsightsQueryService appInsightsQueryService,
             IFingerprinterService fingerprinterService,
+            IGitHubIssueService gitHubIssueService,
             IIngestCursorRepository cursorRepository,
             IUnitOfWork uow,
             IOptions<FingerprintIngestSettings> settings,
@@ -29,6 +31,7 @@ namespace Nexus.Application.Services
         {
             _appInsightsQueryService = appInsightsQueryService;
             _fingerprinterService = fingerprinterService;
+            _gitHubIssueService = gitHubIssueService;
             _cursorRepository = cursorRepository;
             _uow = uow;
             _settings = settings.Value;
@@ -79,7 +82,8 @@ namespace Nexus.Application.Services
             var newCount = 0;
             foreach (var row in exceptionGroups)
             {
-                var (_, isNew, _) = await _fingerprinterService.ProcessExceptionGroupAsync(row, windowFrom, ct);
+                var (fingerprint, isNew, windowCount) = await _fingerprinterService.ProcessExceptionGroupAsync(row, windowFrom, ct);
+                await _gitHubIssueService.ProcessFingerprintAsync(fingerprint, windowCount, isNew, ct);
                 if (isNew)
                     newCount++;
             }
@@ -93,7 +97,8 @@ namespace Nexus.Application.Services
             var newCount = 0;
             foreach (var row in traceWarningGroups)
             {
-                var (_, isNew, _) = await _fingerprinterService.ProcessTraceWarningGroupAsync(row, windowFrom, ct);
+                var (fingerprint, isNew, windowCount) = await _fingerprinterService.ProcessTraceWarningGroupAsync(row, windowFrom, ct);
+                await _gitHubIssueService.ProcessFingerprintAsync(fingerprint, windowCount, isNew, ct);
                 if (isNew)
                     newCount++;
             }
