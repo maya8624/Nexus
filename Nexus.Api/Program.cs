@@ -114,10 +114,21 @@ RecurringJob.AddOrUpdate<ISasExpiryJob>(
     job => job.ExecuteAsync(),
     "*/15 * * * *");
 
-RecurringJob.AddOrUpdate<IFingerprintIngestJob>(
-    "fingerprint-ingest",
-    job => job.ExecuteAsync(),
-    "*/15 * * * *");
+// Registered only when a workspace is configured (Phase 7 wiring); otherwise the job
+// would fail every run against a blank WorkspaceId. RemoveIfExists keeps a previously
+// registered job from firing after the setting is blanked, since Hangfire persists
+// recurring jobs in storage.
+if (!string.IsNullOrEmpty(builder.Configuration["FingerprintIngestSettings:WorkspaceId"]))
+{
+    RecurringJob.AddOrUpdate<IFingerprintIngestJob>(
+        "fingerprint-ingest",
+        job => job.ExecuteAsync(),
+        "*/15 * * * *");
+}
+else
+{
+    RecurringJob.RemoveIfExists("fingerprint-ingest");
+}
 
 app.MapControllers();
 

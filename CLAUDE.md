@@ -133,11 +133,12 @@ polls App Insights on a 15-minute Hangfire recurring job and upserts `Fingerprin
 `FingerprintOccurrence` rows by hash, the rule classifier + Python `/classify`
 contract + ownership router, the GitHub actor (`GitHubIssueService`, Octokit)
 + Python `/summarize` contract, and the REST API for the future dashboard.
-Phase 7 (config wiring + manual setup docs) is not yet built. Deploy caveat until
-then: `Program.cs` registers the `fingerprint-ingest` recurring job unconditionally,
-so on a server with a blank `FingerprintIngestSettings__WorkspaceId` the job fails
-every 15 minutes (no data harm — it dies in the App Insights query before touching
-anything, but it piles up failed jobs in the Hangfire dashboard). The Phase 6 read
+Phase 7 (config wiring + manual setup docs) is not yet built. Until then,
+`Program.cs` registers the `fingerprint-ingest` recurring job **only when
+`FingerprintIngestSettings:WorkspaceId` is non-blank** (and calls
+`RemoveIfExists` otherwise, since Hangfire persists recurring jobs in storage —
+a previously registered job would keep firing after the setting is blanked). So a
+server without fingerprint settings simply doesn't poll. The Phase 6 read
 endpoints and `/api/stats` only touch Postgres and work fine without any fingerprint
 settings; the action endpoints need `GitHubSettings` to succeed.
 
