@@ -38,6 +38,43 @@ namespace Nexus.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IList<Fingerprint>> GetListAsync(GithubIssueStatus? status, FingerprintLevel? level, CancellationToken ct)
+        {
+            return await _context.Fingerprints
+                .Where(x => status == null || x.GithubStatus == status)
+                .Where(x => level == null || x.Level == level)
+                .OrderByDescending(x => x.LastSeenUtc)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
+        public async Task<FingerprintStatsReadModel> GetStatsAsync(DateTimeOffset todayStartUtc, CancellationToken ct)
+        {
+            var openErrors = await _context.Fingerprints
+                .CountAsync(x => x.GithubStatus != GithubIssueStatus.Closed
+                                 && x.GithubStatus != GithubIssueStatus.Merged
+                                 && x.Level == FingerprintLevel.Error, ct);
+
+            var openWarnings = await _context.Fingerprints
+                .CountAsync(x => x.GithubStatus != GithubIssueStatus.Closed
+                                 && x.GithubStatus != GithubIssueStatus.Merged
+                                 && x.Level == FingerprintLevel.Warning, ct);
+
+            var issuesFiledToday = await _context.Fingerprints
+                .CountAsync(x => x.GithubIssueFiledAtUtc != null && x.GithubIssueFiledAtUtc >= todayStartUtc, ct);
+
+            var prsAwaitingReview = await _context.Fingerprints
+                .CountAsync(x => x.GithubStatus == GithubIssueStatus.Pr, ct);
+
+            return new FingerprintStatsReadModel
+            {
+                OpenErrors = openErrors,
+                OpenWarnings = openWarnings,
+                IssuesFiledToday = issuesFiledToday,
+                PrsAwaitingReview = prsAwaitingReview
+            };
+        }
+
         public async Task<IList<FingerprintSparklineBucketReadModel>> GetSparklineBucketsAsync(string fingerprintId, int bucketCount, CancellationToken ct)
         {
             var grouped = await _context.FingerprintOccurrences

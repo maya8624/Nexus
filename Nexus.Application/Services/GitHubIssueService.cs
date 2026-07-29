@@ -61,7 +61,7 @@ namespace Nexus.Application.Services
                             $"Regressed: fingerprint `{fingerprint.Id}` reappeared with {windowOccurrenceCount} occurrence(s) in the latest poll window after the issue was closed.",
                             ct);
                         break;
-                    // None below threshold, Pr, Merged: no-op.
+                        // None below threshold, Pr, Merged: no-op.
                 }
             }
             catch (Exception ex)
@@ -101,10 +101,32 @@ namespace Nexus.Application.Services
             return Result<Fingerprint>.Success(fingerprint);
         }
 
+        public async Task<Result<Fingerprint>> CloseIssueAsync(Fingerprint fingerprint, CancellationToken ct)
+        {
+            switch (fingerprint.GithubStatus)
+            {
+                case GithubIssueStatus.Open:
+                    await _gitHubClient.Issue.Update(
+                        _settings.Owner, _settings.Repo, fingerprint.GithubIssueNumber!.Value,
+                        new IssueUpdate { State = ItemState.Closed });
+
+                    fingerprint.GithubStatus = GithubIssueStatus.Closed;
+                    fingerprint.UpdatedAtUtc = DateTimeOffset.UtcNow;
+                    _fingerprintRepository.Update(fingerprint);
+                    await _uow.SaveChanges();
+                    return Result<Fingerprint>.Success(fingerprint);
+                case GithubIssueStatus.None:
+                    return Result<Fingerprint>.Conflict("NoGithubIssue", "This fingerprint has no GitHub issue to resolve.");
+                case GithubIssueStatus.Pr:
+                    return Result<Fingerprint>.Conflict("PrInProgress", "An agent PR is in progress for this fingerprint's issue.");
+                default:
+                    return Result<Fingerprint>.Conflict("AlreadyResolved", "This fingerprint's issue is already resolved.");
+            }
+        }
+
         private async Task CreateIssueAsync(Fingerprint fingerprint, CancellationToken ct)
         {
-            var occurrences = await _occurrenceRepository.GetRecentAsync(
-                fingerprint.Id, FingerprintConstants.MaxSummarizeOccurrences, ct);
+            var occurrences = await _occurrenceRepository.GetRecentAsync(fingerprint.Id, FingerprintConstants.MaxSummarizeOccurrences, ct);
             var contentResult = await _fingerprintAiService.SummarizeAsync(fingerprint, occurrences, ct);
             var content = contentResult.Value!;
 
@@ -114,15 +136,20 @@ namespace Nexus.Application.Services
 
             var newIssue = new NewIssue(content.Title) { Body = body };
             newIssue.Labels.Add($"severity/{fingerprint.Level.ToString().ToLowerInvariant()}");
+
             if (fingerprint.Category is not null)
                 newIssue.Labels.Add($"category/{FingerprintCategoryWireFormat.ToWire(fingerprint.Category.Value)}");
+
             newIssue.Assignees.Add(_router.Route(fingerprint));
 
             var issue = await _gitHubClient.Issue.Create(_settings.Owner, _settings.Repo, newIssue);
 
+            var now = DateTimeOffset.UtcNow;
             fingerprint.GithubIssueNumber = issue.Number;
             fingerprint.GithubStatus = GithubIssueStatus.Open;
-            fingerprint.UpdatedAtUtc = DateTimeOffset.UtcNow;
+            fingerprint.GithubIssueFiledAtUtc = now;
+            fingerprint.UpdatedAtUtc = now;
+
             _fingerprintRepository.Update(fingerprint);
             // Committed immediately rather than with the poll batch: a crash before the batch commit
             // would lose the issue number and the next poll would file a duplicate issue.
@@ -132,16 +159,19 @@ namespace Nexus.Application.Services
         private async Task AddThrottledCountCommentAsync(Fingerprint fingerprint, int windowOccurrenceCount, CancellationToken ct)
         {
             var now = DateTimeOffset.UtcNow;
-            if (fingerprint.GithubLastCommentedAtUtc is not null &&
-                now - fingerprint.GithubLastCommentedAtUtc.Value < TimeSpan.FromHours(FingerprintConstants.MinHoursBetweenComments))
-                return;
+            if (fingerprint.GithubLastCommentedAtUtc is not null)
+            {
+                var isWithinCommentThrottled = now - fingerprint.GithubLastCommentedAtUtc.Value < TimeSpan.FromHours(FingerprintConstants.MinHoursBetweenComments);
+                if (isWithinCommentThrottled)
+                    return;
+            }
 
-            await _gitHubClient.Issue.Comment.Create(
-                _settings.Owner, _settings.Repo, fingerprint.GithubIssueNumber!.Value,
-                $"Still occurring: {windowOccurrenceCount} occurrence(s) in the latest poll window ({fingerprint.TotalCount} total).");
+            var newComment = $"Still occurring: {windowOccurrenceCount} occurrence(s) in the latest poll window ({fingerprint.TotalCount} total).";
+            await _gitHubClient.Issue.Comment.Create(_settings.Owner, _settings.Repo, fingerprint.GithubIssueNumber!.Value, newComment);
 
             fingerprint.GithubLastCommentedAtUtc = now;
             fingerprint.UpdatedAtUtc = now;
+
             _fingerprintRepository.Update(fingerprint);
             await _uow.SaveChanges();
         }
@@ -149,14 +179,14 @@ namespace Nexus.Application.Services
         private async Task ReopenAsync(Fingerprint fingerprint, string comment, CancellationToken ct)
         {
             var issueNumber = fingerprint.GithubIssueNumber!.Value;
-            await _gitHubClient.Issue.Update(
-                _settings.Owner, _settings.Repo, issueNumber, new IssueUpdate { State = ItemState.Open });
+            await _gitHubClient.Issue.Update(_settings.Owner, _settings.Repo, issueNumber, new IssueUpdate { State = ItemState.Open });
             await _gitHubClient.Issue.Comment.Create(_settings.Owner, _settings.Repo, issueNumber, comment);
 
             var now = DateTimeOffset.UtcNow;
             fingerprint.GithubStatus = GithubIssueStatus.Open;
             fingerprint.GithubLastCommentedAtUtc = now;
             fingerprint.UpdatedAtUtc = now;
+
             _fingerprintRepository.Update(fingerprint);
             await _uow.SaveChanges();
         }

@@ -34,6 +34,8 @@ namespace Nexus.Domain.Entities
 
         public GithubIssueStatus GithubStatus { get; set; }
 
+        public DateTimeOffset? GithubIssueFiledAtUtc { get; set; }
+
         public DateTimeOffset? GithubLastCommentedAtUtc { get; set; }
 
         public DateTimeOffset CreatedAtUtc { get; set; }

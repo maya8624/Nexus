@@ -15,7 +15,7 @@ A real estate property management and transaction platform built with .NET 8 and
 - **AI Chat:** External sidecar service (SSE streaming)
 - **File Storage:** Azure Blob Storage (SAS URL upload flow)
 - **Event Processing:** Azure Functions (isolated worker, blob trigger)
-- **Observability:** Application Insights (Functions)
+- **Observability:** Application Insights (Functions; also polled by the fingerprint log-triage pipeline via Azure.Monitor.Query)
 - **Secrets:** Azure Key Vault
 - **Docs:** Swagger / Swashbuckle
 - **Hosting:** Azure App Service (Web API) + Azure Functions
@@ -80,6 +80,7 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 | **Invoice Extraction** | AI-powered extraction of structured data from invoices and receipts (vendor, line items, totals, dates); document type (`Invoice` or `Receipt`) is detected by the AI and stored as `DocumentType`; results persisted as `Invoice` records linked to the source file upload |
 | **Enquiries** | Tenants submit enquiries to agents; agents draft and send replies; outgoing reply emails are dispatched via a Hangfire background job |
 | **Auth** | Email/password registration + login; Google external login; JWT (60-min expiry) + rotating refresh tokens (7-day expiry) |
+| **Log Triage (Fingerprints)** | Polls Application Insights on a recurring Hangfire job, deduplicates warning/error telemetry into "fingerprints", classifies them (rules first, LLM fallback), routes to a GitHub assignee, and files/updates GitHub issues idempotently; REST API backs a triage dashboard |
 
 ## API Overview
 
@@ -97,6 +98,8 @@ Swagger UI is available at `https://localhost:7289/swagger` in development.
 | `PayPalController` | PayPal payment flow |
 | `OrderController` | Legacy order management |
 | `InternalController` | Admin/internal operations (API-key protected): inspection bookings, deposits, document ingestion, invoice extraction |
+| `FingerprintController` | List/filter fingerprints (`?status=`/`?level=`), detail with sparkline, actions: file-issue, send-to-agent, resolve |
+| `FingerprintStatsController` | Dashboard stat tiles (`/api/stats`): open errors/warnings, issues filed today, agent PRs awaiting review |
 
 ## Authentication
 
@@ -129,6 +132,9 @@ The `IUserContext` abstraction resolves the current user inside services — use
 | `BlobStorageSettings` | Azure Blob Storage connection string, container names (general, extraction, ingestion, invoice), SAS token expiry (minutes) |
 | `SmtpSettings` | Outlook SMTP host, port, credentials |
 | `CorsSettings:AllowedOrigins` | Frontend origins (e.g. `http://localhost:5173`) |
+| `FingerprintIngestSettings` | Application Insights Log Analytics workspace ID, ingest lookback/lag windows |
+| `FingerprintRoutingSettings` | Ownership map → GitHub assignee, default assignee, auto-fix allow/deny lists |
+| `GitHubSettings` | GitHub token, owner, repo for issue filing (blank token disables GitHub calls) |
 | `KeyVaultUrl` | Azure Key Vault URI (production only) |
 | `Serilog` | Log level overrides per environment (see `appsettings.json`) |
 

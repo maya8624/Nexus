@@ -282,5 +282,64 @@ namespace Nexus.Tests.Unit.Application
             Assert.Equal(ResultStatus.Conflict, result.Status);
             _labelsClientMock.Verify(x => x.AddToIssue(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string[]>()), Times.Never);
         }
+
+        [Fact]
+        public async Task CloseIssueAsync_WhenIssueOpen_ClosesIssueAndSetsStatus()
+        {
+            var fingerprint = BuildFingerprint(GithubIssueStatus.Open, githubIssueNumber: 42);
+
+            var result = await _service.CloseIssueAsync(fingerprint, CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(GithubIssueStatus.Closed, fingerprint.GithubStatus);
+            _issuesClientMock.Verify(x => x.Update("owner", "repo", 42,
+                It.Is<IssueUpdate>(u => u.State == ItemState.Closed)), Times.Once);
+            _uowMock.Verify(x => x.SaveChanges(), Times.Once);
+        }
+
+        [Fact]
+        public async Task CloseIssueAsync_WhenNoIssue_ReturnsConflict()
+        {
+            var fingerprint = BuildFingerprint();
+
+            var result = await _service.CloseIssueAsync(fingerprint, CancellationToken.None);
+
+            Assert.Equal(ResultStatus.Conflict, result.Status);
+            Assert.Equal("NoGithubIssue", result.Errors.Single().Code);
+            _issuesClientMock.Verify(x => x.Update(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<IssueUpdate>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task CloseIssueAsync_WhenAlreadyClosed_ReturnsConflict()
+        {
+            var fingerprint = BuildFingerprint(GithubIssueStatus.Closed, githubIssueNumber: 42);
+
+            var result = await _service.CloseIssueAsync(fingerprint, CancellationToken.None);
+
+            Assert.Equal(ResultStatus.Conflict, result.Status);
+            Assert.Equal("AlreadyResolved", result.Errors.Single().Code);
+        }
+
+        [Fact]
+        public async Task CloseIssueAsync_WhenPrInProgress_ReturnsConflict()
+        {
+            var fingerprint = BuildFingerprint(GithubIssueStatus.Pr, githubIssueNumber: 42);
+
+            var result = await _service.CloseIssueAsync(fingerprint, CancellationToken.None);
+
+            Assert.Equal(ResultStatus.Conflict, result.Status);
+            Assert.Equal("PrInProgress", result.Errors.Single().Code);
+            _issuesClientMock.Verify(x => x.Update(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<IssueUpdate>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ProcessFingerprintAsync_WhenIssueCreated_SetsGithubIssueFiledAt()
+        {
+            var fingerprint = BuildFingerprint();
+
+            await _service.ProcessFingerprintAsync(fingerprint, windowOccurrenceCount: 5, isNewRegression: false, CancellationToken.None);
+
+            Assert.NotNull(fingerprint.GithubIssueFiledAtUtc);
+        }
     }
 }

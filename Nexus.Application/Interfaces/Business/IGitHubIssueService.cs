@@ -8,5 +8,6 @@ namespace Nexus.Application.Interfaces.Business
         Task ProcessFingerprintAsync(Fingerprint fingerprint, int windowOccurrenceCount, bool isNewRegression, CancellationToken ct);
         Task<Result<Fingerprint>> ForceFileIssueAsync(Fingerprint fingerprint, CancellationToken ct);
         Task<Result<Fingerprint>> AddAutoFixCandidateLabelAsync(Fingerprint fingerprint, CancellationToken ct);
+        Task<Result<Fingerprint>> CloseIssueAsync(Fingerprint fingerprint, CancellationToken ct);
     }
 }

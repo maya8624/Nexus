@@ -119,17 +119,27 @@ Domain enums live in `Nexus.Domain/Enums/`. Grouped by domain:
 
 ### Fingerprint feature (log-triage system)
 
-Full design lives in `Docs/fingerprint-implementation-plan.md` — poll App Insights,
+Full design lives in `Docs/fingerprint-implementation-plan.md`; two companion docs:
+`Docs/fingerprint-spec.md` (cross-codebase spec updated to as-built, incl. the React
+dashboard UI spec) and `Docs/fingerprint-api-contract.md` (**authoritative REST
+contract for the frontend** — if the docs disagree on an API detail, the contract
+wins). The system — poll App Insights,
 dedupe telemetry into "fingerprints", classify (rules → LLM fallback), route to a
 GitHub assignee, file/update GitHub issues idempotently. Built phase-by-phase, one
 PR per phase; each phase's plan is worked out fresh against the doc before coding.
-**Phases 1–5 are done**: schema/domain/repositories, the App Insights adapter +
+**Phases 1–6 are done**: schema/domain/repositories, the App Insights adapter +
 hashing/normalization, the `FingerprinterService`/`FingerprintIngestJob` pair that
 polls App Insights on a 15-minute Hangfire recurring job and upserts `Fingerprint`/
 `FingerprintOccurrence` rows by hash, the rule classifier + Python `/classify`
-contract + ownership router, and the GitHub actor (`GitHubIssueService`, Octokit)
-+ Python `/summarize` contract. Later phases (REST API, real routing/GitHub
-config values) are not yet built.
+contract + ownership router, the GitHub actor (`GitHubIssueService`, Octokit)
++ Python `/summarize` contract, and the REST API for the future dashboard.
+Phase 7 (config wiring + manual setup docs) is not yet built. Deploy caveat until
+then: `Program.cs` registers the `fingerprint-ingest` recurring job unconditionally,
+so on a server with a blank `FingerprintIngestSettings__WorkspaceId` the job fails
+every 15 minutes (no data harm — it dies in the App Insights query before touching
+anything, but it piles up failed jobs in the Hangfire dashboard). The Phase 6 read
+endpoints and `/api/stats` only touch Postgres and work fine without any fingerprint
+settings; the action endpoints need `GitHubSettings` to succeed.
 
 **Phase 4** wires classification into `FingerprinterService`, immediately after the
 upsert `if/else` and before `AddOccurrenceAsync`, via `IFingerprintClassifier`
@@ -182,6 +192,42 @@ already-open / not-eligible / no-issue cases. `GitHubIssueService` calls
 `_uow.SaveChanges()` immediately after each GitHub side effect rather than
 waiting for the job's batch commit — a crash between issue creation and the batch
 commit would lose the issue number and file a duplicate next poll.
+
+**Phase 6** adds the REST API: `FingerprintQueryService` (implements
+`IFingerprintService`) behind `FingerprintController` (`api/fingerprints` —
+list with `?status=`/`?level=` filters, detail, `file-issue`/`send-to-agent`/
+`resolve` actions) and `FingerprintStatsController` (`api/stats`). The action
+endpoints load the fingerprint (404 if missing) and delegate to Phase 5's
+`ForceFileIssueAsync`/`AddAutoFixCandidateLabelAsync`/the new `CloseIssueAsync`,
+propagating their `Conflict` results as 409s. **Resolve requires an existing
+GitHub issue** — `CloseIssueAsync` closes the open issue via Octokit and sets
+`GithubStatus = Closed`; a fingerprint with no issue gets `Conflict("NoGithubIssue")`
+rather than a status flip (keeps `Closed` meaning "a real issue was closed", so the
+ingest job's reopen-on-regression branch stays safe; a mute/dismiss feature would be
+a separate decision). `GithubIssueFiledAtUtc` (nullable, set in `CreateIssueAsync`,
+migration `AddGithubIssueFiledAtToFingerprints`) exists so `IssuesAssignedToday` in
+`/api/stats` is an accurate "filed since UTC midnight" count instead of an
+`UpdatedAtUtc` proxy that comment-bumps would inflate. Known accepted tradeoff:
+the list endpoint fetches sparklines one query per fingerprint (N+1) — fine at
+triage-dashboard scale, batch it only if lists reach hundreds of rows.
+
+**Mock data for UI development**: `dotnet run --project tools/FingerprintSeed` — a
+standalone console seeder mirroring `tools/DbSeedTemp` (direct `AppDbContext`, own
+`appsettings.Development.json`, deliberately **not** in `Nexus.sln`, same as
+DbSeedTemp). Truncates only `fingerprints`/`fingerprint_occurrences` (never
+`ingest_cursor` — that belongs to the real pipeline) and inserts 12 fingerprints
+with full UI-state coverage: every `GithubStatus` (incl. `Pr`/`Merged`, which the
+pipeline can never produce locally without a real GitHub token), all categories
+plus unclassified/null-enrichment rows, and varied sparkline shapes. Ids/hashes
+come from the real `FingerprintHasher`; timestamps are relative to run time, so
+rerun it whenever sparklines need refreshing (idempotent wipe-and-reseed). Against
+this data `/api/stats` reads `openErrors: 6, openWarnings: 4, issuesAssignedToday: 2,
+agentPrsAwaitingReview: 1`. The seeder's config supports environment-variable
+override — set `ConnectionStrings__DefaultConnection` to point it at another DB
+(e.g. the Azure dev DB, whose connection string lives in Key Vault
+`kv-my-nexus-dev`, secret `ConnectionStrings--DefaultConnection`) without touching
+the committed `appsettings.Development.json` (which stays localhost). It prints
+`Target: <host>` before wiping so the destination is always visible.
 
 `FingerprintOccurrence` and `IngestCursor` each get their own repository
 (`FingerprintOccurrenceRepository`, `IngestCursorRepository`) instead of a bespoke
