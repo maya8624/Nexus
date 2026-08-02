@@ -127,18 +127,18 @@ wins). The system — poll App Insights,
 dedupe telemetry into "fingerprints", classify (rules → LLM fallback), route to a
 GitHub assignee, file/update GitHub issues idempotently. Built phase-by-phase, one
 PR per phase; each phase's plan is worked out fresh against the doc before coding.
-**Phases 1–6 are done**: schema/domain/repositories, the App Insights adapter +
+**Phases 1–7 are done**: schema/domain/repositories, the App Insights adapter +
 hashing/normalization, the `FingerprinterService`/`FingerprintIngestJob` pair that
 polls App Insights on a 15-minute Hangfire recurring job and upserts `Fingerprint`/
 `FingerprintOccurrence` rows by hash, the rule classifier + Python `/classify`
 contract + ownership router, the GitHub actor (`GitHubIssueService`, Octokit)
-+ Python `/summarize` contract, and the REST API for the future dashboard.
-Phase 7 (config wiring + manual setup docs) is not yet built. Until then,
-`Program.cs` registers the `fingerprint-ingest` recurring job **only when
-`FingerprintIngestSettings:WorkspaceId` is non-blank** (and calls
-`RemoveIfExists` otherwise, since Hangfire persists recurring jobs in storage —
-a previously registered job would keep firing after the setting is blanked). So a
-server without fingerprint settings simply doesn't poll. The Phase 6 read
++ Python `/summarize` contract, the REST API for the future dashboard, and the
+telemetry emission side (Phase 7). Manual Azure/GitHub setup steps live in
+`Docs/fingerprint-setup.md`. `Program.cs` registers the `fingerprint-ingest`
+recurring job **only when `FingerprintIngestSettings:WorkspaceId` is non-blank**
+(and calls `RemoveIfExists` otherwise, since Hangfire persists recurring jobs in
+storage — a previously registered job would keep firing after the setting is
+blanked). So a server without fingerprint settings simply doesn't poll. The Phase 6 read
 endpoints and `/api/stats` only touch Postgres and work fine without any fingerprint
 settings; the action endpoints need `GitHubSettings` to succeed.
 
@@ -211,6 +211,33 @@ migration `AddGithubIssueFiledAtToFingerprints`) exists so `IssuesAssignedToday`
 `UpdatedAtUtc` proxy that comment-bumps would inflate. Known accepted tradeoff:
 the list endpoint fetches sparklines one query per fingerprint (N+1) — fine at
 triage-dashboard scale, batch it only if lists reach hundreds of rows.
+
+**Phase 7** adds the telemetry write side: `Nexus.Api` uses the **Azure Monitor
+OpenTelemetry distro** (`Azure.Monitor.OpenTelemetry.AspNetCore`), wired in
+`TelemetryExtensions.AddNexusTelemetry` — registration is **skipped entirely when
+`APPLICATIONINSIGHTS_CONNECTION_STRING` is blank** (same convention as the blank
+GitHub token), so local boot never needs Azure. Cloud role name is fixed there as
+`nexus-api`; Postgres dependency tracing comes from `Npgsql.OpenTelemetry`
+(`AddNpgsql()`). Serilog is registered as an **`ILoggerProvider`**
+(`builder.Logging.ClearProviders()` + `AddSerilog(Log.Logger)`), **not** via
+`builder.Host.UseSerilog(...)`. This is load-bearing and verified against live
+telemetry: routing logs through Serilog's `writeToProviders` bridge hands the
+Azure Monitor exporter an opaque state object, so **every trace landed with
+`SeverityLevel = 0` and no `CategoryName`** — the fingerprint warning query
+(`SeverityLevel == 2`) matched nothing at all. Registering Serilog as a provider
+keeps MEL as the logger factory, so OpenTelemetry receives records with level and
+category intact. Don't "simplify" this back to `UseSerilog`. Because MEL now
+filters first, the `Logging:LogLevel` section governs what reaches App Insights
+(Serilog's own `MinimumLevel` still gates its Console/File sinks) — keep the two
+sections in sync. **Do not enable the App Service codeless Application Insights toggle**
+— it double-instruments alongside the SDK. The ingest KQL in
+`AppInsightsQueryService` is written in **Log Analytics workspace schema**
+(`AppExceptions`/`AppTraces`, `TimeGenerated`, `ProblemId`, `AppRoleName`) because
+`QueryWorkspaceAsync` queries the workspace, where classic resource-scope names
+(`exceptions`/`traces`, `problemId`, `cloud_RoleName`) don't resolve — don't
+"fix" it back to classic schema. Manual Azure setup (resource, RBAC, app
+settings) is documented in `Docs/fingerprint-setup.md`. Don't configure OTel
+`SamplingRatio` — sampling silently deflates fingerprint counts/spike detection.
 
 **Mock data for UI development**: `dotnet run --project tools/FingerprintSeed` — a
 standalone console seeder mirroring `tools/DbSeedTemp` (direct `AppDbContext`, own

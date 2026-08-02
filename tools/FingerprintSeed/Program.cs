@@ -34,6 +34,11 @@ Console.WriteLine($"Target: {new Npgsql.NpgsqlConnectionStringBuilder(connection
 Console.WriteLine("Wiping existing fingerprint data...");
 await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE fingerprint_occurrences, fingerprints CASCADE");
 
+// Raw App Insights severities, matching each seeded row's intended FingerprintLevel so the ids
+// here are the same ones the real pipeline would derive for the same signature.
+const int WarningSeverity = 2;
+const int ErrorSeverity = 3;
+
 Fingerprint AddFingerprint(
     string hash,
     FingerprintLevel level,
@@ -102,7 +107,7 @@ Console.WriteLine("Seeding mock fingerprints...");
 
 // 1. Error / DependencyFailure / Open #101 — busy sparkline, commented 30 min ago
 var fp1 = AddFingerprint(
-    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.InvoiceExtractionJob!ExecuteAsync"),
+    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.InvoiceExtractionJob!ExecuteAsync", ErrorSeverity),
     FingerprintLevel.Error,
     "Response status code does not indicate success: {n} (Service Unavailable).",
     FingerprintCategory.DependencyFailure, ClassificationSource.Rule,
@@ -117,7 +122,7 @@ AddHistory(fp1, [(7, 4), (6, 6), (5, 3), (4, 8), (3, 5), (2, 9), (1, 7), (0, 4)]
 
 // 2. Error / NewRegression / Open #102 — filed today, auto-fix eligible
 var fp2 = AddFingerprint(
-    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.FileUploadService!ConfirmUploadAsync"),
+    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.FileUploadService!ConfirmUploadAsync", ErrorSeverity),
     FingerprintLevel.Error,
     "Object reference not set to an instance of an object.",
     FingerprintCategory.NewRegression, ClassificationSource.Rule,
@@ -133,7 +138,7 @@ AddHistory(fp2, [(3, 2), (1, 3)],
 
 // 3. Error / DataQuality / no issue yet — above threshold, "File issue" button enabled
 var fp3 = AddFingerprint(
-    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.InvoiceService!MapExtractionResult"),
+    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.InvoiceService!MapExtractionResult", ErrorSeverity),
     FingerprintLevel.Error,
     "The JSON value could not be converted to System.Decimal. Path: $.total_amount.",
     FingerprintCategory.DataQuality, ClassificationSource.Llm,
@@ -148,7 +153,7 @@ AddHistory(fp3, [(5, 2), (2, 4), (0, 3)],
 // 4. Warning / Performance / no issue — sparse sparkline
 var rawPerf = "Blob upload for container 'rec-dev-invoices' took 28451 ms, exceeding the 5000 ms threshold";
 var fp4 = AddFingerprint(
-    FingerprintHasher.ComputeTraceHash(FingerprintHasher.NormalizeMessage(rawPerf)),
+    FingerprintHasher.ComputeTraceHash(FingerprintHasher.NormalizeMessage(rawPerf), WarningSeverity),
     FingerprintLevel.Warning,
     FingerprintHasher.NormalizeMessage(rawPerf),
     FingerprintCategory.Performance, ClassificationSource.Rule,
@@ -159,7 +164,7 @@ AddHistory(fp4, [(6, 1), (3, 2), (0, 1)], rawPerf, historicalCount: 15);
 
 // 5. Error / ConfigAuth / Closed #103 — resolved earlier, reopen path testable
 var fp5 = AddFingerprint(
-    FingerprintHasher.ComputeExceptionHash("Nexus.Network.Services.PayPalAuthService!GetAccessTokenAsync"),
+    FingerprintHasher.ComputeExceptionHash("Nexus.Network.Services.PayPalAuthService!GetAccessTokenAsync", ErrorSeverity),
     FingerprintLevel.Error,
     "Response status code does not indicate success: {n} (Unauthorized).",
     FingerprintCategory.ConfigAuth, ClassificationSource.Rule,
@@ -174,7 +179,7 @@ AddHistory(fp5, [(4, 1)],
 
 // 6. Error / RecurringKnown / Open #104 — spike-shaped sparkline
 var fp6 = AddFingerprint(
-    FingerprintHasher.ComputeExceptionHash("Npgsql.NpgsqlConnection!Open"),
+    FingerprintHasher.ComputeExceptionHash("Npgsql.NpgsqlConnection!Open", ErrorSeverity),
     FingerprintLevel.Error,
     "Failed to connect to {n}.{n}.{n}.{n}:{n}",
     FingerprintCategory.RecurringKnown, ClassificationSource.Rule,
@@ -190,7 +195,7 @@ AddHistory(fp6, [(7, 1), (6, 1), (5, 2), (4, 1), (3, 1), (2, 14), (1, 22), (0, 9
 // 7. Warning / DataQuality / Pr #105 — PR-open pill (unreachable via pipeline locally)
 var rawPr = "Skipping enquiry '8f4c2d1a-93b7-4e0d-a1c5-77d2f0b3e6a9': listing has no active agent assigned";
 var fp7 = AddFingerprint(
-    FingerprintHasher.ComputeTraceHash(FingerprintHasher.NormalizeMessage(rawPr)),
+    FingerprintHasher.ComputeTraceHash(FingerprintHasher.NormalizeMessage(rawPr), WarningSeverity),
     FingerprintLevel.Warning,
     FingerprintHasher.NormalizeMessage(rawPr),
     FingerprintCategory.DataQuality, ClassificationSource.Llm,
@@ -204,7 +209,7 @@ AddHistory(fp7, [(5, 3), (4, 2), (1, 1)], rawPr, historicalCount: 8);
 
 // 8. Error / DependencyFailure / Merged #106 — merged pill
 var fp8 = AddFingerprint(
-    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.AiService!SendChatAsync"),
+    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.AiService!SendChatAsync", ErrorSeverity),
     FingerprintLevel.Error,
     "The operation was canceled after {n} ms waiting for a response from rec_brain.",
     FingerprintCategory.DependencyFailure, ClassificationSource.Rule,
@@ -219,7 +224,7 @@ AddHistory(fp8, [(6, 1)],
 
 // 9. Error / unclassified — LLM fallback hasn't run yet
 var fp9 = AddFingerprint(
-    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.IngestionJob!ExecuteAsync"),
+    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.IngestionJob!ExecuteAsync", ErrorSeverity),
     FingerprintLevel.Error,
     "Index was outside the bounds of the array.",
     exceptionType: "System.IndexOutOfRangeException",
@@ -231,7 +236,7 @@ AddHistory(fp9, [(2, 2), (0, 1)], "Index was outside the bounds of the array.");
 // 10. Warning / unclassified / all-null enrichment — trace-origin nulls edge case
 var rawNulls = "Retrying transient failure (attempt 3 of 5)";
 var fp10 = AddFingerprint(
-    FingerprintHasher.ComputeTraceHash(FingerprintHasher.NormalizeMessage(rawNulls)),
+    FingerprintHasher.ComputeTraceHash(FingerprintHasher.NormalizeMessage(rawNulls), WarningSeverity),
     FingerprintLevel.Warning,
     FingerprintHasher.NormalizeMessage(rawNulls),
     daysOld: 1.2);
@@ -239,7 +244,7 @@ AddHistory(fp10, [(4, 1), (1, 2)], rawNulls);
 
 // 11. Error / NewRegression / brand-new — single occurrence minutes ago, near-empty sparkline
 var fp11 = AddFingerprint(
-    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.GitHubIssueService!CreateIssueAsync"),
+    FingerprintHasher.ComputeExceptionHash("Nexus.Application.Services.GitHubIssueService!CreateIssueAsync", ErrorSeverity),
     FingerprintLevel.Error,
     "Validation Failed: field 'assignees' is invalid.",
     FingerprintCategory.NewRegression, ClassificationSource.Rule,
@@ -252,7 +257,7 @@ AddHistory(fp11, [(0, 1)], "Validation Failed: field 'assignees' is invalid.");
 // 12. Warning / ConfigAuth / Open #107 — second issue filed today (stats > 1)
 var rawJwt = "JWT validation failed for request to '/api/fingerprints': token expired at 07/27/2026 04:12:55";
 var fp12 = AddFingerprint(
-    FingerprintHasher.ComputeTraceHash(FingerprintHasher.NormalizeMessage(rawJwt)),
+    FingerprintHasher.ComputeTraceHash(FingerprintHasher.NormalizeMessage(rawJwt), WarningSeverity),
     FingerprintLevel.Warning,
     FingerprintHasher.NormalizeMessage(rawJwt),
     FingerprintCategory.ConfigAuth, ClassificationSource.Llm,

@@ -32,8 +32,8 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.QueryExceptionGroupsAsync(It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<AppInsightsExceptionGroupReadModel>());
             _appInsightsMock
-                .Setup(x => x.QueryTraceWarningGroupsAsync(It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<AppInsightsTraceWarningGroupReadModel>());
+                .Setup(x => x.QueryTraceGroupsAsync(It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<AppInsightsTraceGroupReadModel>());
 
             var settings = Options.Create(new FingerprintIngestSettings
             {
@@ -116,7 +116,7 @@ namespace Nexus.Tests.Unit.Application
                 Count = 3,
                 LastSeen = DateTimeOffset.UtcNow.AddMinutes(-10)
             };
-            var traceRow = new AppInsightsTraceWarningGroupReadModel
+            var traceRow = new AppInsightsTraceGroupReadModel
             {
                 RawMessage = "warn",
                 Count = 2,
@@ -129,19 +129,19 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.QueryExceptionGroupsAsync(It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<AppInsightsExceptionGroupReadModel> { exceptionRow });
             _appInsightsMock
-                .Setup(x => x.QueryTraceWarningGroupsAsync(It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<AppInsightsTraceWarningGroupReadModel> { traceRow });
+                .Setup(x => x.QueryTraceGroupsAsync(It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<AppInsightsTraceGroupReadModel> { traceRow });
             _fingerprinterMock
                 .Setup(x => x.ProcessExceptionGroupAsync(exceptionRow, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((BuildFingerprint(), true, exceptionRow.Count));
             _fingerprinterMock
-                .Setup(x => x.ProcessTraceWarningGroupAsync(traceRow, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.ProcessTraceGroupAsync(traceRow, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((BuildFingerprint(), false, traceRow.Count));
 
             await _job.ExecuteAsync();
 
             _fingerprinterMock.Verify(x => x.ProcessExceptionGroupAsync(exceptionRow, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
-            _fingerprinterMock.Verify(x => x.ProcessTraceWarningGroupAsync(traceRow, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
+            _fingerprinterMock.Verify(x => x.ProcessTraceGroupAsync(traceRow, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
             _cursorRepositoryMock.Verify(x => x.Create(
                 It.Is<IngestCursor>(c => c.Source == FingerprintConstants.IngestCursorSource),
                 It.IsAny<CancellationToken>()), Times.Once);

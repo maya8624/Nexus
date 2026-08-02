@@ -26,7 +26,7 @@ namespace Nexus.Application.Services
         public async Task<(Fingerprint Fingerprint, bool IsNewFingerprint, int WindowCount)> ProcessExceptionGroupAsync(
             AppInsightsExceptionGroupReadModel row, DateTimeOffset windowFrom, CancellationToken ct)
         {
-            var hash = FingerprintHasher.ComputeExceptionHash(row.ProblemId);
+            var hash = FingerprintHasher.ComputeExceptionHash(row.ProblemId, row.Severity);
             var existing = await _fingerprintRepository.GetByHashAsync(hash, ct);
             var isNew = existing is null;
             var now = DateTimeOffset.UtcNow;
@@ -37,7 +37,7 @@ namespace Nexus.Application.Services
                 {
                     Id = FingerprintHasher.GenerateFingerprintId(hash),
                     Hash = hash,
-                    Level = FingerprintLevel.Error,
+                    Level = MapLevel(row.Severity),
                     ExceptionType = Truncate(row.ExceptionType, 500),
                     MessageTemplate = Truncate(row.SampleMessage, 2000)!,
                     Operation = Truncate(row.Operation, 300),
@@ -63,11 +63,11 @@ namespace Nexus.Application.Services
             return (existing, isNew, row.Count);
         }
 
-        public async Task<(Fingerprint Fingerprint, bool IsNewFingerprint, int WindowCount)> ProcessTraceWarningGroupAsync(
-            AppInsightsTraceWarningGroupReadModel row, DateTimeOffset windowFrom, CancellationToken ct)
+        public async Task<(Fingerprint Fingerprint, bool IsNewFingerprint, int WindowCount)> ProcessTraceGroupAsync(
+            AppInsightsTraceGroupReadModel row, DateTimeOffset windowFrom, CancellationToken ct)
         {
             var normalized = FingerprintHasher.NormalizeMessage(row.RawMessage);
-            var hash = FingerprintHasher.ComputeTraceHash(normalized);
+            var hash = FingerprintHasher.ComputeTraceHash(normalized, row.Severity);
             var existing = await _fingerprintRepository.GetByHashAsync(hash, ct);
             var isNew = existing is null;
             var now = DateTimeOffset.UtcNow;
@@ -78,7 +78,7 @@ namespace Nexus.Application.Services
                 {
                     Id = FingerprintHasher.GenerateFingerprintId(hash),
                     Hash = hash,
-                    Level = FingerprintLevel.Warning,
+                    Level = MapLevel(row.Severity),
                     ExceptionType = null,
                     MessageTemplate = Truncate(normalized, 2000)!,
                     Operation = Truncate(row.Operation, 300),
@@ -103,6 +103,15 @@ namespace Nexus.Application.Services
 
             return (existing, isNew, row.Count);
         }
+
+        // Severity is the only trustworthy source for Level: the source table indicates whether an
+        // exception object was attached, not how bad the event was. LogWarning(ex, …) produces an
+        // AppExceptions row at severity 2, and LogError("…") produces an AppTraces row at severity 3.
+        // Critical (4) folds into Error — both mean "file it and look now", and splitting them would
+        // ripple into /api/stats, the GitHub severity labels, and the dashboard's level filter for no
+        // triage gain. The raw severity still reaches the hash, so that choice stays reversible.
+        private static FingerprintLevel MapLevel(int severity)
+            => severity >= 3 ? FingerprintLevel.Error : FingerprintLevel.Warning;
 
         private Fingerprint UpdateFingerprint(Fingerprint existing, int count, DateTimeOffset lastSeen, DateTimeOffset now)
         {

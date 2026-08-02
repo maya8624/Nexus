@@ -7,11 +7,16 @@ namespace Nexus.Tests.Unit.Application
     [Trait("Category", "Unit")]
     public class FingerprintHasherTests
     {
+        // Raw App Insights severities: 2 = Warning, 3 = Error, 4 = Critical.
+        private const int Warning = 2;
+        private const int Error = 3;
+        private const int Critical = 4;
+
         [Fact]
         public void ComputeExceptionHash_SameProblemId_ProducesSameHash()
         {
-            var hash1 = FingerprintHasher.ComputeExceptionHash("problem-123");
-            var hash2 = FingerprintHasher.ComputeExceptionHash("problem-123");
+            var hash1 = FingerprintHasher.ComputeExceptionHash("problem-123", Error);
+            var hash2 = FingerprintHasher.ComputeExceptionHash("problem-123", Error);
 
             Assert.Equal(hash1, hash2);
         }
@@ -19,17 +24,40 @@ namespace Nexus.Tests.Unit.Application
         [Fact]
         public void ComputeExceptionHash_DifferentProblemId_ProducesDifferentHash()
         {
-            var hash1 = FingerprintHasher.ComputeExceptionHash("problem-123");
-            var hash2 = FingerprintHasher.ComputeExceptionHash("problem-456");
+            var hash1 = FingerprintHasher.ComputeExceptionHash("problem-123", Error);
+            var hash2 = FingerprintHasher.ComputeExceptionHash("problem-456", Error);
 
             Assert.NotEqual(hash1, hash2);
         }
 
         [Fact]
+        public void ComputeExceptionHash_SameProblemIdDifferentSeverity_ProducesDifferentHash()
+        {
+            // LogWarning(ex, …) and LogError(ex, …) can share a ProblemId. Without severity in the
+            // key they'd collide onto one fingerprint whose Level is fixed by whichever row the
+            // ingest job saw first, and the upsert path never revisits Level.
+            var warningHash = FingerprintHasher.ComputeExceptionHash("problem-123", Warning);
+            var errorHash = FingerprintHasher.ComputeExceptionHash("problem-123", Error);
+
+            Assert.NotEqual(warningHash, errorHash);
+        }
+
+        [Fact]
+        public void ComputeExceptionHash_CriticalAndError_ProduceDifferentHashes()
+        {
+            // Critical currently maps to FingerprintLevel.Error for display, but the raw severity
+            // is what's hashed — so promoting Critical to its own level later needs no re-hash.
+            var errorHash = FingerprintHasher.ComputeExceptionHash("problem-123", Error);
+            var criticalHash = FingerprintHasher.ComputeExceptionHash("problem-123", Critical);
+
+            Assert.NotEqual(errorHash, criticalHash);
+        }
+
+        [Fact]
         public void ComputeTraceHash_SameNormalizedMessage_ProducesSameHash()
         {
-            var hash1 = FingerprintHasher.ComputeTraceHash("Connection refused to {n}.{n}.{n}.{n}:{n}");
-            var hash2 = FingerprintHasher.ComputeTraceHash("Connection refused to {n}.{n}.{n}.{n}:{n}");
+            var hash1 = FingerprintHasher.ComputeTraceHash("Connection refused to {n}.{n}.{n}.{n}:{n}", Warning);
+            var hash2 = FingerprintHasher.ComputeTraceHash("Connection refused to {n}.{n}.{n}.{n}:{n}", Warning);
 
             Assert.Equal(hash1, hash2);
         }
@@ -37,17 +65,28 @@ namespace Nexus.Tests.Unit.Application
         [Fact]
         public void ComputeTraceHash_DifferentNormalizedMessage_ProducesDifferentHash()
         {
-            var hash1 = FingerprintHasher.ComputeTraceHash("Connection refused to {n}.{n}.{n}.{n}:{n}");
-            var hash2 = FingerprintHasher.ComputeTraceHash("Timeout waiting for {n}.{n}.{n}.{n}:{n}");
+            var hash1 = FingerprintHasher.ComputeTraceHash("Connection refused to {n}.{n}.{n}.{n}:{n}", Warning);
+            var hash2 = FingerprintHasher.ComputeTraceHash("Timeout waiting for {n}.{n}.{n}.{n}:{n}", Warning);
 
             Assert.NotEqual(hash1, hash2);
         }
 
         [Fact]
+        public void ComputeTraceHash_SameMessageDifferentSeverity_ProducesDifferentHash()
+        {
+            // The same message text logged at Warning on a retry path and at Error once retries are
+            // exhausted are two distinct problems, and must stay two distinct fingerprints.
+            var warningHash = FingerprintHasher.ComputeTraceHash("Payment gateway unreachable", Warning);
+            var errorHash = FingerprintHasher.ComputeTraceHash("Payment gateway unreachable", Error);
+
+            Assert.NotEqual(warningHash, errorHash);
+        }
+
+        [Fact]
         public void ComputeExceptionHash_And_ComputeTraceHash_SameRawInput_ProduceDifferentHashes()
         {
-            var exceptionHash = FingerprintHasher.ComputeExceptionHash("same-value");
-            var traceHash = FingerprintHasher.ComputeTraceHash("same-value");
+            var exceptionHash = FingerprintHasher.ComputeExceptionHash("same-value", Error);
+            var traceHash = FingerprintHasher.ComputeTraceHash("same-value", Error);
 
             Assert.NotEqual(exceptionHash, traceHash);
         }
@@ -57,7 +96,7 @@ namespace Nexus.Tests.Unit.Application
         {
             // Fingerprint.Hash is HasMaxLength(64) in the EF config, so the exact
             // format (not just determinism) matters here.
-            var hash = FingerprintHasher.ComputeExceptionHash("problem-123");
+            var hash = FingerprintHasher.ComputeExceptionHash("problem-123", Error);
 
             Assert.Equal(64, hash.Length);
             Assert.Matches("^[0-9a-f]{64}$", hash);
@@ -66,7 +105,7 @@ namespace Nexus.Tests.Unit.Application
         [Fact]
         public void GenerateFingerprintId_HashHex_ReturnsFpPrefixedFirst8Chars()
         {
-            var hash = FingerprintHasher.ComputeExceptionHash("problem-123");
+            var hash = FingerprintHasher.ComputeExceptionHash("problem-123", Error);
 
             var id = FingerprintHasher.GenerateFingerprintId(hash);
 

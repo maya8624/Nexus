@@ -13,8 +13,10 @@ Companion docs in this repo:
 
 **Implementation status:** .NET backend (ingest, fingerprinting, classification,
 routing, GitHub actor, REST API) is built and unit-tested. Python `/classify` and
-`/summarize` are live on rec_brain. Remaining: config wiring + manual Azure/GitHub
-setup (plan Phase 7), the React dashboard, and the post-MVP items in §10.
+`/summarize` are live on rec_brain. Phase 7 (telemetry emission via the Azure
+Monitor OpenTelemetry distro + config wiring) is built; the manual Azure/GitHub
+setup steps live in `fingerprint-setup.md`. Remaining: executing that setup, the
+React dashboard, and the post-MVP items in §10.
 
 ---
 
@@ -152,20 +154,27 @@ advances **only after** the whole poll batch commits.
 
 Client: `Azure.Monitor.Query` (`LogsQueryClient`) with `DefaultAzureCredential`.
 Time bounds are passed via the SDK's `QueryTimeRange` parameter, **not**
-string-interpolated into the KQL text.
+string-interpolated into the KQL text. Queries run via `QueryWorkspaceAsync`
+at **Log Analytics workspace scope**, so the KQL uses the workspace schema
+(`AppExceptions`/`AppTraces`, PascalCase columns, `TimeGenerated`) — the classic
+App Insights resource-scope names (`exceptions`/`traces`, `problemId`,
+`cloud_RoleName`) do not resolve there.
 
-**Query 1 — exceptions (level = Error):** grouped by
-`problemId, type, operation_Name, cloud_RoleName` with count, sample message, and
-first/last timestamps. Fingerprint key = `problemId` (App Insights' own exception
-grouping). `hash = SHA256("appinsights|exception|" + problemId)`.
+**Query 1 — exceptions (level = Error):** `AppExceptions` grouped by
+`ProblemId, ExceptionType, OperationName, AppRoleName` with count, sample message
+(`OuterMessage`), and last-seen timestamp. Fingerprint key = `ProblemId` (App
+Insights' own exception grouping). `hash = SHA256("appinsights|exception|" + problemId)`.
 
-**Query 2 — warnings (traces, severityLevel == 2):** grouped by
-`message, operation_Name, cloud_RoleName`. `traces.message` is the **rendered**
+**Query 2 — warnings (`AppTraces`, SeverityLevel == 2):** grouped by
+`Message, OperationName, AppRoleName`. `Message` is the **rendered**
 message, so it's normalized before hashing to approximate a template — strip
 quoted strings → `{str}`, GUIDs → `{guid}`, digit runs ≥ 3 → `{n}`, collapse
 whitespace (case untouched). `hash = SHA256("appinsights|trace|" + normalizedMessage)`.
-(Emitting the template as a custom dimension from Serilog's App Insights sink is
-the proper fix; noted as a follow-up.)
+(Emitting the template as a custom dimension is the proper fix; noted as a
+follow-up. Serilog is registered as an `ILoggerProvider` so OpenTelemetry receives
+MEL log records directly — `{OriginalFormat}` should therefore be available in
+`customDimensions`; confirm against live telemetry before relying on it for
+template-based grouping.)
 
 **Per grouped row:** read-then-branch upsert on `fingerprints` (absence of the
 row **is** the new-fingerprint signal, passed explicitly to the classifier);
@@ -348,8 +357,8 @@ problemId/normalized message, rule classification with LLM fallback, ownership
 routing, idempotent GitHub issue creation/update/reopen/close, REST API for the
 dashboard read + 3 manual actions.
 
-**Remaining for MVP**: real config values + manual Azure/GitHub setup
-(`fingerprint-implementation-plan.md` Phase 7), the React dashboard. Dev-seed
+**Remaining for MVP**: executing the manual Azure/GitHub setup
+(`fingerprint-setup.md`), the React dashboard. Dev-seed
 mock data exists: `dotnet run --project tools/FingerprintSeed` (see
 `fingerprint-api-contract.md` → "Mock data for development").
 

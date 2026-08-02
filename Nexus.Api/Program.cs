@@ -22,12 +22,22 @@ if (!string.IsNullOrEmpty(keyVaultUrl))
         new DefaultAzureCredential());
 }
 
-builder.Host.UseSerilog((ctx, config) => config
-    .ReadFrom.Configuration(ctx.Configuration)
+// Serilog is registered as an ILoggerProvider instead of replacing the logger factory via
+// UseSerilog. The OpenTelemetry provider from AddNexusTelemetry then receives log records
+// straight from Microsoft.Extensions.Logging with their level and category intact. Routing
+// them through Serilog's bridge instead flattened every trace to SeverityLevel 0 in App
+// Insights, which the fingerprint trace query (SeverityLevel >= 2) would never match.
+// Levels for both providers come from the Logging:LogLevel section; Serilog's own
+// MinimumLevel still gates its Console/File sinks.
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .WriteTo.File("logs/nexus-.log", rollingInterval: RollingInterval.Day)
-);
+    .CreateLogger();
+
+builder.Logging.ClearProviders();
+builder.Logging.AddSerilog(Log.Logger, dispose: true);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplicationServices();
@@ -57,6 +67,7 @@ builder.Services.AddControllers()
 
 builder.Services.AddNexusAuth(builder.Configuration);
 builder.Services.AddNexusRateLimiting(builder.Configuration);
+builder.Services.AddNexusTelemetry(builder.Configuration);
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddSwaggerGen(options =>
@@ -139,10 +150,28 @@ try
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Application failed to start.");
+    // Serilog is only an ILoggerProvider now (see the logging setup above), so a static Log.Fatal
+    // call bypasses Microsoft.Extensions.Logging and never reaches the OpenTelemetry exporter —
+    // a startup crash, arguably the most important exception the process can produce, would be
+    // invisible to App Insights and so unfingerprintable. Logging through the container reaches
+    // both Serilog's sinks and OpenTelemetry; fall back to the static logger if the container
+    // itself is what failed.
+    try
+    {
+        app.Services
+            .GetRequiredService<Microsoft.Extensions.Logging.ILogger<Program>>()
+            .LogCritical(ex, "Application failed to start.");
+    }
+    catch
+    {
+        Log.Fatal(ex, "Application failed to start.");
+    }
 }
 finally
 {
+    // Disposing the host shuts down the OpenTelemetry providers, which flushes buffered telemetry.
+    // Without it the exception logged above can be lost on the way out.
+    await app.DisposeAsync();
     Log.CloseAndFlush();
 }
 

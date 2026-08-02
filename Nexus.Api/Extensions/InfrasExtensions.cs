@@ -27,8 +27,7 @@ namespace Nexus.Api.Extensions
             services.Configure<FingerprintIngestSettings>(config.GetSection(nameof(FingerprintIngestSettings)));
             services.Configure<FingerprintRoutingSettings>(config.GetSection(nameof(FingerprintRoutingSettings)));
             services.Configure<GitHubSettings>(config.GetSection(nameof(GitHubSettings)));
-            services.AddSingleton(sp =>
-                new BlobServiceClient(sp.GetRequiredService<IOptions<BlobStorageSettings>>().Value.ConnectionString));
+            services.AddSingleton(sp => new BlobServiceClient(sp.GetRequiredService<IOptions<BlobStorageSettings>>().Value.ConnectionString));
             services.AddSingleton(sp => new LogsQueryClient(new DefaultAzureCredential()));
             services.AddSingleton<Octokit.IGitHubClient>(sp =>
             {

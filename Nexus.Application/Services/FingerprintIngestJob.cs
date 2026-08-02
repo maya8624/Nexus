@@ -52,16 +52,16 @@ namespace Nexus.Application.Services
             }
 
             var exceptionGroups = await _appInsightsQueryService.QueryExceptionGroupsAsync(from, to, ct);
-            var traceWarningGroups = await _appInsightsQueryService.QueryTraceWarningGroupsAsync(from, to, ct);
+            var traceGroups = await _appInsightsQueryService.QueryTraceGroupsAsync(from, to, ct);
 
-            if (exceptionGroups.Count == 0 && traceWarningGroups.Count == 0)
+            if (exceptionGroups.Count == 0 && traceGroups.Count == 0)
             {
                 _logger.LogDebug("Fingerprint ingest: no new events in window {From:o}-{To:o}.", from, to);
                 return;
             }
 
             var newCount = await ProcessExceptionGroupsAsync(exceptionGroups, from, ct);
-            newCount += await ProcessTraceWarningGroupsAsync(traceWarningGroups, from, ct);
+            newCount += await ProcessTraceGroupsAsync(traceGroups, from, ct);
 
             await _uow.SaveChanges();
 
@@ -73,7 +73,7 @@ namespace Nexus.Application.Services
 
             _logger.LogInformation(
                 "Fingerprint ingest processed {ExceptionCount} exception groups and {TraceCount} trace groups ({NewCount} new) for window {From:o}-{To:o}.",
-                exceptionGroups.Count, traceWarningGroups.Count, newCount, from, to);
+                exceptionGroups.Count, traceGroups.Count, newCount, from, to);
         }
 
         private async Task<int> ProcessExceptionGroupsAsync(
@@ -91,13 +91,13 @@ namespace Nexus.Application.Services
             return newCount;
         }
 
-        private async Task<int> ProcessTraceWarningGroupsAsync(
-            IList<AppInsightsTraceWarningGroupReadModel> traceWarningGroups, DateTimeOffset windowFrom, CancellationToken ct)
+        private async Task<int> ProcessTraceGroupsAsync(
+            IList<AppInsightsTraceGroupReadModel> traceGroups, DateTimeOffset windowFrom, CancellationToken ct)
         {
             var newCount = 0;
-            foreach (var row in traceWarningGroups)
+            foreach (var row in traceGroups)
             {
-                var (fingerprint, isNew, windowCount) = await _fingerprinterService.ProcessTraceWarningGroupAsync(row, windowFrom, ct);
+                var (fingerprint, isNew, windowCount) = await _fingerprinterService.ProcessTraceGroupAsync(row, windowFrom, ct);
                 await _gitHubIssueService.ProcessFingerprintAsync(fingerprint, windowCount, isNew, ct);
                 if (isNew)
                     newCount++;
