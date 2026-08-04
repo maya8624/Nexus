@@ -17,7 +17,7 @@ namespace Nexus.Infrastructure.Repositories
 
         public async Task<FileUpload?> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            return await _context.FileUploads.FindAsync([id], ct);
+            return await Find(id, ct);
         }
 
         public async Task<FileUpload?> GetByIdForUserAsync(Guid id, Guid userId, CancellationToken ct)

@@ -20,9 +20,9 @@ namespace Nexus.Application.Services
         // than a filter because the same ProblemId logged at two levels is two distinct fingerprints —
         // LogWarning(ex, …) lands here at severity 2 just as LogError(ex, …) lands at 3.
         private const string ExceptionGroupsQuery = @"
-AppExceptions
-| summarize Count = count(), LastSeen = max(TimeGenerated), SampleMessage = any(OuterMessage) by ProblemId, ExceptionType, Severity = SeverityLevel, Operation = OperationName, ServiceName = AppRoleName
-| project ProblemId, ExceptionType, Severity, Operation, ServiceName, SampleMessage, Count, LastSeen";
+            AppExceptions
+            | summarize Count = count(), LastSeen = max(TimeGenerated), SampleMessage = any(OuterMessage) by ProblemId, ExceptionType, Severity = SeverityLevel, Operation = OperationName, ServiceName = AppRoleName
+            | project ProblemId, ExceptionType, Severity, Operation, ServiceName, SampleMessage, Count, LastSeen";
 
         // Traces are log records with no exception object attached, so they have no ProblemId and grouping
         // falls back to raw message text. Severity 2 is Warning, 3 Error, 4 Critical — all three are
@@ -30,11 +30,11 @@ AppExceptions
         // nor AppExceptions, and would be invisible entirely. {0} is the category filter (see
         // BuildCategoryFilter); CategoryName lives inside the dynamic Properties column.
         private const string TraceGroupsQueryTemplate = @"
-AppTraces
-| where SeverityLevel >= 2
-| extend Category = tostring(parse_json(Properties).CategoryName){0}
-| summarize Count = count(), LastSeen = max(TimeGenerated) by RawMessage = Message, Severity = SeverityLevel, Operation = OperationName, ServiceName = AppRoleName
-| project RawMessage, Severity, Operation, ServiceName, Count, LastSeen";
+            AppTraces
+            | where SeverityLevel >= 2
+            | extend Category = tostring(parse_json(Properties).CategoryName){0}
+            | summarize Count = count(), LastSeen = max(TimeGenerated) by RawMessage = Message, Severity = SeverityLevel, Operation = OperationName, ServiceName = AppRoleName
+            | project RawMessage, Severity, Operation, ServiceName, Count, LastSeen";
 
         private readonly LogsQueryClient _logsQueryClient;
         private readonly FingerprintIngestSettings _settings;

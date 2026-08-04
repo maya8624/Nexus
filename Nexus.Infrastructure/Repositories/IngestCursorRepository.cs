@@ -16,7 +16,7 @@ namespace Nexus.Infrastructure.Repositories
 
         public async Task<IngestCursor?> GetAsync(string source, CancellationToken ct)
         {
-            return await _context.IngestCursors.FindAsync([source], ct);
+            return await Find(source, ct);
         }
     }
 }

@@ -113,13 +113,17 @@ namespace Nexus.Application.Services
         private static FingerprintLevel MapLevel(int severity)
             => severity >= 3 ? FingerprintLevel.Error : FingerprintLevel.Warning;
 
-        private Fingerprint UpdateFingerprint(Fingerprint existing, int count, DateTimeOffset lastSeen, DateTimeOffset now)
+        // No repository Update call: GetByHashAsync always returns a tracked entity - from the change
+        // tracker's Local view when an earlier row in this batch already staged it, otherwise from a
+        // tracking query - so EF picks these mutations up on its own. Calling DbSet.Update here would be
+        // worse than redundant: on a fingerprint still Added from this batch it flips the entry to
+        // Modified, and SaveChanges then emits an UPDATE for a row that was never inserted. The
+        // classifier mutates Category/AutoFixEligible the same way for the same reason.
+        private static void UpdateFingerprint(Fingerprint existing, int count, DateTimeOffset lastSeen, DateTimeOffset now)
         {
             existing.TotalCount += count;
             existing.LastSeenUtc = lastSeen;
             existing.UpdatedAtUtc = now;
-            _fingerprintRepository.Update(existing);
-            return existing;
         }
 
         private async Task AddOccurrenceAsync(

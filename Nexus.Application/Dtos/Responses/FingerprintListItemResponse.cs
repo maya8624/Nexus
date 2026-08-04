@@ -14,6 +14,13 @@ namespace Nexus.Application.Dtos.Responses
         public DateTimeOffset LastSeenUtc { get; init; }
         public GithubIssueStatus GithubStatus { get; init; }
         public int? GithubIssueNumber { get; init; }
+
+        /// <summary>
+        /// Derived from the configured owner/repo and <see cref="GithubIssueNumber"/>; null when the
+        /// fingerprint has no issue or the server has no GitHub repository configured.
+        /// </summary>
+        public string? GithubIssueUrl { get; init; }
+
         public bool AutoFixEligible { get; init; }
         public IList<FingerprintSparklineBucketResponse> Sparkline { get; init; } = [];
     }

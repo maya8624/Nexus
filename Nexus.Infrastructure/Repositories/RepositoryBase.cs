@@ -31,8 +31,11 @@ namespace Nexus.Infrastructure.Repositories
         public async Task<IEnumerable<T>> GetByCondition(Expression<Func<T, bool>> expression, CancellationToken ct)
             => await _dbSet.Where(expression).ToListAsync(ct);
 
-        public async Task<T?> Find(int id, CancellationToken ct)
-            => await _dbSet.FindAsync(id, ct);
+        // The array form is deliberate: FindAsync(key, ct) would also compile, but the collection
+        // expression is what unambiguously selects the (keyValues, CancellationToken) overload rather
+        // than the params one.
+        public async Task<T?> Find<TKey>(TKey key, CancellationToken ct) where TKey : notnull
+            => await _dbSet.FindAsync([key], ct);
 
         public async Task<bool> IsAny(Expression<Func<T, bool>> expression, CancellationToken ct)
             => await _dbSet.AnyAsync(expression, ct);

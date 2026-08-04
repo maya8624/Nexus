@@ -81,7 +81,7 @@ namespace Nexus.Tests.Unit.Application
         }
 
         [Fact]
-        public async Task ProcessExceptionGroupAsync_WhenHashExists_IncrementsCountAndUpdates()
+        public async Task ProcessExceptionGroupAsync_WhenHashExists_IncrementsCountWithoutStagingAnUpdate()
         {
             var row = BuildExceptionRow(count: 5);
             var existing = new Fingerprint
@@ -108,7 +108,11 @@ namespace Nexus.Tests.Unit.Application
             Assert.Equal(15, fingerprint.TotalCount);
             Assert.Equal(row.LastSeen, fingerprint.LastSeenUtc);
             Assert.Equal("old template", fingerprint.MessageTemplate);
-            _repositoryMock.Verify(x => x.Update(existing), Times.Once);
+            // Deliberately no Update call. GetByHashAsync only ever returns tracked entities, so change
+            // tracking persists these mutations - and on a fingerprint still Added from this batch,
+            // DbSet.Update would flip the entry to Modified and emit an UPDATE for a row that was never
+            // inserted (verified against EF Core 8.0.11).
+            _repositoryMock.Verify(x => x.Update(It.IsAny<Fingerprint>()), Times.Never);
             _repositoryMock.Verify(x => x.Create(It.IsAny<Fingerprint>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 

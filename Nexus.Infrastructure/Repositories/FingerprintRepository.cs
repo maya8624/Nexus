@@ -18,7 +18,7 @@ namespace Nexus.Infrastructure.Repositories
 
         public async Task<Fingerprint?> GetByIdAsync(string id, CancellationToken ct)
         {
-            return await _context.Fingerprints.FindAsync([id], ct);
+            return await Find(id, ct);
         }
 
         public async Task<Fingerprint?> GetByHashAsync(string hash, CancellationToken ct)
@@ -45,6 +45,21 @@ namespace Nexus.Infrastructure.Repositories
                 .Where(x => level == null || x.Level == level)
                 .OrderByDescending(x => x.LastSeenUtc)
                 .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
+        public async Task<IList<Fingerprint>> GetUnfiledSinceAsync(DateTimeOffset createdSince, int take, CancellationToken ct)
+        {
+            // Deliberately tracked, unlike the dashboard's GetListAsync: the ingest job's retry pass hands
+            // these straight to the GitHub actor, which calls Update and SaveChanges on them. A detached
+            // copy of a row already tracked by this context would throw on Update.
+            //
+            // Oldest first, so a backlog larger than the per-run cap drains in arrival order rather than
+            // starving the earliest failures.
+            return await _context.Fingerprints
+                .Where(x => x.GithubStatus == GithubIssueStatus.None && x.CreatedAtUtc >= createdSince)
+                .OrderBy(x => x.CreatedAtUtc)
+                .Take(take)
                 .ToListAsync(ct);
         }
 

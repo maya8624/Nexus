@@ -115,9 +115,14 @@ looks back 60 minutes (`InitialLookbackMinutes`); the cursor advances from there
 
 ## 5. GitHub actor (issue filing)
 
-Same conventions as the other secrets:
+### 5.1 Token
 
-- Create a GitHub PAT with `repo` scope.
+A **fine-grained PAT** scoped to the single target repo with **Issues: Read and
+write** is sufficient — that one permission covers create, comment, label,
+reopen, and close. (`Metadata: Read-only` is added automatically and can't be
+removed.) A classic PAT with `repo` scope also works but grants read/write on
+every repo you own, for a token that only files issues on one.
+
 - Key Vault `kv-my-nexus-dev` → secret **`GitHubSettings--Token`** (the `--`
   separator is Key Vault's nested-key convention, same as
   `ConnectionStrings--DefaultConnection` / `StripeSettings--SecretKey`; it flows
@@ -129,6 +134,54 @@ Same conventions as the other secrets:
 
 With a blank token the GitHub client registration is skipped (local boot safe);
 the read endpoints and `/api/stats` work regardless.
+
+### 5.2 Create the 9 labels first
+
+`GitHubIssueService` attaches labels by name and GitHub has no idea they should
+exist. Create all nine in the target repo before the first filing:
+
+| Label | Emitted by |
+| --- | --- |
+| `severity/error`, `severity/warning` | `GitHubIssueService.CreateIssueAsync` — `$"severity/{Level.ToLowerInvariant()}"` |
+| `category/DEPENDENCY_FAILURE`, `category/NEW_REGRESSION`, `category/RECURRING_KNOWN`, `category/CONFIG_AUTH`, `category/DATA_QUALITY`, `category/PERFORMANCE` | same method, via `FingerprintCategoryWireFormat.ToWire` |
+| `auto-fix-candidate` | `FingerprintConstants.AutoFixCandidateLabel`, applied by `send-to-agent` |
+
+The `/` is part of the literal label name, not a namespace — GitHub treats these
+as opaque strings.
+
+### 5.3 `DefaultAssignee` is mandatory
+
+`CreateIssueAsync` does `newIssue.Assignees.Add(_router.Route(fingerprint))`
+unconditionally, and `FingerprintRouter.Route` falls through to
+`DefaultAssignee` whenever `Ownership` is empty. Leaving it blank makes GitHub
+reject every issue with **`Validation Failed: field 'assignees' is invalid`** —
+and because `ProcessFingerprintAsync` swallows exceptions, the ingest job logs a
+warning and moves on rather than failing visibly. It must be a real login with
+access to the repo.
+
+### 5.4 Filing hard-depends on the AI sidecar
+
+`CreateIssueAsync` calls `IFingerprintAiService.SummarizeAsync` for the title and
+body **before** it contacts GitHub, and that method throws rather than degrading.
+No reachable `AiServiceSettings:Summarize` endpoint means no issue is ever filed —
+a 503 from the REST endpoint, or a swallowed warning in the ingest job.
+
+> ⚠️ The rec_brain routes are **singular**: `api/fingerprint/classify` and
+> `api/fingerprint/summarize`. Configuring the plural `api/fingerprints/...`
+> yields a 404 that surfaces only as "The AI service is currently unavailable" —
+> it silently disables both LLM classification fallback and all issue filing.
+
+### 5.5 Auto-fix eligibility
+
+`AutoFixAllowlistCategories` gates `Fingerprint.AutoFixEligible`
+(`FingerprintRuleClassifierService.ComputeAutoFixEligible`). Empty means nothing
+is ever eligible: no `## Suggested Fix` section on issue bodies, `send-to-agent`
+always returns `409 NotAutoFixEligible`, and the dashboard's button stays
+disabled. Current setting is `["DATA_QUALITY", "CONFIG_AUTH"]` — the two
+categories whose fixes are usually a small local code or config change.
+
+Note trace-origin fingerprints have no `ProblemId` and so are **never** eligible,
+regardless of category.
 
 ## 6. Verification checklist (in order)
 

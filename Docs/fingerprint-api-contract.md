@@ -40,6 +40,7 @@ for all). Returns an array sorted by `lastSeenUtc` descending:
     "lastSeenUtc": "2026-07-27T06:45:00+00:00",
     "githubStatus": "Open",
     "githubIssueNumber": 123,
+    "githubIssueUrl": "https://github.com/maya8624/Nexus/issues/123",
     "autoFixEligible": true,
     "sparkline": [
       { "bucketStart": "2026-07-27T06:00:00+00:00", "count": 12 },
@@ -52,6 +53,13 @@ for all). Returns an array sorted by `lastSeenUtc` descending:
 **Sparkline notes:** up to 7 hourly buckets, **newest first** — reverse the array
 for a left-to-right time axis. Hours with zero occurrences have no bucket at all,
 so pad gaps client-side if you want an even 7-slot chart.
+
+**`githubIssueUrl`** is the ready-made link for a "View on GitHub" button — use it
+rather than building a URL from `githubIssueNumber` yourself. It is **derived**, not
+stored: the server composes it from its configured owner/repo, so it is `null`
+whenever `githubIssueNumber` is `null` **or** the server has no GitHub repository
+configured. Treat `null` as "don't render the link"; `githubIssueNumber` can be
+non-null while the URL is `null` on a server without GitHub settings.
 
 ### `GET /api/fingerprints/{id}` — detail
 
@@ -122,13 +130,17 @@ fingerprint tables, with timestamps relative to "now" so sparklines stay fresh.
 Against this data expect: `GET /api/stats` →
 `{ "openErrors": 6, "openWarnings": 4, "issuesAssignedToday": 2, "agentPrsAwaitingReview": 1 }`
 and `GET /api/fingerprints` → 12 rows. The action endpoints will 404/409
-normally, but note the GitHub issue numbers (#101–#107) are fake — "View on
-GitHub" links won't resolve, and `file-issue`/`resolve` will fail at the real
-GitHub call locally (no token configured), which is expected.
+normally, but note the GitHub issue numbers (#101–#107) are fake, and
+`file-issue`/`resolve` will fail at the real GitHub call locally (no token
+configured), which is expected. With blank local GitHub settings
+`githubIssueUrl` comes back `null` on every row even where `githubIssueNumber` is
+set — so the seeded data exercises the "no link" branch, not a broken link. To see
+populated URLs locally, set `GitHubSettings:Owner`/`Repo` (no token needed — the
+URL is derived, never fetched).
 
 ## Nullable / empty states to design for
 
-`category`, `githubIssueNumber`, `classifiedBy`, `exceptionType`, `serviceName`,
-`operation`, and the GitHub timestamps are all nullable. A brand-new fingerprint
+`category`, `githubIssueNumber`, `githubIssueUrl`, `classifiedBy`, `exceptionType`,
+`serviceName`, `operation`, and the GitHub timestamps are all nullable. A brand-new fingerprint
 can be `level: "Error"`, `category: null`, `githubStatus: "None"` with an empty
 sparkline — the list row and detail page must handle those gracefully.

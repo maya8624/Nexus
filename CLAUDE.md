@@ -155,8 +155,8 @@ window — an accepted MVP tradeoff, not a bug); only if nothing matched **and**
 override a stale LLM call, but a bad LLM result isn't retried) does it fall back to
 `IFingerprintAiService.ClassifyAsync`. A `FingerprintAiServiceException` from that
 call is caught and swallowed *inside the classifier*, not propagated — one flaky AI
-call must not abort the whole poll batch's single end-of-job `SaveChanges`, so the
-fingerprint is just left unclassified and retried next poll.
+call must not abort the rest of the poll batch, so the fingerprint is just left
+unclassified and retried next poll.
 
 `AutoFixEligible` is computed by every branch that sets a category, gated on
 `AutoFixAllowlistCategories`/`AutoFixDenylistNamespaces` (`FingerprintRoutingSettings`)
@@ -194,6 +194,83 @@ already-open / not-eligible / no-issue cases. `GitHubIssueService` calls
 waiting for the job's batch commit — a crash between issue creation and the batch
 commit would lose the issue number and file a duplicate next poll.
 
+**Commit ordering is load-bearing.** `FingerprintIngestJob` runs in three strict
+phases: stage every exception and trace row through the fingerprinter, collecting
+`PendingGitHubAction` records; **one** `SaveChanges` covering all fingerprints, all
+occurrences, *and* the cursor; then `ProcessPendingGitHubActionsAsync`. The actor
+must never run before that commit. Two things break if it does: a brand-new
+fingerprint is still `Added`, so the actor's `_fingerprintRepository.Update(...)`
+moves it to `Modified` and its commit emits an UPDATE against a row that was never
+inserted, failing `fk_fingerprint_occurrences_fingerprints_fingerprint_id` on the
+occurrence staged beside it; and the GitHub issue gets created before the
+fingerprint is durable, so any failure in between leaves an issue with no
+fingerprint behind it — which, because `ProcessFingerprintAsync` swallows
+exceptions, is re-filed on every later poll. Observed live: 9 orphaned issues in one
+afternoon. Guarded by
+`ExecuteAsync_ShouldCommitTheWholeBatchBeforeInvokingTheGitHubActor`.
+
+This replaced an earlier per-row `PersistBeforeSideEffectAsync()` commit. A single
+`SaveChangesAsync` is already one transaction, so no explicit `BeginTransaction` is
+needed. **The cursor advances inside that same commit deliberately**: a committed
+window is never re-polled, which is what makes Hangfire's retry safe. Re-polling is
+*not* idempotent for counters — `UpdateFingerprint` re-runs `TotalCount += count`
+and `AddOccurrenceAsync` inserts a duplicate row, since `(FingerprintId, OccurredAt)`
+is a plain `HasIndex`, not `IsUnique` — so a partially-committed batch used to
+inflate sparklines and the spike baseline on every retry. Accepted tradeoff: if the
+process dies between the commit and the GitHub loop, that batch's issues are never
+filed. Exposure is low (the actor catches everything, so only process death reaches
+it) and it self-heals for any recurring error, since the fingerprint keeps
+`GithubStatus = None` and files normally next time it appears.
+
+**The missed-filing retry** (`RetryMissedIssueFilingsAsync`) runs after the batch's own
+GitHub loop and closes the gap that the in-batch cursor creates. A fingerprint can
+only sit at `GithubStatus.None` *after creation* if its filing failed — the poll died
+before the actor, GitHub errored, or the token was blank — because
+`FingerprintFilingPolicy.ShouldFileIssue` is `isNewRegression || windowCount >= 3` and
+`isNew` is true on first sighting, so the policy always approves a brand-new
+fingerprint. The cursor has advanced past its window, so nothing re-examines it unless
+the same error recurs. The retry re-reads `None` rows via
+`IFingerprintRepository.GetUnfiledSinceAsync` (tracked, unlike the dashboard's
+`AsNoTracking` `GetListAsync`, because the actor calls `Update`/`SaveChanges` on
+them) and passes **`isNewRegression: true`** — deliberately bypassing the threshold,
+since these already earned a "file it" and re-applying it would suppress them twice.
+Ids already in this batch's `pending` are excluded: they are still `None` until the
+actor files them, so the query returns them too, and processing them twice would file
+an issue and immediately comment on it. Bounded by
+`MissedIssueLookbackHours` (default 24, `<= 0` disables) and `MaxMissedIssueRetriesPerRun`
+(default 25) — without the time bound it would keep retrying `FingerprintSeed`'s
+mock `None` rows and every failure accumulated against a blank local token. It also
+runs on the no-new-events path, since a quiet window is exactly when a backlog should
+drain. Accepted gap: `None` means *the DB has no issue number*, not *no issue exists*;
+if `CreateIssueAsync` reached GitHub but its commit failed, the retry files a
+duplicate. Closing that would need a `fingerprint/<id>` label on every issue plus a
+GitHub search before filing — deferred until duplicates are actually observed.
+
+**Several source rows routinely resolve to one fingerprint**, so `FingerprintIngestJob`
+runs both query results through its private `MergeByHash` overloads *before* staging.
+The App Insights queries group by keys finer than the hash: the trace KQL groups by raw
+`Message` while `NormalizeMessage` runs afterward in C#, and `ComputeExceptionHash` uses
+only `severity|problemId` while the exception KQL also groups by `Operation`/
+`ServiceName`. So `Blob "a.pdf" not found` and `Blob "b.pdf" not found` arrive as two
+rows and are one fingerprint. Merging up front is load-bearing three ways: the
+fingerprinter never tries to stage two `Fingerprint`s with the same deterministic Id
+(EF rejects that **at `Add`**, not at `SaveChanges` — verified on EF Core 8.0.11 — which
+kills the batch and freezes the cursor through all 10 retries); exactly one
+`FingerprintOccurrence` row is written per window instead of one per source row, which
+keeps sparklines and `GetHourlyBaselineAsync` honest; and the count reaching
+`ShouldFileIssue`/the spike multiplier is the window's real total rather than one slice.
+Merging is why `GetByHashAsync` can stay a plain query and why no batch-scoped identity
+map is needed anywhere.
+
+Relatedly, **`FingerprinterService.UpdateFingerprint` mutates the entity without calling
+`_fingerprintRepository.Update`** — verified against EF Core 8.0.11, `DbSet.Update` on an
+entity still `Added` from this batch flips the entry to `Modified` and `SaveChanges` then
+emits an UPDATE for a row that was never inserted. `GetByHashAsync` only ever returns
+tracked entities, so change tracking persists the mutations on its own;
+`FingerprintRuleClassifierService` has always relied on the same thing for
+`Category`/`AutoFixEligible`. Don't "restore" the `Update` call. The `GitHubIssueService`
+`Update` calls are fine because they all run after the commit, when nothing is `Added`.
+
 **Phase 6** adds the REST API: `FingerprintQueryService` (implements
 `IFingerprintService`) behind `FingerprintController` (`api/fingerprints` —
 list with `?status=`/`?level=` filters, detail, `file-issue`/`send-to-agent`/
@@ -205,7 +282,13 @@ GitHub issue** — `CloseIssueAsync` closes the open issue via Octokit and sets
 `GithubStatus = Closed`; a fingerprint with no issue gets `Conflict("NoGithubIssue")`
 rather than a status flip (keeps `Closed` meaning "a real issue was closed", so the
 ingest job's reopen-on-regression branch stays safe; a mute/dismiss feature would be
-a separate decision). `GithubIssueFiledAtUtc` (nullable, set in `CreateIssueAsync`,
+a separate decision). The list/detail responses expose `githubIssueUrl`, **derived not stored** — `Fingerprint`
+persists only `GithubIssueNumber`, and `GitHubIssueUrlBuilder` (`Common/`) composes
+`https://github.com/{Owner}/{Repo}/issues/{n}` from `GitHubSettings` on each read, so a
+repository rename can't strand a stale link. It returns null when there's no issue
+number *or* no configured owner/repo — without that second guard a local server with
+blank `GitHubSettings` would advertise `https://github.com//issues/123`.
+`GithubIssueFiledAtUtc` (nullable, set in `CreateIssueAsync`,
 migration `AddGithubIssueFiledAtToFingerprints`) exists so `IssuesAssignedToday` in
 `/api/stats` is an accurate "filed since UTC midnight" count instead of an
 `UpdatedAtUtc` proxy that comment-bumps would inflate. Known accepted tradeoff:

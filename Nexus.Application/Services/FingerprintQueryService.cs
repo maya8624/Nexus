@@ -1,8 +1,10 @@
+using Microsoft.Extensions.Options;
 using Nexus.Application.Common;
 using Nexus.Application.Constants;
 using Nexus.Application.Dtos.Responses;
 using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Interfaces.Repository;
+using Nexus.Application.Settings;
 using Nexus.Domain.Entities;
 using Nexus.Domain.Enums;
 
@@ -13,15 +15,18 @@ namespace Nexus.Application.Services
         private readonly IFingerprintRepository _fingerprintRepository;
         private readonly IFingerprintOccurrenceRepository _occurrenceRepository;
         private readonly IGitHubIssueService _gitHubIssueService;
+        private readonly GitHubSettings _gitHubSettings;
 
         public FingerprintQueryService(
             IFingerprintRepository fingerprintRepository,
             IFingerprintOccurrenceRepository occurrenceRepository,
-            IGitHubIssueService gitHubIssueService)
+            IGitHubIssueService gitHubIssueService,
+            IOptions<GitHubSettings> gitHubSettings)
         {
             _fingerprintRepository = fingerprintRepository;
             _occurrenceRepository = occurrenceRepository;
             _gitHubIssueService = gitHubIssueService;
+            _gitHubSettings = gitHubSettings.Value;
         }
 
         public async Task<Result<IList<FingerprintListItemResponse>>> GetListAsync(GithubIssueStatus? status, FingerprintLevel? level, CancellationToken ct)
@@ -130,6 +135,7 @@ namespace Nexus.Application.Services
                 LastSeenUtc = fingerprint.LastSeenUtc,
                 GithubStatus = fingerprint.GithubStatus,
                 GithubIssueNumber = fingerprint.GithubIssueNumber,
+                GithubIssueUrl = BuildIssueUrl(fingerprint),
                 AutoFixEligible = fingerprint.AutoFixEligible,
                 Sparkline = sparkline,
                 ExceptionType = fingerprint.ExceptionType,
@@ -148,7 +154,7 @@ namespace Nexus.Application.Services
             };
         }
 
-        private static FingerprintListItemResponse MapListItem(Fingerprint fingerprint, IList<FingerprintSparklineBucketResponse> sparkline)
+        private FingerprintListItemResponse MapListItem(Fingerprint fingerprint, IList<FingerprintSparklineBucketResponse> sparkline)
         {
             return new FingerprintListItemResponse
             {
@@ -162,9 +168,13 @@ namespace Nexus.Application.Services
                 LastSeenUtc = fingerprint.LastSeenUtc,
                 GithubStatus = fingerprint.GithubStatus,
                 GithubIssueNumber = fingerprint.GithubIssueNumber,
+                GithubIssueUrl = BuildIssueUrl(fingerprint),
                 AutoFixEligible = fingerprint.AutoFixEligible,
                 Sparkline = sparkline
             };
         }
+
+        private string? BuildIssueUrl(Fingerprint fingerprint)
+            => GitHubIssueUrlBuilder.Build(_gitHubSettings.Owner, _gitHubSettings.Repo, fingerprint.GithubIssueNumber);
     }
 }

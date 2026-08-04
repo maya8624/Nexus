@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Moq;
 using Nexus.Application.Common;
 using Nexus.Application.Constants;
@@ -5,6 +6,7 @@ using Nexus.Application.Interfaces.Business;
 using Nexus.Application.Interfaces.Repository;
 using Nexus.Application.ReadModels;
 using Nexus.Application.Services;
+using Nexus.Application.Settings;
 using Nexus.Domain.Entities;
 using Nexus.Domain.Enums;
 using Xunit;
@@ -28,11 +30,14 @@ namespace Nexus.Tests.Unit.Application
                 .Setup(x => x.GetRecentAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<FingerprintOccurrence>());
 
-            _service = new FingerprintQueryService(
-                _fingerprintRepositoryMock.Object,
-                _occurrenceRepositoryMock.Object,
-                _gitHubIssueServiceMock.Object);
+            _service = BuildService(new GitHubSettings { Token = "token", Owner = "maya8624", Repo = "Nexus" });
         }
+
+        private FingerprintQueryService BuildService(GitHubSettings gitHubSettings) => new(
+            _fingerprintRepositoryMock.Object,
+            _occurrenceRepositoryMock.Object,
+            _gitHubIssueServiceMock.Object,
+            Options.Create(gitHubSettings));
 
         private static Fingerprint BuildFingerprint(
             string id = "fp_deadbeef",
@@ -78,6 +83,67 @@ namespace Nexus.Tests.Unit.Application
             Assert.Equal(fingerprint.Category, item.Category);
             Assert.Equal(fingerprint.TotalCount, item.TotalCount);
             Assert.Equal(12, Assert.Single(item.Sparkline).Count);
+        }
+
+        [Fact]
+        public async Task GetListAsync_WhenFingerprintHasAnIssue_DerivesTheIssueUrl()
+        {
+            // The URL is not persisted - only the issue number is - so it is rebuilt from the configured
+            // owner/repo on every read.
+            var fingerprint = BuildFingerprint(githubStatus: GithubIssueStatus.Open);
+            fingerprint.GithubIssueNumber = 123;
+            _fingerprintRepositoryMock
+                .Setup(x => x.GetListAsync(null, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Fingerprint> { fingerprint });
+
+            var result = await _service.GetListAsync(null, null, CancellationToken.None);
+
+            var item = Assert.Single(result.Value!);
+            Assert.Equal("https://github.com/maya8624/Nexus/issues/123", item.GithubIssueUrl);
+        }
+
+        [Fact]
+        public async Task GetListAsync_WhenFingerprintHasNoIssue_LeavesTheIssueUrlNull()
+        {
+            var fingerprint = BuildFingerprint();
+            _fingerprintRepositoryMock
+                .Setup(x => x.GetListAsync(null, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Fingerprint> { fingerprint });
+
+            var result = await _service.GetListAsync(null, null, CancellationToken.None);
+
+            Assert.Null(Assert.Single(result.Value!).GithubIssueUrl);
+        }
+
+        [Fact]
+        public async Task GetListAsync_WhenNoRepositoryIsConfigured_LeavesTheIssueUrlNull()
+        {
+            // GitHubSettings is blank whenever no token is configured, which is the normal local setup.
+            // Without the guard a seeded fingerprint would advertise "https://github.com//issues/123".
+            var service = BuildService(new GitHubSettings { Token = "", Owner = "", Repo = "" });
+            var fingerprint = BuildFingerprint(githubStatus: GithubIssueStatus.Open);
+            fingerprint.GithubIssueNumber = 123;
+            _fingerprintRepositoryMock
+                .Setup(x => x.GetListAsync(null, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Fingerprint> { fingerprint });
+
+            var result = await service.GetListAsync(null, null, CancellationToken.None);
+
+            Assert.Null(Assert.Single(result.Value!).GithubIssueUrl);
+        }
+
+        [Fact]
+        public async Task GetByIdAsync_WhenFingerprintHasAnIssue_DerivesTheIssueUrl()
+        {
+            var fingerprint = BuildFingerprint(githubStatus: GithubIssueStatus.Open);
+            fingerprint.GithubIssueNumber = 456;
+            _fingerprintRepositoryMock
+                .Setup(x => x.GetByIdAsync(fingerprint.Id, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(fingerprint);
+
+            var result = await _service.GetByIdAsync(fingerprint.Id, CancellationToken.None);
+
+            Assert.Equal("https://github.com/maya8624/Nexus/issues/456", result.Value!.GithubIssueUrl);
         }
 
         [Fact]

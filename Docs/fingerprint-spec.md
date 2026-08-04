@@ -338,9 +338,13 @@ Row click → detail panel:
 - Recent occurrences list (`renderedMessage`, mono, scrollable, max-height
   ~120px) — this is the "sample trace" surface
 - Actions (enable rules mirror the server): primary "File GitHub issue"
-  (`githubStatus` is `None` or `Closed`), "View on GitHub #N" (whenever
-  `githubIssueNumber` exists), "Send to agent for fix" (`autoFixEligible` and
-  issue exists), "Mark resolved" (`githubStatus === "Open"`)
+  (`githubStatus` is `None` or `Closed`), "View on GitHub #N" (link `href` is
+  `githubIssueUrl`; gate on **`githubIssueUrl !== null`**, not on
+  `githubIssueNumber` — the URL is derived from the server's configured
+  owner/repo, so it is `null` on a server with no GitHub settings even when the
+  issue number is present, and gating on the number would render a link with
+  nowhere to go), "Send to agent for fix" (`autoFixEligible` and issue exists),
+  "Mark resolved" (`githubStatus === "Open"`)
 
 States: loading skeleton for table; empty state ("No open fingerprints — logs
 are clean"); error state with retry.
