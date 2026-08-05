@@ -45,6 +45,118 @@ endpoints, no DB access, called via the same `X-API-Key` header pattern every ot
 
 ---
 
+## End-to-end runtime flow (as built)
+
+The recap above is the component-level view. This is what actually happens on each
+run of `FingerprintIngestJob`, including the phase boundaries that turned out to be
+load-bearing — those are explained under the diagram.
+
+```
+Nexus.Api  ──(OpenTelemetry, Azure Monitor distro)──►  App Insights
+                                                    (Log Analytics workspace)
+      │
+      │  FingerprintIngestJob — Hangfire recurring, every 15 min
+      │  (registered only when FingerprintIngestSettings:WorkspaceId is non-blank)
+      ▼
+┌─ PHASE 1: stage ───────────────────────────────────────────────┐
+│                                                                │
+│  read IngestCursor ──► window = [lastCursor, now]              │
+│         │                                                      │
+│         ▼                                                      │
+│  AppInsightsQueryService — 2 KQL queries (workspace schema)    │
+│    • AppExceptions grouped by ProblemId                        │
+│    • AppTraces where SeverityLevel == 2                        │
+│         │                                                      │
+│         ▼                                                      │
+│  MergeByHash ── many source rows → one row per hash            │
+│    (must happen BEFORE staging — the queries group by keys     │
+│     finer than the hash does)                                  │
+│         │                                                      │
+│         ▼                                                      │
+│  FingerprinterService                                          │
+│    hash = severity|problemId  (or normalized message)          │
+│    id   = fp_ + 8 hex        ── deterministic, no round-trip   │
+│    GetByHashAsync ──► found? UpdateFingerprint : create        │
+│         │                                                      │
+│         ▼                                                      │
+│  FingerprintRuleClassifierService  (rules first, LLM last)     │
+│    1. isNewFingerprint?         → NEW_REGRESSION  ⏹ stop       │
+│    2. keyword tables            → DependencyFailure            │
+│                                   > ConfigAuth                 │
+│                                   > DataQuality                │
+│                                   > Performance                │
+│    3. count > baseline ×        → RECURRING_KNOWN              │
+│       MinSpikeMultiplier                                       │
+│    4. nothing matched AND       → Python /classify             │
+│       Category is null            (exceptions swallowed here)  │
+│    ⤷ every branch that sets a category also sets               │
+│      AutoFixEligible (allow/denylist vs ProblemId,             │
+│      fails closed when problemId is null)                      │
+│         │                                                      │
+│         ▼                                                      │
+│  AddOccurrenceAsync  +  collect PendingGitHubAction            │
+└────────────────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─ PHASE 2: commit ──────────────────────────────────────────────┐
+│  ONE SaveChanges — all fingerprints + all occurrences + cursor │
+│  ⚠ the actor must never run before this                        │
+└────────────────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─ PHASE 3: act ─────────────────────────────────────────────────┐
+│  ProcessPendingGitHubActionsAsync                              │
+│  GitHubIssueService (Octokit) — branch on GithubStatus:        │
+│                                                                │
+│   None + ShouldFileIssue  → create issue                       │
+│        (isNew || count≥3)   labels: severity/*, category/*     │
+│                             assignee: FingerprintRouter        │
+│                             body: Python /summarize            │
+│                             + "## Suggested Fix" if eligible   │
+│   Open                    → count comment, throttled to 1h     │
+│                             via GithubLastCommentedAtUtc       │
+│   Closed                  → reopen + "Regressed" comment       │
+│   Pr / Merged / below      → no-op                             │
+│                                                                │
+│  SaveChanges after EACH GitHub side effect, not batched        │
+│         │                                                      │
+│         ▼                                                      │
+│  RetryMissedIssueFilingsAsync — re-file fingerprints stuck at  │
+│  GithubStatus.None from windows the cursor has already passed  │
+│  (also runs on the no-new-events path)                         │
+└────────────────────────────────────────────────────────────────┘
+      │
+      ▼
+  REST API ──►  React dashboard
+    /api/fingerprints  (list, detail, file-issue, send-to-agent, resolve)
+    /api/stats
+```
+
+### The three steps carrying the most weight
+
+**Merge before staging.** Several source rows routinely resolve to one fingerprint,
+because the KQL groups by finer keys than the hash uses. Merging up front is what
+lets `GetByHashAsync` stay a plain query with no batch-scoped identity map, keeps
+occurrence rows at one per window, and gives `ShouldFileIssue` the window's real
+total. If two same-Id entities do reach `Add`, EF rejects it **at `Add`**, not at
+`SaveChanges` (verified on EF Core 8.0.11) — which kills the batch and freezes the
+cursor through all 10 retries.
+
+**Commit before the actor.** Phase 2 sits between staging and GitHub for two
+reasons: a brand-new fingerprint is still `Added`, so an early `Update` emits an
+UPDATE for a row that was never inserted and breaks the occurrence FK; and an issue
+filed before its fingerprint is durable can end up orphaned — which, because
+`ProcessFingerprintAsync` swallows exceptions, is re-filed on every later poll.
+
+**The cursor advances inside that same commit.** A committed window is never
+re-polled, which is what makes Hangfire's retry safe — re-polling is not idempotent,
+since `UpdateFingerprint` re-runs `TotalCount += count` and occurrence rows are not
+uniquely constrained. The accepted tradeoff is that process death between the commit
+and the GitHub loop skips that batch's filings, which `RetryMissedIssueFilingsAsync`
+then picks up.
+
+---
+
 ## Design decisions
 
 These are the points where the spec's generic pseudocode doesn't match this repo's
